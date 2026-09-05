@@ -128,6 +128,17 @@ function effectiveDay(date) {
   return dayIndex(date);
 }
 
+/** 그 슬롯에 같은 이름의 강좌가 몇 개나 열리나(내 학급이 속한 밴드들 안에서). */
+function twinCount(bands, day, period, subject) {
+  let count = 0;
+  for (const list of bands.values()) {
+    for (const sec of list) {
+      if (sec.day === day && sec.period === period && sec.subject === subject) count += 1;
+    }
+  }
+  return count;
+}
+
 function lessonsOn(date) {
   const day = effectiveDay(date);
   const out = [];
@@ -149,6 +160,14 @@ function lessonsOn(date) {
         ? {
             period: sec.period, subject: sec.subject,
             teacher: sec.teacher, room: sec.room, kind: 'section',
+            // 합반이면 여러 반이 함께 듣는다. 변경이 어느 반에 기록됐든 내 수업이다.
+            classIds: sec.classIds || [],
+            /*
+             * 같은 시간 내 밴드들에 같은 이름의 강좌가 몇인가. 둘 이상이면(분담 운영)
+             * 과목명으로 안 갈려 교사를 봐야 한다. 하나뿐이면 교사를 보지 않는다 —
+             * 원장과 변경 기록이 교사명을 다르게 적었을 때 멀쩡한 보강을 떨어뜨린다.
+             */
+            twins: twinCount(bands, day, sec.period, sec.subject),
           }
         : { period: sec.period, subject: '이동수업', teacher: null, kind: 'unpicked', band });
     }
@@ -164,21 +183,77 @@ function lessonsOn(date) {
 }
 
 /*
- * 그 칸에 걸린 변경 하나.
+ * 「이 변경이 내 칸의 것인가」.
  *
- * 반과 교시만으로는 칸이 하나로 좁혀지지 않는다 — 한 학급의 같은 교시가 이동수업이면
- * 학생마다 다른 강좌에 앉아 있다. 실제로 3-1 의 5교시에는 「고전과 윤리」와 「세계 문제와
- * 미래 사회」가 함께 걸려 있고, 앞의 보강을 뒤를 듣는 학생에게 칠하면 오지 않을 선생님을
- * 기다리게 된다. 그래서 원래 과목까지 같아야 내 칸으로 친다.
+ * 반과 교시만으로는 칸이 하나로 좁혀지지 않는다. 교사웹에서 같은 자리로 사고가 여러 번
+ * 났고(밴드 칸은 반·교시로 특정되지 않는다), 학생 화면에서는 셋으로 나타난다.
+ *
+ *   합반  — 3-1 과 3-3 이 함께 듣는 「고전과 윤리」의 보강은 3-1 에만 기록된다.
+ *          내 반만 보면 3-3 학생은 영영 못 받는다. 그 강좌의 어느 반에 적혔든 내 수업이다.
+ *   분반  — 3-1 의 5교시에는 「고전과 윤리」와 「세계 문제와 미래 사회」가 함께 걸려 있다.
+ *          원래 과목까지 같아야 한다.
+ *   동명  — 같은 시간 같은 밴드에 「과학창의연구」가 둘이다(분담 운영). 과목명으로는
+ *          안 갈리므로 교사로 가른다. 공동수업은 원장이 「박가영·Akhona」처럼 병기하고
+ *          변경 기록은 한 사람만 적으므로, 한쪽이 다른 쪽을 품으면 같은 사람으로 본다.
+ */
+function sameTeacher(left, right) {
+  if (!left || !right) return true;          // 한쪽을 모르면 가르지 않는다
+  return left === right || left.includes(right) || right.includes(left);
+}
+
+function ownsCell(chg, lesson) {
+  if (!lesson || lesson.kind === 'unpicked') return false;
+  if (lesson.kind === 'section') {
+    if (!(lesson.classIds || []).includes(chg.classId)) return false;
+    if (chg.origSubject && chg.origSubject !== lesson.subject) return false;
+    if ((lesson.twins ?? 1) <= 1) return true;      // 갈릴 것이 없으면 교사를 안 본다
+    return sameTeacher(chg.origTeacher, lesson.teacher);
+  }
+  if (chg.classId !== state.me.classId) return false;
+  /*
+   * 학급 칸에서는 교사를 대보지 않는다. 그 시간에 그 반이 듣는 수업은 하나뿐이라
+   * 과목이면 충분하고, 병기된 교사명 때문에 멀쩡한 보강을 떨어뜨릴 이유가 없다.
+   */
+  return !chg.origSubject || !lesson.subject || chg.origSubject === lesson.subject;
+}
+
+/*
+ * 한 칸에 걸린 변경 — 여럿이면 합친다.
+ *
+ * 교체로 들어온 수업에 다시 보강이 걸리는 일이 있다(2026-09-03 2-11 7교시: 교체로
+ * 「확률과 통계」가 들어오고 그 수업에 보강이 붙었다). 하나만 집으면 나머지가 조용히
+ * 사라진다 — 교사웹에서도 같은 사고가 있었다. 교체는 «무슨 수업인지»를, 보강은
+ * «누가 들어오는지»를 바꾸므로 둘을 겹쳐 읽는다.
  */
 function changeForCell(list, period, lesson) {
-  for (const chg of list) {
-    if (chg.kind === 'dayswap' || chg.kind === 'daycopy') continue;
-    if (chg.period !== period) continue;
-    if (chg.origSubject && lesson && lesson.subject && chg.origSubject !== lesson.subject) continue;
-    return chg;
-  }
-  return null;
+  const here = list.filter((chg) => chg.period === period && ownsCell(chg, lesson));
+  /*
+   * 교체로 **들어온** 수업에 다시 붙은 변경은 원래 과목과 안 맞는다. 2026-09-03 2-11
+   * 7교시가 그랬다 — 교체로 「확률과 통계」가 들어오고 그 수업에 보강이 붙었는데,
+   * 칸의 원래 과목은 「영어Ⅱ」라 보강이 걸러져 사라졌다. 들어온 과목으로 한 번 더 본다.
+   */
+  const incoming = here.map((chg) => chg.newSubject).filter(Boolean);
+  const extra = incoming.length
+    ? list.filter((chg) => chg.period === period && !here.includes(chg)
+        && incoming.includes(chg.origSubject)
+        && ownsCell(chg, { ...lesson, subject: chg.origSubject }))
+    : [];
+  const found = [...here, ...extra];
+  if (!found.length) return null;
+  const cancel = found.find((chg) => chg.kind === 'cancel');
+  if (cancel) return { kind: 'cancel', subject: null, teacher: null, note: '수업 없음', stack: found };
+  const swap = found.find((chg) => chg.kind === 'swap');
+  const substitute = found.find((chg) => chg.kind === 'substitute');
+  const base = swap ?? substitute ?? found[0];
+  return {
+    kind: substitute ? 'substitute' : base.kind,
+    subject: (swap && (swap.newSubject || swap.origSubject)) || lesson.subject,
+    teacher: (substitute && substitute.newTeacher) || (swap && swap.newTeacher) || null,
+    origTeacher: base.origTeacher ?? null,
+    note: [swap ? '교체' : null, substitute ? '보강' : null].filter(Boolean).join(' · ') || '변경',
+    fromDate: base.fromDate ?? null,
+    stack: found,
+  };
 }
 
 /*
@@ -207,8 +282,21 @@ function changesOn(date) {
   if (!state.changes || !state.changes.changes) return [];
   const key = iso(date);
   return state.changes.changes.filter(
-    (chg) => chg.date === key && (chg.classId === state.me.classId || !chg.classId),
+    (chg) => chg.date === key,
   );
+}
+
+/* 그 날 내 칸에 실제로 걸린 변경 수. 달력의 점이 이것을 센다. */
+function myChangeCount(date) {
+  if (!state.changes) return 0;
+  const list = changesOn(date);
+  const lessons = lessonsOn(date);
+  const seen = new Set();
+  for (const [period, lesson] of lessons) {
+    const chg = changeForCell(list, period, lesson);
+    if (chg) for (const item of chg.stack) seen.add(item);
+  }
+  return seen.size;
 }
 
 /* ── 그리기 ── */
@@ -380,9 +468,9 @@ function todayPanel() {
       cell.appendChild(wrap);
     } else {
       cell.appendChild(el('div', 'name',
-        chg ? (chg.newSubject || chg.origSubject || lesson.subject) : lesson.subject));
+        chg ? (chg.subject || lesson.subject) : lesson.subject));
       const who = chg
-        ? `${chg.newTeacher ?? ''} ${chg.kind === 'substitute' ? '보강' : '교체'}`.trim()
+        ? `${chg.teacher ?? ''} ${chg.note}`.trim()
         : (lesson.teacher || '');
       if (who) cell.appendChild(el('div', 'by', who));
       if (chg && chg.origTeacher) cell.appendChild(el('span', 'was', chg.origTeacher));
@@ -446,9 +534,9 @@ function weekPanel() {
       if (chg) td.className = 'c';
       td.append(lesson.kind === 'unpicked'
         ? '이동수업'
-        : (chg && (chg.newSubject || chg.origSubject)) || lesson.subject);
+        : (chg && chg.subject) || lesson.subject);
       const who = chg
-        ? `${chg.newTeacher ?? ''} ${chg.kind === 'substitute' ? '보강' : '교체'}`.trim()
+        ? `${chg.teacher ?? ''} ${chg.note}`.trim()
         : lesson.teacher;
       if (who) td.appendChild(el('small', null, who));
       row.appendChild(td);
@@ -481,8 +569,8 @@ function weekPanel() {
     const row = el('div', 'r');
     row.appendChild(el('b', null, `${DAYS[c.dayIdx]} ${c.period}교시`));
     row.appendChild(el('span', null,
-      `${c.origSubject || ''} · ${c.origTeacher ? `${c.origTeacher} → ` : ''}`
-      + `${c.newTeacher ?? ''} ${c.kind === 'substitute' ? '보강' : '교체'}`.trim()));
+      `${c.subject || ''} · ${c.origTeacher ? `${c.origTeacher} → ` : ''}`
+      + `${c.teacher ?? ''} ${c.note}`.trim()));
     side.appendChild(row);
   }
   panel.appendChild(side);
@@ -520,7 +608,7 @@ function monthPanel() {
           if (ev.kind === 'holiday') td.classList.add('off');
           td.appendChild(el('span', `tag ${ev.kind}`, ev.labels[0] || ''));
         }
-        if (changesOn(date).some((c) => c.kind !== 'dayswap' && c.kind !== 'daycopy')) {
+        if (myChangeCount(date) > 0) {
           const dots = el('span', 'dots'); dots.appendChild(el('i')); td.appendChild(dots);
         }
         td.onclick = () => { state.cursor = date; state.view = 'day'; render(); };
