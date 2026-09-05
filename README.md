@@ -41,3 +41,19 @@
 ## 설계 문서
 
 `hanmin-academic-system` 저장소의 `docs/학생-시간표-공개-계획.md`
+
+## DNS 연결 전 임시 주소
+
+`CNAME` 파일을 `CNAME.대기` 로 미뤄 두었다. DNS 가 붙기 전에는 커스텀 도메인으로
+301 이 걸려 아무것도 안 보이기 때문이다. 그동안은 아래에서 확인한다.
+
+```
+https://pang99x-hub.github.io/hanmin-timetable/
+```
+
+**DNS 를 붙인 뒤** `CNAME.대기` 를 `CNAME` 으로 되돌리고 커밋하면 `timetable.hanmin.hs.kr`
+로 열린다. 필요한 레코드는 `course` 와 같은 모양이다.
+
+```
+timetable.hanmin.hs.kr.   CNAME   pang99x-hub.github.io.
+```
