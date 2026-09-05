@@ -100,8 +100,17 @@ button{font-family:inherit; cursor:pointer}
 
 /* ── 넓은 화면: 오늘 + 주 나란히 ── */
 .cols{display:grid; gap:22px; margin-top:16px}
+/*
+ * 「오늘」 옆에 주간을 두는 것은 **옆에 놓을 자리가 있을 때만**이다.
+ *
+ * 좁은 화면에서는 아래로 쌓이는데, 그건 «오늘»을 보러 온 사람에게 필요 없는 것이
+ * 스크롤을 늘릴 뿐이다(2026-09-06 지적). 주간은 탭으로 언제든 볼 수 있다.
+ */
 @media (min-width:980px){
   .cols.both{grid-template-columns:minmax(0,310px) minmax(0,1fr)}
+}
+@media (max-width:979px){
+  .cols.both > .panel + .panel{display:none}
 }
 .panel h2{margin:0 0 10px; font-size:11px; font-weight:800; letter-spacing:.11em; color:var(--ink-4)}
 
