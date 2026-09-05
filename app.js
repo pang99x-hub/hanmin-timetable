@@ -88,40 +88,46 @@ const save = () => localStorage.setItem(KEY, JSON.stringify(state.me));
 function bandsOfMyClass() {
   const map = new Map();
   for (const sec of state.sections) {
-    if (!sec.classes.includes(state.me.classId)) continue;
-    const band = sec.b || `${sec.s}`;
+    if (!sec.classIds.includes(state.me.classId)) continue;
+    const band = sec.bandKey || sec.subject;
     if (!map.has(band)) map.set(band, []);
     map.get(band).push(sec);
   }
   return map;
 }
-const sectionKey = (sec) => `${sec.sec ?? ''}|${sec.s}|${sec.t ?? ''}`;
+const sectionKey = (sec) => `${sec.sectionId ?? ''}|${sec.subject}|${sec.teacher ?? ''}`;
 
 function lessonsOn(date) {
   const day = dayIndex(date);
   const out = [];
   for (const cell of state.classes) {
-    if (cell.c === state.me.classId && cell.d === day) {
-      out.push({ p: cell.p, s: cell.s, t: cell.t, r: cell.r, kind: 'class' });
+    if (cell.classId === state.me.classId && cell.day === day) {
+      out.push({
+        period: cell.period, subject: cell.subject,
+        teacher: cell.teacher, room: cell.room, kind: 'class',
+      });
     }
   }
   const bands = bandsOfMyClass();
   for (const [band, list] of bands) {
     const chosen = state.me.sections[band];
     for (const sec of list) {
-      if (sec.d !== day) continue;
+      if (sec.day !== day) continue;
       if (chosen && sectionKey(sec) !== chosen) continue;
       out.push(chosen
-        ? { p: sec.p, s: sec.s, t: sec.t, r: sec.r, kind: 'section' }
-        : { p: sec.p, s: '이동수업', t: null, kind: 'unpicked', band });
+        ? {
+            period: sec.period, subject: sec.subject,
+            teacher: sec.teacher, room: sec.room, kind: 'section',
+          }
+        : { period: sec.period, subject: '이동수업', teacher: null, kind: 'unpicked', band });
     }
   }
   // 같은 교시에 «안 고른 밴드»가 여러 개면 한 줄로 접는다.
   const byPeriod = new Map();
   for (const item of out) {
-    const found = byPeriod.get(item.p);
-    if (!found) { byPeriod.set(item.p, item); continue; }
-    if (found.kind === 'unpicked' && item.kind !== 'unpicked') byPeriod.set(item.p, item);
+    const found = byPeriod.get(item.period);
+    if (!found) { byPeriod.set(item.period, item); continue; }
+    if (found.kind === 'unpicked' && item.kind !== 'unpicked') byPeriod.set(item.period, item);
   }
   return byPeriod;
 }
@@ -131,7 +137,7 @@ function changesOn(date) {
   if (!state.changes || !state.changes.changes) return [];
   const key = iso(date);
   return state.changes.changes.filter(
-    (chg) => chg.date === key && (chg.c === state.me.classId || !chg.c),
+    (chg) => chg.opDate === key && (chg.classId === state.me.classId || !chg.classId),
   );
 }
 
@@ -218,7 +224,8 @@ function header() {
   const rot = changesOn(state.cursor).find((chg) => chg.kind === 'dayswap');
   if (rot) {
     const note = el('div', 'rotate');
-    note.innerHTML = `오늘은 <b>${rot.as || '다른 날'} 시간표</b>로 운영합니다`;
+    const asDay = rot.toDate ? `${DAYS[dayIndex(parse(rot.toDate))] ?? ''}요일` : '다른 날';
+    note.innerHTML = `오늘은 <b>${asDay} 시간표</b>로 운영합니다`;
     box.appendChild(note);
   }
   return box;
@@ -273,7 +280,7 @@ function todayPanel() {
       day.dataset.lunch = '1';
     }
     const lesson = lessons.get(period.period);
-    const chg = chgs.find((item) => item.p === period.period && item.kind !== 'dayswap');
+    const chg = chgs.find((item) => item.period === period.period && item.kind !== 'dayswap');
     const slot = el('div', 'slot');
     const gut = el('span', 'gut');
     gut.append(el('span', 'p', `${period.period}교시`), el('span', 't', period.startTime));
@@ -291,10 +298,13 @@ function todayPanel() {
       wrap.appendChild(btn);
       cell.appendChild(wrap);
     } else {
-      cell.appendChild(el('div', 'name', chg ? (chg.s || lesson.s) : lesson.s));
-      const who = chg ? `${chg.to} ${chg.kind === 'substitute' ? '보강' : '교체'}` : (lesson.t || '');
+      cell.appendChild(el('div', 'name',
+        chg ? (chg.newSubject || chg.origSubject || lesson.subject) : lesson.subject));
+      const who = chg
+        ? `${chg.newTeacher ?? ''} ${chg.kind === 'substitute' ? '보강' : '교체'}`.trim()
+        : (lesson.teacher || '');
       if (who) cell.appendChild(el('div', 'by', who));
-      if (chg && chg.from) cell.appendChild(el('span', 'was', chg.from));
+      if (chg && chg.origTeacher) cell.appendChild(el('span', 'was', chg.origTeacher));
     }
     if (chg) slot.classList.add('chg');
     if (isToday && !chg && lesson && now.toTimeString().slice(0, 5) >= period.startTime
@@ -349,12 +359,17 @@ function weekPanel() {
     row.appendChild(pn);
     for (let i = 0; i < 5; i += 1) {
       const lesson = byDay[i].lessons.get(period.period);
-      const chg = byDay[i].changes.find((item) => item.p === period.period && item.kind !== 'dayswap');
+      const chg = byDay[i].changes.find(
+        (item) => item.period === period.period && item.kind !== 'dayswap');
       const td = el('td');
       if (!lesson) { td.className = 'e'; row.appendChild(td); continue; }
       if (chg) td.className = 'c';
-      td.append(lesson.kind === 'unpicked' ? '이동수업' : (chg && chg.s) || lesson.s);
-      const who = chg ? `${chg.to} ${chg.kind === 'substitute' ? '보강' : '교체'}` : lesson.t;
+      td.append(lesson.kind === 'unpicked'
+        ? '이동수업'
+        : (chg && (chg.newSubject || chg.origSubject)) || lesson.subject);
+      const who = chg
+        ? `${chg.newTeacher ?? ''} ${chg.kind === 'substitute' ? '보강' : '교체'}`.trim()
+        : lesson.teacher;
       if (who) td.appendChild(el('small', null, who));
       row.appendChild(td);
     }
@@ -364,16 +379,17 @@ function weekPanel() {
 
   const week = [0, 1, 2, 3, 4].flatMap((i) =>
     changesOn(addDays(mon, i)).filter((c) => c.kind !== 'dayswap')
-      .map((c) => ({ ...c, day: i })));
+      .map((c) => ({ ...c, dayIdx: i })));
   const side = el('div', 'side');
   side.appendChild(el('h3', null, '이번 주 바뀐 수업'));
   if (!state.changes) side.appendChild(el('p', 'none', '수업 변경은 아직 준비 중입니다'));
   else if (week.length === 0) side.appendChild(el('p', 'none', '바뀐 수업이 없습니다'));
   else for (const c of week) {
     const row = el('div', 'r');
-    row.appendChild(el('b', null, `${DAYS[c.day]} ${c.p}교시`));
+    row.appendChild(el('b', null, `${DAYS[c.dayIdx]} ${c.period}교시`));
     row.appendChild(el('span', null,
-      `${c.s || ''} · ${c.from ? `${c.from} → ` : ''}${c.to} ${c.kind === 'substitute' ? '보강' : '교체'}`));
+      `${c.origSubject || ''} · ${c.origTeacher ? `${c.origTeacher} → ` : ''}`
+      + `${c.newTeacher ?? ''} ${c.kind === 'substitute' ? '보강' : '교체'}`.trim()));
     side.appendChild(row);
   }
   panel.appendChild(side);
@@ -445,7 +461,7 @@ function setupClass() {
   const box = el('div', 'setup');
   box.appendChild(el('h1', null, '어느 반인가요?'));
   box.appendChild(el('p', null, '한 번만 고르면 됩니다. 이 기기에만 저장되고 어디로도 보내지 않습니다.'));
-  const ids = [...new Set(state.classes.map((cell) => cell.c))].sort((a, b) => {
+  const ids = [...new Set(state.classes.map((cell) => cell.classId))].sort((a, b) => {
     const [ga, ca] = a.split('-').map(Number); const [gb, cb] = b.split('-').map(Number);
     return ga - gb || ca - cb;
   });
@@ -473,9 +489,10 @@ function openPicker(band) {
   const opts = el('div', 'opts');
   for (const [key, sec] of uniq) {
     const btn = el('button', state.me.sections[band] === key ? 'on' : null);
-    btn.append(sec.s);
+    btn.append(sec.subject);
     btn.appendChild(el('small', null,
-      `${sec.t || '담당 미정'}${sec.r ? ` · ${sec.r}` : ''} · ${DAYS[sec.d]}${sec.p}교시`));
+      `${sec.teacher || '담당 미정'}${sec.room ? ` · ${sec.room}` : ''}`
+      + ` · ${DAYS[sec.day]}${sec.period}교시`));
     btn.onclick = () => { state.me.sections[band] = key; save(); render(); };
     opts.appendChild(btn);
   }
