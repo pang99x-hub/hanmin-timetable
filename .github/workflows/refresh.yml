@@ -31,11 +31,14 @@ jobs:
       - name: 자료 받기
         env:
           DESK: ${{ secrets.AX_DATA_URL }}
-          SECRET: ${{ secrets.AX_DATA_SECRET }}
+          # 슈파베이스 anon 키. 웹앱에도 박혀 있는 공개 값이라 숨겨야 할 비밀은 아니지만,
+          # 이것이 없으면 플랫폼 문지기가 먼저 되돌려보낸다.
+          ANON: ${{ secrets.AX_DATA_ANON_KEY }}
         run: |
           set -euo pipefail
           code=$(curl -sS -o /tmp/payload.json -w '%{http_code}' -X POST "$DESK" \
-            -H "X-AX-Worker-Secret: $SECRET" -H 'Content-Type: application/json' -d '{}')
+            -H "Authorization: Bearer $ANON" -H "apikey: $ANON" \
+            -H 'Content-Type: application/json' -d '{}')
           if [ "$code" != "200" ]; then
             echo "::error::교사웹이 $code 로 답했습니다"; head -c 400 /tmp/payload.json; exit 1
           fi
