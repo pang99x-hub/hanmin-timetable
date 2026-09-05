@@ -13,6 +13,11 @@
  * 구분해 말한다 — 빈칸만 두면 학생은 고장으로 읽는다.
  *
  * 내 반과 내 강좌는 **이 기기에만** 저장한다. 서버로 보내지 않는다.
+ *
+ * 딱 한 번, 처음 열 때만 바깥에 묻는다 — 구글 로그인으로 «나는 누구»를 확인하고
+ * 내 반과 내 강좌 번호를 받아 온다(앱스스크립트 창구). 정적 파일에는 누가 무엇을
+ * 듣는지가 없다. 없어야 한다 — 주소만 알면 누구나 받는 파일이기 때문이다.
+ * 받은 뒤에는 기기에 저장하고 다시 묻지 않는다. 아침에 900명이 몰려도 창구는 조용하다.
  */
 'use strict';
 
@@ -20,10 +25,17 @@ const DAYS = ['월', '화', '수', '목', '금'];
 const KEY = 'hanmin.timetable.me.v1';
 const DATA = 'data/';
 
+/* 창구와 구글 로그인. 학교가 바뀌면 이 두 줄만 고친다. */
+const DESK = 'https://script.google.com/macros/s/AKfycbxrSNLXhSMh7MvzV860ebOhVCJY1Pe0mSUSfnvFpXFZL4CE9SFCqFu9myJS19u9FWHr/exec';
+const CLIENT_ID = '817402337132-buq4v80hslbv80d2ajteaj8h5664hod2.apps.googleusercontent.com';
+
 const state = {
   school: null, classes: [], sections: [],
   changes: null, meals: null, calendar: null,
   me: null,          // { classId, sections: {bandKey: sectionKey} }
+  gate: 'login',     // login | manual — 로그인 전 화면
+  busy: false,       // 창구에 묻는 중
+  gateError: null,
   view: 'day',       // day | week | month
   cursor: new Date(),
   loadedAt: null,
@@ -144,7 +156,11 @@ function changesOn(date) {
 /* ── 그리기 ── */
 function render() {
   const app = document.getElementById('app');
-  if (!state.me || !state.me.classId) { app.innerHTML = ''; app.appendChild(setupClass()); return; }
+  if (!state.me || !state.me.classId) {
+    app.innerHTML = '';
+    app.appendChild(state.gate === 'manual' ? setupClass() : loginGate());
+    return;
+  }
   app.innerHTML = '';
   app.appendChild(header());
   const cols = document.createElement('div');
@@ -190,7 +206,7 @@ function header() {
   const right = el('div', 'right');
   const me = el('button', 'me', state.me.classId);
   me.title = '반 다시 고르기';
-  me.onclick = () => { state.me = null; render(); };
+  me.onclick = () => { state.me = null; state.gate = 'manual'; render(); };
   right.appendChild(me);
   top.appendChild(right);
   box.appendChild(top);
@@ -457,6 +473,119 @@ function calendarSide() {
 }
 
 /* ── 처음 설정: 내 반 ── */
+/* ── 로그인 ───────────────────────────────────────────────────────────
+ * 구글 로그인으로 «나는 누구»만 확인하고, 창구에서 내 반과 강좌 번호를 받는다.
+ * 이 화면을 지나면 다시 볼 일이 없다.
+ */
+function loadGoogle() {
+  if (window.google && window.google.accounts) return Promise.resolve(true);
+  if (loadGoogle.pending) return loadGoogle.pending;
+  loadGoogle.pending = new Promise((resolve) => {
+    const tag = document.createElement('script');
+    tag.src = 'https://accounts.google.com/gsi/client';
+    tag.async = true;
+    tag.onload = () => resolve(true);
+    tag.onerror = () => resolve(false);   // 학교 망이 막아 둔 경우 — 직접 고르기로 간다
+    document.head.appendChild(tag);
+  });
+  return loadGoogle.pending;
+}
+
+/*
+ * 창구에 묻기.
+ *
+ * Content-Type 을 text/plain 으로 보내는 것은 실수가 아니다. application/json 이면
+ * 브라우저가 먼저 OPTIONS 를 보내는데(preflight) 앱스스크립트는 그것을 받지 못해
+ * 요청 자체가 실패한다. text/plain 은 preflight 없이 바로 간다.
+ */
+async function askDesk(credential) {
+  const res = await fetch(DESK, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'mySections', credential }),
+  });
+  if (!res.ok) throw new Error('창구에 닿지 못했습니다.');
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || '확인하지 못했습니다.');
+  return data;
+}
+
+/*
+ * 받은 강좌 번호를 화면이 쓰는 모양(밴드 → 강좌)으로 옮긴다.
+ * 자료에 없는 번호는 조용히 버린다 — 시간표에 안 잡힌 강좌(방과후 등)일 수 있고,
+ * 남겨 두면 «고르기»가 영영 안 사라진다.
+ */
+function adoptSections(ids) {
+  const wanted = new Set((ids || []).map(String));
+  const out = {};
+  for (const sec of state.sections) {
+    if (!wanted.has(String(sec.sectionId))) continue;
+    out[sec.bandKey || sec.subject] = sectionKey(sec);
+  }
+  return out;
+}
+
+function loginGate() {
+  const box = el('div', 'setup');
+  box.appendChild(el('h1', null, '내 시간표'));
+  box.appendChild(el('p', null,
+    '학교 구글 계정으로 로그인하면 내 반과 이동수업이 한 번에 채워집니다.'));
+
+  const slot = el('div', 'gsi');
+  box.appendChild(slot);
+
+  if (state.busy) {
+    slot.appendChild(el('div', 'waiting', '시간표를 찾는 중입니다…'));
+  } else {
+    loadGoogle().then((ready) => {
+      if (!ready) {
+        slot.innerHTML = '';
+        slot.appendChild(el('div', 'waiting', '로그인 창을 열지 못했습니다. 아래에서 반을 골라 주세요.'));
+        return;
+      }
+      google.accounts.id.initialize({
+        client_id: CLIENT_ID,
+        callback: onCredential,
+        auto_select: true,          // 이미 학교 계정으로 로그인해 있으면 그냥 통과시킨다
+      });
+      slot.innerHTML = '';
+      google.accounts.id.renderButton(slot, {
+        theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'filled_black' : 'outline',
+        size: 'large', shape: 'pill', text: 'signin_with', locale: 'ko', width: 260,
+      });
+      // 이미 학교 계정으로 로그인해 있으면 누를 것도 없이 지나가게 한다.
+      google.accounts.id.prompt();
+    });
+  }
+
+  if (state.gateError) box.appendChild(el('div', 'gate-err', state.gateError));
+
+  const manual = el('button', 'back', '로그인 없이 반 고르기');
+  manual.onclick = () => { state.gate = 'manual'; state.gateError = null; render(); };
+  box.appendChild(manual);
+  return box;
+}
+
+async function onCredential(response) {
+  state.busy = true; state.gateError = null; render();
+  try {
+    const found = await askDesk(response.credential);
+    if (!found.found || !found.classId) {
+      // 명단에 아직 없는 계정. 막지 않고 직접 고르기로 넘긴다.
+      state.gateError = '명단에서 찾지 못했습니다. 아래에서 반을 골라 주세요.';
+      state.gate = 'manual';
+    } else {
+      state.me = { classId: found.classId, sections: adoptSections(found.sections) };
+      save();
+    }
+  } catch (error) {
+    state.gateError = String(error.message || error);
+  } finally {
+    state.busy = false;
+    render();
+  }
+}
+
 function setupClass() {
   const box = el('div', 'setup');
   box.appendChild(el('h1', null, '어느 반인가요?'));
@@ -472,6 +601,9 @@ function setupClass() {
     grid.appendChild(btn);
   }
   box.appendChild(grid);
+  const back = el('button', 'back', '구글 로그인으로 돌아가기');
+  back.onclick = () => { state.gate = 'login'; state.gateError = null; render(); };
+  box.appendChild(back);
   return box;
 }
 
@@ -507,7 +639,12 @@ function footer() {
   const foot = el('div', 'foot');
   foot.appendChild(el('span', null, `${state.school.name || '학교'} · ${state.classes.length}칸`));
   const reset = el('button', null, '내 반·강좌 다시 고르기');
-  reset.onclick = () => { localStorage.removeItem(KEY); state.me = null; render(); };
+  reset.onclick = () => {
+    localStorage.removeItem(KEY);
+    state.me = null; state.gate = 'login'; state.gateError = null;
+    if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
+    render();
+  };
   foot.appendChild(reset);
   return foot;
 }
