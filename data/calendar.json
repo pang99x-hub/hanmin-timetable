@@ -1,0 +1,1963 @@
+{
+  "days": [
+    {
+      "date": "2026-05-09",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-05-16",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-05-22",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "학생귀가"
+      ]
+    },
+    {
+      "date": "2026-05-23",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-05-24",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "석가탄신일"
+      ]
+    },
+    {
+      "date": "2026-05-25",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "학생귀교",
+        "대체공휴일"
+      ]
+    },
+    {
+      "date": "2026-05-30",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-06-03",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "전국동시지방선거일"
+      ]
+    },
+    {
+      "date": "2026-06-04",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "전국연합학력평가",
+        "대수능모의평가"
+      ]
+    },
+    {
+      "date": "2026-06-06",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "현충일"
+      ]
+    },
+    {
+      "date": "2026-06-08",
+      "grades": [
+        1,
+        2
+      ],
+      "kind": "event",
+      "labels": [
+        "체험학습"
+      ]
+    },
+    {
+      "date": "2026-06-09",
+      "grades": [
+        1,
+        2
+      ],
+      "kind": "event",
+      "labels": [
+        "체험학습"
+      ]
+    },
+    {
+      "date": "2026-06-10",
+      "grades": [
+        2
+      ],
+      "kind": "event",
+      "labels": [
+        "체험학습"
+      ]
+    },
+    {
+      "date": "2026-06-11",
+      "grades": [
+        2
+      ],
+      "kind": "event",
+      "labels": [
+        "체험학습"
+      ]
+    },
+    {
+      "date": "2026-06-12",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "학생귀가"
+      ]
+    },
+    {
+      "date": "2026-06-13",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-06-20",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-06-27",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-07-02",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "1학기 2차 정기시험"
+      ]
+    },
+    {
+      "date": "2026-07-03",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "1학기 2차 정기시험"
+      ]
+    },
+    {
+      "date": "2026-07-04",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-07-06",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "1학기 2차 정기시험"
+      ]
+    },
+    {
+      "date": "2026-07-07",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "1학기 2차 정기시험"
+      ]
+    },
+    {
+      "date": "2026-07-08",
+      "grades": [
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "전국연합학력평가"
+      ]
+    },
+    {
+      "date": "2026-07-11",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-07-16",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "학생귀가",
+        "방학식"
+      ]
+    },
+    {
+      "date": "2026-07-17",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학",
+        "제헌절"
+      ]
+    },
+    {
+      "date": "2026-07-18",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-07-19",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-07-20",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-07-21",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-07-22",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-07-23",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-07-24",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-07-25",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-07-26",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-07-27",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-07-28",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-07-29",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-07-30",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-07-31",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-08-01",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-08-02",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-08-03",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-08-04",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-08-05",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-08-06",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-08-07",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-08-08",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-08-09",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "여름방학"
+      ]
+    },
+    {
+      "date": "2026-08-10",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "개학식"
+      ]
+    },
+    {
+      "date": "2026-08-14",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "한비제"
+      ]
+    },
+    {
+      "date": "2026-08-15",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "광복절"
+      ]
+    },
+    {
+      "date": "2026-08-17",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "대체공휴일"
+      ]
+    },
+    {
+      "date": "2026-08-22",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-08-24",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "자기진로 탐색의 날"
+      ]
+    },
+    {
+      "date": "2026-08-29",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-09-02",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "전국연합학력평가",
+        "대수능모의평가"
+      ]
+    },
+    {
+      "date": "2026-09-04",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "학생귀가"
+      ]
+    },
+    {
+      "date": "2026-09-05",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-09-12",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-09-19",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-09-23",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "학생귀가"
+      ]
+    },
+    {
+      "date": "2026-09-24",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "추석연휴",
+        "추석"
+      ]
+    },
+    {
+      "date": "2026-09-25",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "추석"
+      ]
+    },
+    {
+      "date": "2026-09-26",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "추석연휴",
+        "추석"
+      ]
+    },
+    {
+      "date": "2026-09-29",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "2학기 1차 정기시험"
+      ]
+    },
+    {
+      "date": "2026-09-30",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "2학기 1차 정기시험"
+      ]
+    },
+    {
+      "date": "2026-10-01",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "2학기 1차 정기시험"
+      ]
+    },
+    {
+      "date": "2026-10-02",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "2학기 1차 정기시험"
+      ]
+    },
+    {
+      "date": "2026-10-03",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "개천절"
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "대체공휴일"
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "한글날"
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-10-15",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "개교기념일"
+      ]
+    },
+    {
+      "date": "2026-10-17",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-10-20",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "전국연합학력평가"
+      ]
+    },
+    {
+      "date": "2026-10-23",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "학생귀가"
+      ]
+    },
+    {
+      "date": "2026-10-24",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-10-31",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-11-07",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-11-14",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-11-19",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "exam",
+      "labels": [
+        "대학수학능력시험"
+      ]
+    },
+    {
+      "date": "2026-11-20",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "학생귀가"
+      ]
+    },
+    {
+      "date": "2026-11-21",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-11-24",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "학술제"
+      ]
+    },
+    {
+      "date": "2026-11-28",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-12-05",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-12-11",
+      "grades": [
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "수능성적표배부"
+      ]
+    },
+    {
+      "date": "2026-12-12",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-12-14",
+      "grades": [
+        1,
+        2
+      ],
+      "kind": "exam",
+      "labels": [
+        "2학기 2차 정기시험"
+      ]
+    },
+    {
+      "date": "2026-12-15",
+      "grades": [
+        1,
+        2
+      ],
+      "kind": "exam",
+      "labels": [
+        "2학기 2차 정기시험"
+      ]
+    },
+    {
+      "date": "2026-12-16",
+      "grades": [
+        1,
+        2
+      ],
+      "kind": "exam",
+      "labels": [
+        "2학기 2차 정기시험"
+      ]
+    },
+    {
+      "date": "2026-12-17",
+      "grades": [
+        1,
+        2
+      ],
+      "kind": "exam",
+      "labels": [
+        "2학기 2차 정기시험"
+      ]
+    },
+    {
+      "date": "2026-12-19",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-12-24",
+      "grades": [
+        1,
+        2
+      ],
+      "kind": "event",
+      "labels": [
+        "학생귀가",
+        "방학식"
+      ]
+    },
+    {
+      "date": "2026-12-25",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학",
+        "성탄절"
+      ]
+    },
+    {
+      "date": "2026-12-26",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2026-12-27",
+      "grades": [
+        1,
+        2
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2026-12-28",
+      "grades": [
+        1,
+        2
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2026-12-29",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "학생귀가",
+        "방학식",
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2026-12-30",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2026-12-31",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-01",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학",
+        "신정"
+      ]
+    },
+    {
+      "date": "2027-01-02",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2027-01-03",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-04",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-05",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-06",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-07",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-08",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-09",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2027-01-10",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-11",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-12",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-13",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-14",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-15",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-16",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2027-01-17",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-18",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-19",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-20",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-21",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-22",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-23",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2027-01-24",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-25",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-26",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-27",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-28",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-29",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-01-30",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2027-01-31",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-02-01",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "개학식",
+        "겨울방학"
+      ]
+    },
+    {
+      "date": "2027-02-02",
+      "grades": [
+        3
+      ],
+      "kind": "event",
+      "labels": [
+        "졸업식"
+      ]
+    },
+    {
+      "date": "2027-02-03",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "종업식",
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-04",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-05",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-06",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학",
+        "설날"
+      ]
+    },
+    {
+      "date": "2027-02-07",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학",
+        "설날"
+      ]
+    },
+    {
+      "date": "2027-02-08",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학",
+        "설날"
+      ]
+    },
+    {
+      "date": "2027-02-09",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학",
+        "대체공휴일"
+      ]
+    },
+    {
+      "date": "2027-02-10",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-11",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-12",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-13",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2027-02-14",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-15",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-16",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-17",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-18",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-19",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-20",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2027-02-21",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-22",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-23",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-24",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-25",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-26",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    },
+    {
+      "date": "2027-02-27",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학",
+        "토요휴업일"
+      ]
+    },
+    {
+      "date": "2027-02-28",
+      "grades": [
+        1,
+        2,
+        3
+      ],
+      "kind": "holiday",
+      "labels": [
+        "봄방학"
+      ]
+    }
+  ],
+  "from": "2026-05-09",
+  "schema": 1,
+  "to": "2027-05-04"
+}

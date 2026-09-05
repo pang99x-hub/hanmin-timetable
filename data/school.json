@@ -1,1 +1,47 @@
-{"schema":1,"name":"한민고등학교","source":"교사웹 일과표(school_day_schedule_templates)","note":"지금은 손으로 옮겨 적었다. 3단계에서 에지 함수가 일과표를 읽어 자동으로 굽는다 — 일과표를 고치면 여기도 따라 바뀌어야 한다.","periods":[{"period":1,"startTime":"08:10","endTime":"09:00"},{"period":2,"startTime":"09:10","endTime":"10:00"},{"period":3,"startTime":"10:10","endTime":"11:00"},{"period":4,"startTime":"11:10","endTime":"12:00"},{"period":5,"startTime":"13:00","endTime":"13:50"},{"period":6,"startTime":"14:00","endTime":"14:50"},{"period":7,"startTime":"15:00","endTime":"15:50"}],"mealTimes":{"breakfast":"06:30","lunch":"12:00","dinner":"17:50"}}
+{
+  "mealTimes": {
+    "breakfast": "06:30",
+    "dinner": "17:50",
+    "lunch": "12:00"
+  },
+  "name": "한민고등학교",
+  "periods": [
+    {
+      "endTime": "09:00",
+      "period": 1,
+      "startTime": "08:10"
+    },
+    {
+      "endTime": "10:00",
+      "period": 2,
+      "startTime": "09:10"
+    },
+    {
+      "endTime": "11:00",
+      "period": 3,
+      "startTime": "10:10"
+    },
+    {
+      "endTime": "12:00",
+      "period": 4,
+      "startTime": "11:10"
+    },
+    {
+      "endTime": "13:50",
+      "period": 5,
+      "startTime": "13:00"
+    },
+    {
+      "endTime": "14:50",
+      "period": 6,
+      "startTime": "14:00"
+    },
+    {
+      "endTime": "15:50",
+      "period": 7,
+      "startTime": "15:00"
+    }
+  ],
+  "schema": 1,
+  "source": "교사웹 일과표 «2026학년도 2학기 일과표»"
+}
