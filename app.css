@@ -1,0 +1,227 @@
+/*
+ * 한민고 학생 시간표 — 화면.
+ *
+ * 색과 크기는 토큰으로만 쓴다. 밝은 화면과 어두운 화면을 같은 정성으로 만든다 —
+ * 기숙사에서 밤에 여는 일이 많다.
+ */
+:root{
+  --ink:#181a21; --ink-2:#484d5b; --ink-3:#797f8e; --ink-4:#a3a8b4;
+  --paper:#f6f5f2; --card:#fff; --sunk:#efedE8;
+  --line:#e3e0da; --line-2:#eeebe5;
+  --now:#4338ca; --now-soft:#ecebfb; --now-line:#cfcdf6;
+  --chg:#a5580b; --chg-soft:#fbf1df; --chg-line:#eedcb8;
+  --meal:#3d5a3a; --meal-soft:#eaefe7; --meal-line:#d3ddcf;
+  --rail:#dedbd4;
+  --shadow:0 1px 2px rgba(24,26,33,.05), 0 14px 34px rgba(24,26,33,.07);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --ink:#edeff4; --ink-2:#a9aeba; --ink-3:#828896; --ink-4:#666c7a;
+    --paper:#111217; --card:#191b21; --sunk:#20222a;
+    --line:#2b2e37; --line-2:#23262e;
+    --now:#a29bff; --now-soft:#232244; --now-line:#3b3a68;
+    --chg:#e0a75c; --chg-soft:#2c2418; --chg-line:#4a3c22;
+    --meal:#a3c497; --meal-soft:#1c241b; --meal-line:#31402e;
+    --rail:#2e313a;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 14px 34px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#edeff4; --ink-2:#a9aeba; --ink-3:#828896; --ink-4:#666c7a;
+  --paper:#111217; --card:#191b21; --sunk:#20222a;
+  --line:#2b2e37; --line-2:#23262e;
+  --now:#a29bff; --now-soft:#232244; --now-line:#3b3a68;
+  --chg:#e0a75c; --chg-soft:#2c2418; --chg-line:#4a3c22;
+  --meal:#a3c497; --meal-soft:#1c241b; --meal-line:#31402e;
+  --rail:#2e313a;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 14px 34px rgba(0,0,0,.4);
+}
+:root[data-theme="light"]{
+  --ink:#181a21; --ink-2:#484d5b; --ink-3:#797f8e; --ink-4:#a3a8b4;
+  --paper:#f6f5f2; --card:#fff; --sunk:#efedE8;
+  --line:#e3e0da; --line-2:#eeebe5;
+  --now:#4338ca; --now-soft:#ecebfb; --now-line:#cfcdf6;
+  --chg:#a5580b; --chg-soft:#fbf1df; --chg-line:#eedcb8;
+  --meal:#3d5a3a; --meal-soft:#eaefe7; --meal-line:#d3ddcf;
+  --rail:#dedbd4;
+  --shadow:0 1px 2px rgba(24,26,33,.05), 0 14px 34px rgba(24,26,33,.07);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0; padding:0}
+body{
+  background:var(--paper); color:var(--ink); line-height:1.6;
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",
+    "Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+  font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+}
+button{font-family:inherit; cursor:pointer}
+:focus-visible{outline:2px solid var(--now); outline-offset:2px; border-radius:6px}
+@media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important} }
+
+.wrap{max-width:1180px; margin:0 auto; padding:18px 16px 60px}
+@media (min-width:900px){ .wrap{padding:28px 28px 72px} }
+
+/* ── 머리 ── */
+.top{display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap}
+.title{font-size:24px; font-weight:800; letter-spacing:-.03em; line-height:1.15; margin:0}
+.title em{font-style:normal; color:var(--ink-3); font-size:15px; font-weight:750; margin-left:5px}
+@media (min-width:900px){ .title{font-size:28px} }
+.asof{margin:4px 0 0; font-size:11px; color:var(--ink-4)}
+.asof b{font-weight:750}
+.asof b.fresh{color:var(--meal)}
+.asof b.stale{color:var(--chg)}
+.top .right{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.me{
+  font-size:12.5px; font-weight:750; color:var(--ink-2); background:var(--card);
+  border:1px solid var(--line); border-radius:999px; padding:5px 12px;
+}
+
+.tabs{display:flex; gap:4px; margin:14px 0 0; padding:3px; background:var(--sunk);
+      border-radius:11px; max-width:340px}
+.tabs button{
+  flex:1; border:0; background:transparent; border-radius:8px; padding:7px 0;
+  font-size:13px; font-weight:750; color:var(--ink-3);
+}
+.tabs button[aria-selected="true"]{background:var(--card); color:var(--ink);
+  box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+.nav{display:flex; align-items:center; gap:6px; margin:12px 0 0; padding:4px;
+     background:var(--sunk); border-radius:10px; max-width:340px}
+.nav button{width:32px; height:30px; border:0; border-radius:7px; background:transparent;
+            color:var(--ink-3); font-size:15px; font-weight:800; line-height:1}
+.nav button:hover{background:var(--card); color:var(--ink)}
+.nav .mid{flex:1; text-align:center; font-size:13px; font-weight:800}
+.nav .mid em{font-style:normal; font-weight:700; color:var(--ink-3); font-size:11px; margin-left:5px}
+
+.rotate{margin:14px 0 0; padding:10px 13px; border-radius:10px; background:var(--chg-soft);
+        border:1px solid var(--chg-line); color:var(--chg); font-size:13px; font-weight:750}
+
+/* ── 넓은 화면: 오늘 + 주 나란히 ── */
+.cols{display:grid; gap:22px; margin-top:16px}
+@media (min-width:980px){
+  .cols.both{grid-template-columns:minmax(0,310px) minmax(0,1fr)}
+}
+.panel h2{margin:0 0 10px; font-size:11px; font-weight:800; letter-spacing:.11em; color:var(--ink-4)}
+
+/* ── 오늘 타임라인 ── */
+.day{position:relative; padding-left:54px}
+.day::before{content:""; position:absolute; left:41px; top:8px; bottom:8px; width:2px;
+             background:var(--rail); border-radius:2px}
+.slot{position:relative; margin-bottom:7px}
+.gut{position:absolute; left:-54px; top:9px; width:35px; text-align:right; line-height:1.26}
+.gut .p{display:block; font-size:10.5px; font-weight:800; color:var(--ink-3); letter-spacing:-.02em}
+.gut .t{display:block; font-size:10px; font-weight:650; color:var(--ink-4)}
+.dot{position:absolute; left:-17px; top:14px; width:9px; height:9px; border-radius:50%;
+     background:var(--card); border:2px solid var(--rail)}
+.cell{padding:9px 13px; border-radius:11px; border:1px solid var(--line-2); background:var(--card)}
+.cell .name{font-size:14.5px; font-weight:750; letter-spacing:-.012em}
+.cell .by{margin-top:1px; font-size:11.5px; color:var(--ink-3)}
+.cell .was{display:block; margin-top:2px; font-size:10.5px; opacity:.72; text-decoration:line-through}
+
+.slot.now .cell{border-color:var(--now-line); background:var(--now-soft)}
+.slot.now .name,.slot.now .by{color:var(--now)}
+.slot.now .by{font-weight:700}
+.slot.now .gut .p{color:var(--now)}
+.slot.now .dot{border-color:var(--now); background:var(--now)}
+
+.slot.chg .cell{border-color:var(--chg-line); background:var(--chg-soft)}
+.slot.chg .name,.slot.chg .by,.slot.chg .was{color:var(--chg)}
+.slot.chg .by{font-weight:750}
+.slot.chg .gut .p{color:var(--chg)}
+.slot.chg .dot{border-color:var(--chg); background:var(--chg)}
+
+.slot.free .cell{background:transparent; border-style:dashed}
+.slot.free .name{color:var(--ink-4); font-weight:650}
+
+.slot.meal .cell{background:var(--meal-soft); border-color:var(--meal-line)}
+.slot.meal .name{color:var(--meal); font-size:13px; letter-spacing:.02em}
+.slot.meal .dot{border-color:var(--meal); background:var(--meal)}
+.menu{margin:4px 0 0; font-size:11.5px; line-height:1.55; color:var(--ink-2)}
+.menu.none{color:var(--ink-4)}
+
+.pick{margin-top:5px}
+.pick button{
+  font-size:11px; font-weight:750; color:var(--now); background:var(--now-soft);
+  border:1px solid var(--now-line); border-radius:7px; padding:3px 9px;
+}
+
+/* ── 주간 격자 ── */
+.wk{width:100%; border-collapse:separate; border-spacing:3px; table-layout:fixed}
+.wk th{font-size:11px; font-weight:750; color:var(--ink-3); padding:0 0 5px}
+.wk th.today{color:var(--now)}
+.wk th small{display:block; font-size:9.5px; font-weight:650; color:var(--ink-4)}
+.wk td{height:46px; padding:4px 3px; border-radius:8px; text-align:center; vertical-align:middle;
+       border:1px solid var(--line-2); background:var(--card);
+       font-size:11px; font-weight:750; color:var(--ink-2); line-height:1.28}
+.wk td small{display:block; font-size:9.5px; font-weight:650; color:var(--ink-4); margin-top:1px}
+.wk td.e{background:transparent; border-style:dashed}
+.wk td.c{background:var(--chg-soft); border-color:var(--chg-line); color:var(--chg)}
+.wk td.c small{color:var(--chg); opacity:.85}
+.wk td.n{background:var(--now-soft); border-color:var(--now-line); color:var(--now)}
+.wk .pn{width:32px; background:transparent; border:0; text-align:right; padding-right:6px;
+        font-size:10px; font-weight:800; color:var(--ink-4); line-height:1.2}
+.wk .pn em{display:block; font-style:normal; font-weight:650; font-size:9px; opacity:.85}
+.wk tr.mealrow td{height:auto; padding:5px 9px; background:var(--meal-soft);
+  border-color:var(--meal-line); color:var(--meal); font-size:10.5px; font-weight:700; text-align:left}
+@media (max-width:640px){ .wk td{height:40px; font-size:10px} .wk td small{display:none} }
+
+/* ── 월간 ── */
+.mo{width:100%; border-collapse:separate; border-spacing:3px; table-layout:fixed}
+.mo th{font-size:10px; font-weight:750; color:var(--ink-4); padding:0 0 5px}
+.mo th.sun{color:#b4544f}
+.mo td{height:52px; padding:4px 3px 3px; border-radius:8px; vertical-align:top; position:relative;
+       border:1px solid var(--line-2); background:var(--card)}
+.mo .d{font-size:11px; font-weight:750; color:var(--ink-2); line-height:1}
+.mo td.out{background:transparent; border-color:transparent}
+.mo td.out .d{color:var(--ink-4); opacity:.4}
+.mo td.off{background:var(--sunk); border-color:transparent}
+.mo td.off .d{color:var(--ink-4)}
+.mo td.today{background:var(--now-soft); border-color:var(--now-line)}
+.mo td.today .d{color:var(--now); font-weight:800}
+.mo .tag{display:block; margin-top:3px; font-size:8.5px; font-weight:750; line-height:1.25;
+         color:var(--chg); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.mo .dots{position:absolute; right:4px; bottom:4px; display:flex; gap:2px}
+.mo .dots i{width:4px; height:4px; border-radius:50%; background:var(--chg); display:block}
+
+/* ── 목록·안내 ── */
+.side{margin-top:16px; padding-top:13px; border-top:1px solid var(--line-2)}
+.side h3{margin:0 0 8px; font-size:10.5px; font-weight:800; letter-spacing:.11em; color:var(--ink-4)}
+.side .r{display:flex; gap:9px; align-items:baseline; font-size:12.5px; padding:3px 0}
+.side .r b{font-weight:800; min-width:56px; color:var(--chg)}
+.side .r.cal b{color:var(--ink-3)}
+.side .r span{color:var(--ink-2)}
+.side .none{font-size:12.5px; color:var(--ink-4)}
+
+.notice{padding:12px 14px; border-radius:11px; background:var(--card);
+        border:1px solid var(--line); font-size:13px; color:var(--ink-2)}
+.notice b{color:var(--ink)}
+
+/* ── 처음 설정 ── */
+.setup{max-width:420px; margin:8vh auto 0; text-align:center}
+.setup h1{font-size:24px; font-weight:800; letter-spacing:-.02em; margin:0 0 8px}
+.setup p{margin:0 0 22px; color:var(--ink-2); font-size:14.5px}
+.grid-pick{display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr)); gap:7px}
+.grid-pick button{
+  padding:11px 6px; border-radius:10px; border:1px solid var(--line);
+  background:var(--card); color:var(--ink); font-size:14px; font-weight:750;
+}
+.grid-pick button:hover{border-color:var(--now-line); background:var(--now-soft); color:var(--now)}
+.setup .back{margin-top:16px; background:none; border:0; color:var(--ink-3);
+             font-size:12.5px; font-weight:700; text-decoration:underline}
+
+/* 강좌 고르기 */
+.opts{display:grid; gap:6px; margin-top:10px; text-align:left}
+.opts button{
+  padding:10px 13px; border-radius:10px; border:1px solid var(--line);
+  background:var(--card); color:var(--ink); font-size:13.5px; font-weight:700; text-align:left;
+}
+.opts button:hover{border-color:var(--now-line); background:var(--now-soft)}
+.opts button small{display:block; font-size:11.5px; font-weight:650; color:var(--ink-3); margin-top:1px}
+.opts button.on{border-color:var(--now); background:var(--now-soft); color:var(--now)}
+
+.foot{margin-top:38px; padding-top:18px; border-top:1px solid var(--line);
+      font-size:11.5px; color:var(--ink-4); display:flex; gap:14px; flex-wrap:wrap}
+.foot button{background:none; border:0; color:var(--ink-3); font-size:11.5px;
+             font-weight:700; text-decoration:underline; padding:0}
