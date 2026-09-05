@@ -234,3 +234,11 @@ button{font-family:inherit; cursor:pointer}
       font-size:11.5px; color:var(--ink-4); display:flex; gap:14px; flex-wrap:wrap}
 .foot button{background:none; border:0; color:var(--ink-3); font-size:11.5px;
              font-weight:700; text-decoration:underline; padding:0}
+
+/* 로그인 */
+.gsi{display:flex; justify-content:center; min-height:44px; margin-bottom:4px}
+.waiting{color:var(--ink-3); font-size:13.5px; font-weight:650; padding:12px 0}
+.gate-err{margin-top:14px; padding:10px 13px; border-radius:10px; font-size:13px;
+          font-weight:650; text-align:left;
+          color:var(--chg); background:var(--chg-soft); border:1px solid var(--chg-line)}
+.setup .grid-pick + .back{margin-top:18px}
