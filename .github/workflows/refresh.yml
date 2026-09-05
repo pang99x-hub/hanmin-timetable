@@ -1,0 +1,64 @@
+# 수업 변경·급식·학사일정·일과표를 다시 굽는다.
+#
+# 반별·강좌별 시간표는 학기에 한 번 데스크탑에서 내보내지만, 이 넷은 매일 바뀐다.
+# 교사웹의 에지 함수가 자료를 구워 주고, 여기서 받아 커밋한다.
+#
+# 왜 교사웹이 직접 커밋하지 않나: 그러려면 저장소 쓰기 토큰을 서버에 들려 줘야 한다.
+# Actions 는 자기 저장소에 쓸 권한을 이미 갖고 있어서 열쇠가 한 벌 줄어든다.
+name: 자료 새로 굽기
+
+on:
+  schedule:
+    # 15분마다. 수업 변경이 승인되면 늦어도 그 안에 학생 화면에 닿는다.
+    # (UTC 기준이지만 15분 간격이라 시간대와 무관하다)
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  # 앞 실행이 커밋하는 중에 뒤가 겹치면 서로 밀어낸다.
+  group: refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 자료 받기
+        env:
+          DESK: ${{ secrets.AX_DATA_URL }}
+          SECRET: ${{ secrets.AX_DATA_SECRET }}
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/payload.json -w '%{http_code}' -X POST "$DESK" \
+            -H "X-AX-Worker-Secret: $SECRET" -H 'Content-Type: application/json' -d '{}')
+          if [ "$code" != "200" ]; then
+            echo "::error::교사웹이 $code 로 답했습니다"; head -c 400 /tmp/payload.json; exit 1
+          fi
+          # ok 가 아니면 아래 jq 가 조용히 빈 파일을 쓰고 지나간다 — 여기서 끊는다.
+          jq -e '.ok == true' /tmp/payload.json > /dev/null
+
+      - name: 파일로 나누기
+        run: |
+          set -euo pipefail
+          for name in school changes meals calendar; do
+            jq -S ".$name" /tmp/payload.json > "data/$name.json"
+          done
+          wc -c data/*.json
+
+      - name: 바뀐 것만 커밋
+        run: |
+          set -euo pipefail
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/school.json data/changes.json data/meals.json data/calendar.json
+          if git diff --cached --quiet; then
+            echo '바뀐 것 없음 — 커밋하지 않습니다.'
+            exit 0
+          fi
+          git commit -m "자료 갱신: $(git diff --cached --name-only | xargs -n1 basename | tr '\n' ' ')"
+          git push
