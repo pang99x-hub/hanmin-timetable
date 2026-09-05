@@ -1,4 +1,10 @@
-import { JSDOM } from 'jsdom';   // node --experimental-... 없이: NODE_PATH 로 잡거나 pnpm add -D jsdom
+/*
+ * jsdom 은 교육과정 모노레포에 있다(이 저장소는 의존성 없이 굴린다). 경로가 다르면
+ * JSDOM_PATH 로 알려 준다.
+ */
+const jsdomPath = process.env.JSDOM_PATH
+  ?? process.env.HOME + '/Documents/AX 시스템 구축/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/api.js';
+const { JSDOM } = await import('file://' + jsdomPath);
 import fs from 'node:fs';
 const ROOT = process.env.HOME + '/Documents/hanmin-timetable';
 const data = (n) => { try { return fs.readFileSync(`${ROOT}/data/${n}`,'utf8'); } catch { return null; } };

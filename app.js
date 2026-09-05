@@ -109,8 +109,27 @@ function bandsOfMyClass() {
 }
 const sectionKey = (sec) => `${sec.sectionId ?? ''}|${sec.subject}|${sec.teacher ?? ''}`;
 
+/*
+ * 그날 실제로 도는 요일.
+ *
+ * 요일 교환(dayswap)이 걸리면 «화요일에 목요일 시간표»가 돈다. 학교 전체가 함께 겪으므로
+ * 반을 가리지 않는다. 이것을 안 보면 그날 시간표가 통째로 틀린 채로 그려진다 — 한 칸이
+ * 틀린 것보다 나쁘다.
+ */
+function effectiveDay(date) {
+  const key = iso(date);
+  const list = (state.changes && state.changes.changes) || [];
+  for (const chg of list) {
+    if (chg.kind !== 'dayswap' && chg.kind !== 'daycopy') continue;
+    if (chg.date === key && chg.otherDate) return dayIndex(parse(chg.otherDate));
+    // 교환은 양방향이다. 복사(daycopy)는 원본 날짜를 건드리지 않는다.
+    if (chg.kind === 'dayswap' && chg.otherDate === key && chg.date) return dayIndex(parse(chg.date));
+  }
+  return dayIndex(date);
+}
+
 function lessonsOn(date) {
-  const day = dayIndex(date);
+  const day = effectiveDay(date);
   const out = [];
   for (const cell of state.classes) {
     if (cell.classId === state.me.classId && cell.day === day) {
@@ -144,12 +163,51 @@ function lessonsOn(date) {
   return byPeriod;
 }
 
+/*
+ * 그 칸에 걸린 변경 하나.
+ *
+ * 반과 교시만으로는 칸이 하나로 좁혀지지 않는다 — 한 학급의 같은 교시가 이동수업이면
+ * 학생마다 다른 강좌에 앉아 있다. 실제로 3-1 의 5교시에는 「고전과 윤리」와 「세계 문제와
+ * 미래 사회」가 함께 걸려 있고, 앞의 보강을 뒤를 듣는 학생에게 칠하면 오지 않을 선생님을
+ * 기다리게 된다. 그래서 원래 과목까지 같아야 내 칸으로 친다.
+ */
+function changeForCell(list, period, lesson) {
+  for (const chg of list) {
+    if (chg.kind === 'dayswap' || chg.kind === 'daycopy') continue;
+    if (chg.period !== period) continue;
+    if (chg.origSubject && lesson && lesson.subject && chg.origSubject !== lesson.subject) continue;
+    return chg;
+  }
+  return null;
+}
+
+/*
+ * 그 날의 학사일정 하나.
+ *
+ * 나이스는 학년별로 대상을 표시한다(1·2·3). 학년이 비어 있으면 전교 대상이다 —
+ * 「3학년 수능 응시」를 1학년 달력에 띄우지 않으려고 걸러 준다.
+ */
+function myGrade() {
+  const found = /^(\d)/.exec(state.me && state.me.classId ? state.me.classId : '');
+  return found ? Number(found[1]) : null;
+}
+
+function calendarOn(date) {
+  const days = (state.calendar && state.calendar.days) || [];
+  const key = iso(date);
+  const grade = myGrade();
+  const found = days.find((day) => day.date === key);
+  if (!found) return null;
+  if (grade && found.grades && found.grades.length && !found.grades.includes(grade)) return null;
+  return found;
+}
+
 /* 그 날 그 반에 걸린 변경. changes.json 이 없으면 빈 목록이다. */
 function changesOn(date) {
   if (!state.changes || !state.changes.changes) return [];
   const key = iso(date);
   return state.changes.changes.filter(
-    (chg) => chg.opDate === key && (chg.classId === state.me.classId || !chg.classId),
+    (chg) => chg.date === key && (chg.classId === state.me.classId || !chg.classId),
   );
 }
 
@@ -281,9 +339,16 @@ function todayPanel() {
     const cell = el('div', 'cell');
     cell.appendChild(el('div', 'name', label));
     const menu = state.meals && state.meals.days && state.meals.days[iso(state.cursor)];
-    const text = menu && menu[kind];
-    cell.appendChild(el('p', text ? 'menu' : 'menu none',
-      text || (state.meals ? '등록된 식단이 없습니다' : '급식은 아직 준비 중입니다')));
+    const items = menu && menu[kind];
+    if (Array.isArray(items) && items.length) {
+      const list = el('ul', 'menu');
+      for (const item of items) list.appendChild(el('li', null, item));
+      cell.appendChild(list);
+    } else {
+      cell.appendChild(el('p', 'menu none',
+        typeof items === 'string' && items ? items
+          : state.meals ? '등록된 식단이 없습니다' : '급식은 아직 준비 중입니다'));
+    }
     slot.append(gut, el('span', 'dot'), cell);
     day.appendChild(slot);
   };
@@ -296,7 +361,7 @@ function todayPanel() {
       day.dataset.lunch = '1';
     }
     const lesson = lessons.get(period.period);
-    const chg = chgs.find((item) => item.period === period.period && item.kind !== 'dayswap');
+    const chg = changeForCell(chgs, period.period, lesson);
     const slot = el('div', 'slot');
     const gut = el('span', 'gut');
     gut.append(el('span', 'p', `${period.period}교시`), el('span', 't', period.startTime));
@@ -375,8 +440,7 @@ function weekPanel() {
     row.appendChild(pn);
     for (let i = 0; i < 5; i += 1) {
       const lesson = byDay[i].lessons.get(period.period);
-      const chg = byDay[i].changes.find(
-        (item) => item.period === period.period && item.kind !== 'dayswap');
+      const chg = changeForCell(byDay[i].changes, period.period, lesson);
       const td = el('td');
       if (!lesson) { td.className = 'e'; row.appendChild(td); continue; }
       if (chg) td.className = 'c';
@@ -393,9 +457,22 @@ function weekPanel() {
   }
   panel.appendChild(table);
 
-  const week = [0, 1, 2, 3, 4].flatMap((i) =>
-    changesOn(addDays(mon, i)).filter((c) => c.kind !== 'dayswap')
-      .map((c) => ({ ...c, dayIdx: i })));
+  /*
+   * 「이번 주 바뀐 수업」도 내 칸에 걸린 것만 싣는다. 그 날의 변경을 통째로 나열하면
+   * 옆 강좌를 듣는 학생에게 「고전과 윤리 보강」이 뜬다 — 표는 맞게 그려 놓고 목록에서
+   * 새는 식이라 눈에 잘 안 띈다.
+   */
+  const week = [0, 1, 2, 3, 4].flatMap((i) => {
+    const seen = new Set();
+    const out = [];
+    for (const period of periods) {
+      const chg = changeForCell(byDay[i].changes, period.period, byDay[i].lessons.get(period.period));
+      if (!chg || seen.has(chg)) continue;
+      seen.add(chg);
+      out.push({ ...chg, dayIdx: i });
+    }
+    return out;
+  });
   const side = el('div', 'side');
   side.appendChild(el('h3', null, '이번 주 바뀐 수업'));
   if (!state.changes) side.appendChild(el('p', 'none', '수업 변경은 아직 준비 중입니다'));
@@ -426,7 +503,6 @@ function monthPanel() {
   table.appendChild(head);
 
   const start = addDays(first, -first.getDay());
-  const events = (state.calendar && state.calendar.events) || [];
   for (let week = 0; week < 6; week += 1) {
     const row = el('tr');
     let any = false;
@@ -439,9 +515,12 @@ function monthPanel() {
       if (sameDay(date, new Date())) td.classList.add('today');
       td.appendChild(el('span', 'd', String(date.getDate())));
       if (!outside) {
-        const ev = events.find((item) => item.date === iso(date));
-        if (ev) td.appendChild(el('span', 'tag', ev.title));
-        if (changesOn(date).some((c) => c.kind !== 'dayswap')) {
+        const ev = calendarOn(date);
+        if (ev) {
+          if (ev.kind === 'holiday') td.classList.add('off');
+          td.appendChild(el('span', `tag ${ev.kind}`, ev.labels[0] || ''));
+        }
+        if (changesOn(date).some((c) => c.kind !== 'dayswap' && c.kind !== 'daycopy')) {
           const dots = el('span', 'dots'); dots.appendChild(el('i')); td.appendChild(dots);
         }
         td.onclick = () => { state.cursor = date; state.view = 'day'; render(); };
@@ -458,15 +537,19 @@ function monthPanel() {
 function calendarSide() {
   const side = el('div', 'side');
   side.appendChild(el('h3', null, '다가오는 일정'));
-  const events = (state.calendar && state.calendar.events) || [];
-  const soon = events.filter((ev) => ev.date >= iso(new Date())).slice(0, 4);
+  const today = iso(new Date());
+  const grade = myGrade();
+  const soon = ((state.calendar && state.calendar.days) || [])
+    .filter((day) => day.date >= today)
+    .filter((day) => !grade || !day.grades || !day.grades.length || day.grades.includes(grade))
+    .slice(0, 5);
   if (!state.calendar) side.appendChild(el('p', 'none', '학사일정은 아직 준비 중입니다'));
   else if (soon.length === 0) side.appendChild(el('p', 'none', '등록된 일정이 없습니다'));
-  else for (const ev of soon) {
-    const date = parse(ev.date);
-    const row = el('div', 'r cal');
+  else for (const day of soon) {
+    const date = parse(day.date);
+    const row = el('div', `r cal ${day.kind}`);
     row.appendChild(el('b', null, `${date.getMonth() + 1}/${date.getDate()}`));
-    row.appendChild(el('span', null, ev.title));
+    row.appendChild(el('span', null, day.labels.join(' · ')));
     side.appendChild(row);
   }
   return side;
