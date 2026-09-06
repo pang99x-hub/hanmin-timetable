@@ -34,6 +34,14 @@ const state = {
   changes: null, meals: null, calendar: null,
   me: null,          // { classId, sections: {bandKey: sectionKey} }
   openMeals: new Set(),   // 펼쳐 둔 식사(breakfast·lunch·dinner). 기기에만 남는다.
+  /*
+   * 교사로 로그인했을 때만 채워진다 — 학생 화면이 어떻게 보이는지 확인해야 하는
+   * 일이 있는데(문의 대응·점검), 학생 계정을 빌릴 수는 없다.
+   * 이 세 가지는 기기에 저장하지 않는다. 창을 닫으면 사라진다.
+   */
+  teacher: null,          // { credential, roster: [{classId, no, name}] }
+  viewing: null,          // 지금 보고 있는 학생 { classId, no, name }
+  pickClass: null,        // 교사 화면에서 고른 학급
   busy: false,       // 창구에 묻는 중
   gateError: null,
   view: 'day',       // day | week | month
@@ -91,7 +99,18 @@ async function boot() {
   });
 }
 
-const save = () => localStorage.setItem(KEY, JSON.stringify(state.me));
+/**
+ * 이 기기의 «내 시간표»를 저장한다.
+ *
+ * 교사가 학생 화면을 보는 중에는 저장하지 않는다. 그때 state.me 는 남의 것이라,
+ * 저장하면 학생 이름·반·수강 강좌가 교사 기기에 남는다. 화면에 잠깐 보여 주는 것과
+ * 기기에 남기는 것은 다른 일이다 — 보는 것은 업무지만 남기는 것은 유출이다.
+ * 실제로 새는 자리가 있었다: 보는 중에 이동수업 반 단추를 누르면 여기까지 왔다.
+ */
+const save = () => {
+  if (state.viewing) return;
+  localStorage.setItem(KEY, JSON.stringify(state.me));
+};
 
 /* ── 내 시간표 만들기 ────────────────────────────────────────────────
  * 반 시간표 + 내가 고른 강좌. 강좌를 아직 안 고른 밴드는 «고르기»로 남긴다 —
@@ -302,6 +321,11 @@ function myChangeCount(date) {
 /* ── 그리기 ── */
 function render() {
   const app = document.getElementById('app');
+  if (state.teacher && !state.me) {
+    app.innerHTML = '';
+    app.appendChild(teacherPicker());
+    return;
+  }
   if (!state.me || !state.me.classId) {
     app.innerHTML = '';
     app.appendChild(loginGate());
@@ -350,8 +374,21 @@ function header() {
   top.appendChild(left);
 
   const right = el('div', 'right');
-  // 반은 창구가 정해 준 것이라 사람이 고칠 자리가 아니다. 표시만 한다.
-  right.appendChild(el('span', 'me', state.me.classId));
+  if (state.viewing) {
+    /*
+     * 교사가 남의 화면을 보는 중이라는 것을 늘 보이게 둔다. 자기 화면으로 착각한 채
+     * 「내 시간표가 이상하다」고 말하는 일이 생긴다.
+     */
+    const tag = el('span', 'asstudent',
+      `${state.viewing.classId} ${state.viewing.no}번 ${state.viewing.name} 화면`);
+    right.appendChild(tag);
+    const back = el('button', 'me', '다른 학생');
+    back.onclick = () => { state.me = null; state.viewing = null; render(); };
+    right.appendChild(back);
+  } else {
+    // 반은 창구가 정해 준 것이라 사람이 고칠 자리가 아니다. 표시만 한다.
+    right.appendChild(el('span', 'me', state.me.classId));
+  }
   top.appendChild(right);
   box.appendChild(top);
 
@@ -765,10 +802,91 @@ function loginGate() {
   return box;
 }
 
+/* ── 교사: 학생 골라 보기 ─────────────────────────────────────────────
+ * 학생 화면이 어떻게 보이는지 확인해야 할 때가 있다(문의 대응·점검). 학생 계정을
+ * 빌릴 수는 없으니, 교사 계정으로 들어와 학급·번호로 고른다.
+ *
+ * 고르는 목록에는 이메일도 강좌도 없다 — 학급·번호·이름뿐이다. 시간표는 고른 뒤에
+ * 그 학생 것만 따로 받아 온다. 나가는 개인정보는 적을수록 좋다.
+ */
+async function openStudent(target) {
+  state.busy = true; state.gateError = null; render();
+  try {
+    const res = await fetch(DESK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'studentView',
+        credential: state.teacher.credential,
+        classId: target.classId,
+        no: target.no,
+      }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || '가져오지 못했습니다.');
+    if (!data.found) throw new Error('그 학생을 찾지 못했습니다.');
+    state.viewing = { classId: data.classId, no: data.no, name: data.name };
+    state.me = { classId: data.classId, sections: adoptSections(data.sections) };
+    // 교사가 보는 것은 저장하지 않는다 — 이 기기의 «내 시간표»가 아니다.
+  } catch (error) {
+    state.gateError = String(error.message || error);
+  } finally {
+    state.busy = false;
+    render();
+  }
+}
+
+function teacherPicker() {
+  const box = el('div', 'setup wide');
+  box.appendChild(el('h1', null, '학생 시간표 보기'));
+  box.appendChild(el('p', null, '학급을 고르고 학생을 고르면 그 학생이 보는 화면이 그대로 나옵니다.'));
+
+  if (state.busy) {
+    box.appendChild(el('div', 'waiting', '가져오는 중입니다…'));
+    return box;
+  }
+  if (state.gateError) box.appendChild(el('div', 'gate-err', state.gateError));
+
+  const roster = state.teacher.roster;
+  const classes = [...new Set(roster.map((r) => r.classId))];
+  const grid = el('div', 'pick-grid');
+  for (const id of classes) {
+    const btn = el('button', state.pickClass === id ? 'on' : null, id);
+    btn.onclick = () => { state.pickClass = state.pickClass === id ? null : id; render(); };
+    grid.appendChild(btn);
+  }
+  box.appendChild(grid);
+
+  if (state.pickClass) {
+    const list = el('div', 'pick-grid names');
+    for (const r of roster.filter((x) => x.classId === state.pickClass)) {
+      const btn = el('button', null, `${r.no}. ${r.name || '(이름 없음)'}`);
+      btn.onclick = () => openStudent(r);
+      list.appendChild(btn);
+    }
+    box.appendChild(list);
+  }
+
+  const out = el('button', 'back', '로그아웃');
+  out.onclick = () => {
+    state.teacher = null; state.viewing = null; state.pickClass = null;
+    if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
+    render();
+  };
+  box.appendChild(out);
+  return box;
+}
+
 async function onCredential(response) {
   state.busy = true; state.gateError = null; render();
   try {
     const found = await askDesk(response.credential);
+    if (found.role === 'teacher') {
+      // 교사는 자기 시간표가 없다. 누구를 볼지 고르는 화면으로 간다.
+      state.teacher = { credential: response.credential, roster: found.roster || [] };
+      state.me = null;
+      return;
+    }
     if (!found.found || !found.classId) {
       /*
        * 로그인은 됐는데 명단에 없다 — 전학 온 지 얼마 안 됐거나 아직 반 배정 전이다.
