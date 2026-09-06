@@ -33,7 +33,6 @@ const state = {
   school: null, classes: [], sections: [],
   changes: null, meals: null, calendar: null,
   me: null,          // { classId, sections: {bandKey: sectionKey} }
-  gate: 'login',     // login | manual — 로그인 전 화면
   openMeals: new Set(),   // 펼쳐 둔 식사(breakfast·lunch·dinner). 기기에만 남는다.
   busy: false,       // 창구에 묻는 중
   gateError: null,
@@ -305,7 +304,7 @@ function render() {
   const app = document.getElementById('app');
   if (!state.me || !state.me.classId) {
     app.innerHTML = '';
-    app.appendChild(state.gate === 'manual' ? setupClass() : loginGate());
+    app.appendChild(loginGate());
     return;
   }
   app.innerHTML = '';
@@ -351,10 +350,8 @@ function header() {
   top.appendChild(left);
 
   const right = el('div', 'right');
-  const me = el('button', 'me', state.me.classId);
-  me.title = '반 다시 고르기';
-  me.onclick = () => { state.me = null; state.gate = 'manual'; render(); };
-  right.appendChild(me);
+  // 반은 창구가 정해 준 것이라 사람이 고칠 자리가 아니다. 표시만 한다.
+  right.appendChild(el('span', 'me', state.me.classId));
   top.appendChild(right);
   box.appendChild(top);
 
@@ -663,7 +660,6 @@ function calendarSide() {
   return side;
 }
 
-/* ── 처음 설정: 내 반 ── */
 /* ── 로그인 ───────────────────────────────────────────────────────────
  * 구글 로그인으로 «나는 누구»만 확인하고, 창구에서 내 반과 강좌 번호를 받는다.
  * 이 화면을 지나면 다시 볼 일이 없다.
@@ -720,7 +716,7 @@ function loginGate() {
   const box = el('div', 'setup');
   box.appendChild(el('h1', null, '내 시간표'));
   box.appendChild(el('p', null,
-    '학교 구글 계정으로 로그인하면 내 반과 이동수업이 한 번에 채워집니다.'));
+    '학교 구글 계정으로 로그인하세요. 내 반과 이동수업이 한 번에 채워집니다.'));
 
   const slot = el('div', 'gsi');
   box.appendChild(slot);
@@ -731,7 +727,15 @@ function loginGate() {
     loadGoogle().then((ready) => {
       if (!ready) {
         slot.innerHTML = '';
-        slot.appendChild(el('div', 'waiting', '로그인 창을 열지 못했습니다. 아래에서 반을 골라 주세요.'));
+        /*
+         * 구글 스크립트를 못 받아 왔다 — 학교 망이 막았거나 잠깐 끊긴 것이다.
+         * 우회로를 주지 않는다. 대신 무엇이 막혔고 어떻게 하면 되는지 말한다.
+         * 막다른 길에 아무 말 없이 세워 두는 것이 가장 나쁘다.
+         */
+        slot.appendChild(el('div', 'waiting',
+          '로그인 창을 열지 못했습니다. 잠시 뒤 새로고침해 주세요.'));
+        slot.appendChild(el('div', 'hint',
+          '학교 와이파이에서 계속 안 되면 담임 선생님께 알려 주세요.'));
         return;
       }
       google.accounts.id.initialize({
@@ -751,9 +755,13 @@ function loginGate() {
 
   if (state.gateError) box.appendChild(el('div', 'gate-err', state.gateError));
 
-  const manual = el('button', 'back', '로그인 없이 반 고르기');
-  manual.onclick = () => { state.gate = 'manual'; state.gateError = null; render(); };
-  box.appendChild(manual);
+  /*
+   * «로그인 없이 반 고르기»를 두지 않는다.
+   *
+   * 그 길로 들어오면 이동수업 칸이 «고르기»로 남아 학생이 자기 시간표를 손으로
+   * 맞춰야 한다 — 틀리게 맞춰 놓고도 맞다고 믿게 된다. 로그인하면 그 자리가
+   * 저절로 채워진다. 손쉬운 우회로가 있으면 사람은 그쪽으로 간다.
+   */
   return box;
 }
 
@@ -762,9 +770,12 @@ async function onCredential(response) {
   try {
     const found = await askDesk(response.credential);
     if (!found.found || !found.classId) {
-      // 명단에 아직 없는 계정. 막지 않고 직접 고르기로 넘긴다.
-      state.gateError = '명단에서 찾지 못했습니다. 아래에서 반을 골라 주세요.';
-      state.gate = 'manual';
+      /*
+       * 로그인은 됐는데 명단에 없다 — 전학 온 지 얼마 안 됐거나 아직 반 배정 전이다.
+       * 스스로 고르게 하지 않는다(틀린 시간표를 만들어 놓고 믿게 된다). 누구에게
+       * 말해야 하는지 알려 준다. 명단은 학교가 채우는 것이지 학생이 채울 것이 아니다.
+       */
+      state.gateError = '명단에서 찾지 못했습니다. 담임 선생님께 알려 주시면 등록해 드립니다.';
     } else {
       state.me = { classId: found.classId, sections: adoptSections(found.sections) };
       save();
@@ -777,26 +788,6 @@ async function onCredential(response) {
   }
 }
 
-function setupClass() {
-  const box = el('div', 'setup');
-  box.appendChild(el('h1', null, '어느 반인가요?'));
-  box.appendChild(el('p', null, '한 번만 고르면 됩니다. 이 기기에만 저장되고 어디로도 보내지 않습니다.'));
-  const ids = [...new Set(state.classes.map((cell) => cell.classId))].sort((a, b) => {
-    const [ga, ca] = a.split('-').map(Number); const [gb, cb] = b.split('-').map(Number);
-    return ga - gb || ca - cb;
-  });
-  const grid = el('div', 'grid-pick');
-  for (const id of ids) {
-    const btn = el('button', null, id);
-    btn.onclick = () => { state.me = { classId: id, sections: {} }; save(); render(); };
-    grid.appendChild(btn);
-  }
-  box.appendChild(grid);
-  const back = el('button', 'back', '구글 로그인으로 돌아가기');
-  back.onclick = () => { state.gate = 'login'; state.gateError = null; render(); };
-  box.appendChild(back);
-  return box;
-}
 
 /* ── 강좌 고르기 ── */
 function openPicker(band) {
@@ -829,10 +820,10 @@ function openPicker(band) {
 function footer() {
   const foot = el('div', 'foot');
   foot.appendChild(el('span', null, `${state.school.name || '학교'} · ${state.classes.length}칸`));
-  const reset = el('button', null, '내 반·강좌 다시 고르기');
+  const reset = el('button', null, '다른 계정으로 로그인');
   reset.onclick = () => {
     localStorage.removeItem(KEY);
-    state.me = null; state.gate = 'login'; state.gateError = null;
+    state.me = null; state.gateError = null;
     if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
     render();
   };

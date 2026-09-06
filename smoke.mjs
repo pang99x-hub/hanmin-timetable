@@ -54,4 +54,24 @@ if (Object.keys(me.sections).length !== 2) throw new Error('강좌 ' + Object.ke
 const unpicked = [...app.querySelectorAll('.pick button')].length;
 console.log('5) 안 채워진 이동수업 칸:', unpicked);
 if (unpicked) throw new Error('로그인했는데 «고르기» 가 ' + unpicked + '칸 남음');
+
+/*
+ * 명단에 없는 계정 — 우회로는 없앴지만 막다른 길이어서도 안 된다.
+ * 로그인은 됐는데 그 학생이 명단에 없을 때, 화면이 «무엇을 하라»고 말해야 한다.
+ */
+{
+  const before = w.fetch;
+  w.fetch = async (url, init) => String(url).includes('script.google.com')
+    ? { ok:true, json: async () => ({ ok:true, found:false, classId:'', sections:[] }) }
+    : before(url, init);
+  store.delete('hanmin.timetable.me.v1');
+  w.eval('state.me = null; render();');
+  await w.onCredential({ credential: '가짜' });
+  const t = app.textContent;
+  console.log('6) 명단에 없을 때 :', t.includes('담임 선생님') ? '안내가 뜬다' : '❌ 안내 없음');
+  console.log('7) 우회로 없음    :', t.includes('반 고르기') ? '❌ 남아 있다' : '없다');
+  if (!t.includes('담임 선생님') || t.includes('반 고르기')) throw new Error('막다른 길');
+  w.fetch = before;
+}
+
 console.log('\n통과');
