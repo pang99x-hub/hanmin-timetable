@@ -268,6 +268,9 @@ function changeForCell(list, period, lesson) {
     kind: substitute ? 'substitute' : base.kind,
     subject: (swap && (swap.newSubject || swap.origSubject)) || lesson.subject,
     teacher: (substitute && substitute.newTeacher) || (swap && swap.newTeacher) || null,
+    // 보강·교체로 교실이 바뀌기도 한다. 이동수업은 «어디로 가나»가 곧 정보라
+    // 바뀐 교실을 화면까지 들고 온다.
+    room: (substitute && substitute.newRoom) || (swap && swap.newRoom) || null,
     origTeacher: base.origTeacher ?? null,
     note: [swap ? '교체' : null, substitute ? '보강' : null].filter(Boolean).join(' · ') || '변경',
     fromDate: base.fromDate ?? null,
@@ -531,7 +534,16 @@ function todayPanel() {
       const who = chg
         ? `${chg.teacher ?? ''} ${chg.note}`.trim()
         : (lesson.teacher || '');
-      if (who) cell.appendChild(el('div', 'by', who));
+      /*
+       * 이동수업은 교실을 함께 보여 준다 — 학생이 «어디로 가나»를 알아야 한다.
+       * 자기 교실에서 하는 수업(kind: 'class')은 갈 곳이 없으니 적지 않는다.
+       * 보강으로 교실이 바뀌었으면 바뀐 쪽을 보여 준다.
+       */
+      const room = lesson.kind === 'section'
+        ? ((chg && chg.room) || lesson.room || '')
+        : '';
+      const line = [who, room].filter(Boolean).join(' · ');
+      if (line) cell.appendChild(el('div', 'by', line));
       if (chg && chg.origTeacher) cell.appendChild(el('span', 'was', chg.origTeacher));
     }
     if (chg) slot.classList.add('chg');
