@@ -98,12 +98,32 @@ console.log('\n[3] 급식·학사일정');
   const w = await open({ classId:'3-1', sections:{} });
   w.eval("state.cursor = parse('2026-09-10'); state.view='day'; render();");
   const text = w.document.getElementById('app').textContent;
-  check('중식 메뉴가 줄마다 나옴', ['보리밥','미역국','제육볶음'].every((x) => text.includes(x)));
+  // 식사는 접혀 있다 — 시간표를 보러 온 화면이라 메뉴가 자리를 다 먹으면 안 된다.
+  check('접힌 상태: 메뉴가 다 펼쳐지지 않음', !text.includes('제육볶음'));
+  check('접힌 상태: 무엇이 나오는지 한 줄은 보임', text.includes('보리밥'));
+  const lunchHead = [...w.document.querySelectorAll('.slot.meal .mealhead')]
+    .find((b) => b.textContent.includes('중식'));
+  check('중식 줄을 누를 수 있음', Boolean(lunchHead));
+  if (lunchHead) {
+    lunchHead.dispatchEvent(new w.Event('click', { bubbles: true }));
+    const opened = w.document.getElementById('app').textContent;
+    check('펼치면 메뉴가 줄마다 나옴',
+      ['보리밥','미역국','제육볶음'].every((x) => opened.includes(x)));
+  }
   w.eval("state.view='month'; render();");
   const month = w.document.getElementById('app').textContent;
   check('3학년에게 3학년 시험이 보임', month.includes('1학기 2차 정기시험'));
   check('3학년에게 1학년 행사는 안 보임', !month.includes('1학년 현장체험'));
   check('전교 휴업일은 보임', month.includes('재량휴업일'));
+}
+
+console.log('\n[4] 주간표에는 급식 줄이 없다');
+{
+  const w = await open({ classId:'3-1', sections:{} });
+  w.eval("state.cursor = parse('2026-09-10'); state.view='week'; render();");
+  check('주간표에 급식 줄 없음', w.document.querySelectorAll('.wk tr.mealrow').length === 0);
+  check('주간표에 «급식은 «오늘»에서» 문구 없음',
+    !w.document.querySelector('.wk').textContent.includes('급식'));
 }
 
 console.log(fail.length ? `\n실패 ${fail.length}건: ${fail.join(', ')}` : '\n전부 통과');

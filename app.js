@@ -34,6 +34,7 @@ const state = {
   changes: null, meals: null, calendar: null,
   me: null,          // { classId, sections: {bandKey: sectionKey} }
   gate: 'login',     // login | manual — 로그인 전 화면
+  openMeals: new Set(),   // 펼쳐 둔 식사(breakfast·lunch·dinner). 기기에만 남는다.
   busy: false,       // 창구에 묻는 중
   gateError: null,
   view: 'day',       // day | week | month
@@ -419,23 +420,47 @@ function todayPanel() {
   const now = new Date();
   const isToday = sameDay(state.cursor, now);
 
+  /*
+   * 식사는 접어 둔다.
+   *
+   * 하루 세 끼의 메뉴를 다 펼쳐 두면 그것만 스무 줄이 넘어, 정작 «몇 교시에 무슨
+   * 수업»이 화면 밖으로 밀린다. 시간표를 보러 온 화면이다. 메뉴는 궁금할 때 편다.
+   *
+   * 편 상태는 기억한다 — 아침에 한 번 펴 놓고 날짜를 넘길 때마다 다시 접히면
+   * 성가시다. 기기에만 남는다(state).
+   */
   const addMeal = (label, time, kind) => {
     if (!time) return;
-    const slot = el('div', 'slot meal');
-    const gut = el('span', 'gut');
-    gut.append(el('span', 'p', label), el('span', 't', time));
-    const cell = el('div', 'cell');
-    cell.appendChild(el('div', 'name', label));
     const menu = state.meals && state.meals.days && state.meals.days[iso(state.cursor)];
     const items = menu && menu[kind];
-    if (Array.isArray(items) && items.length) {
+    const lines = Array.isArray(items) ? items
+      : typeof items === 'string' && items ? [items] : [];
+    const open = state.openMeals.has(kind);
+
+    const slot = el('div', `slot meal${open ? ' open' : ''}`);
+    const gut = el('span', 'gut');
+    gut.append(el('span', 'p', label), el('span', 't', time));
+
+    const cell = el('div', 'cell');
+    const head = el('button', 'mealhead');
+    head.setAttribute('aria-expanded', String(open));
+    head.append(el('span', 'name', label));
+    // 접혀 있어도 무엇이 나오는지 한 줄은 보여 준다 — 열어 볼지 판단할 거리가 된다.
+    head.appendChild(el('span', 'peek', lines.length
+      ? (open ? '' : lines.slice(0, 2).join(' · '))
+      : (state.meals ? '등록된 식단이 없습니다' : '급식은 아직 준비 중입니다')));
+    if (lines.length) head.appendChild(el('span', 'chev', open ? '−' : '+'));
+    head.onclick = () => {
+      if (!lines.length) return;
+      if (open) state.openMeals.delete(kind); else state.openMeals.add(kind);
+      render();
+    };
+    cell.appendChild(head);
+
+    if (open && lines.length) {
       const list = el('ul', 'menu');
-      for (const item of items) list.appendChild(el('li', null, item));
+      for (const item of lines) list.appendChild(el('li', null, item));
       cell.appendChild(list);
-    } else {
-      cell.appendChild(el('p', 'menu none',
-        typeof items === 'string' && items ? items
-          : state.meals ? '등록된 식단이 없습니다' : '급식은 아직 준비 중입니다'));
     }
     slot.append(gut, el('span', 'dot'), cell);
     day.appendChild(slot);
@@ -508,20 +533,15 @@ function weekPanel() {
   table.appendChild(head);
 
   const periods = state.school.periods || [];
-  const meals = state.school.mealTimes || {};
+  /*
+   * 주간표에 급식 줄을 두지 않는다. 여기서 보는 것은 «이번 주 수업이 어떻게 흐르는가»
+   * 이고, 매일 같은 시각인 급식은 그 흐름을 끊기만 한다. 메뉴는 «오늘»에서 본다.
+   */
   const byDay = [0, 1, 2, 3, 4].map((i) => ({
     lessons: lessonsOn(addDays(mon, i)), changes: changesOn(addDays(mon, i)),
   }));
-  let lunchDone = false;
 
   for (const period of periods) {
-    if (!lunchDone && period.startTime >= (meals.lunch || '99:99')) {
-      const row = el('tr', 'mealrow');
-      row.appendChild(el('td', 'pn', '중식'));
-      const td = el('td', null, `${meals.lunch} · 급식은 «오늘»에서 봅니다`);
-      td.colSpan = 5; row.appendChild(td); table.appendChild(row);
-      lunchDone = true;
-    }
     const row = el('tr');
     const pn = el('td', 'pn', String(period.period));
     pn.appendChild(el('em', null, period.startTime));
