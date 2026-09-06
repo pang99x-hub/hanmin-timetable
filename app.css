@@ -268,3 +268,20 @@ span.me{
   border:1px solid var(--line); background:var(--card);
   font-size:13px; font-weight:750; color:var(--ink-2);
 }
+
+/* 교사: 학생 골라 보기 */
+.setup.wide{max-width:760px}
+.pick-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(78px,1fr)); gap:6px; margin-top:10px}
+.pick-grid.names{grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); margin-top:14px}
+.pick-grid button{
+  padding:10px 6px; border-radius:10px; border:1px solid var(--line);
+  background:var(--card); color:var(--ink); font-size:13.5px; font-weight:700;
+}
+.pick-grid button:hover{border-color:var(--now-line); background:var(--now-soft); color:var(--now)}
+.pick-grid button.on{border-color:var(--now); background:var(--now-soft); color:var(--now)}
+.pick-grid.names button{text-align:left; padding-left:11px; font-weight:650}
+.asstudent{
+  display:inline-block; margin-right:8px; padding:5px 11px; border-radius:999px;
+  background:var(--chg-soft); border:1px solid var(--chg-line); color:var(--chg);
+  font-size:12.5px; font-weight:750;
+}
