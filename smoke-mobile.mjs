@@ -134,5 +134,34 @@ console.log('\n[4] 교차수업 — 학급 전체가 듣는 묶음 수업');
   }
 }
 
+
+/*
+ * 이동수업은 «어디로 가나»가 곧 정보다 — 교실이 화면에 함께 떠야 한다.
+ * 자기 교실에서 하는 학급 수업은 갈 곳이 없으니 적지 않는다.
+ */
+console.log('\n[5] 이동수업은 교실을 함께 보여 준다');
+{
+  const withRoom = sections.find((s) => s.room && s.classIds && s.classIds.length > 0);
+  check('교실이 적힌 분반이 있다', Boolean(withRoom), withRoom ? withRoom.room : '');
+  if (withRoom) {
+    const cls = withRoom.classIds[0];
+    const w = await open(cls, { [withRoom.bandKey || withRoom.subject]:
+      `${withRoom.sectionId ?? ''}|${withRoom.subject}|${withRoom.teacher ?? ''}` });
+    const days = ['2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11'];
+    w.eval(`state.cursor = parse('${days[withRoom.day]}'); state.tab = 'day'; render();`);
+    const text = w.document.getElementById('app').textContent;
+    check(`«${withRoom.subject}» 옆에 교실 «${withRoom.room}» 이 뜬다`,
+      text.includes(withRoom.room), text.slice(0, 120));
+
+    // 학급 수업에는 붙지 않는다 — 같은 화면에서 확인한다.
+    const 학급칸 = classes.find((c) => c.classId === cls && c.day === withRoom.day && c.room);
+    if (학급칸) {
+      const 교실만 = (text.match(new RegExp(학급칸.room.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+      check(`학급 수업 «${학급칸.subject}» 의 교실은 적지 않는다`, 교실만 === 0,
+        교실만 ? `${학급칸.room} 이 ${교실만}번 나옴` : '');
+    }
+  }
+}
+
 console.log(fail.length ? `\n실패 ${fail.length}건` : '\n전부 통과');
 process.exit(fail.length ? 1 : 0);
