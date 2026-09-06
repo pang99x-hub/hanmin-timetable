@@ -172,8 +172,6 @@ button{font-family:inherit; cursor:pointer}
 .wk .pn{width:32px; background:transparent; border:0; text-align:right; padding-right:6px;
         font-size:10px; font-weight:800; color:var(--ink-4); line-height:1.2}
 .wk .pn em{display:block; font-style:normal; font-weight:650; font-size:9px; opacity:.85}
-.wk tr.mealrow td{height:auto; padding:5px 9px; background:var(--meal-soft);
-  border-color:var(--meal-line); color:var(--meal); font-size:10.5px; font-weight:700; text-align:left}
 @media (max-width:640px){ .wk td{height:40px; font-size:10px} .wk td small{display:none} }
 
 /* ── 월간 ── */
@@ -250,3 +248,24 @@ button{font-family:inherit; cursor:pointer}
 .mo .tag.exam{color:var(--now); background:var(--now-soft); font-weight:800}
 .side .r.holiday b{color:var(--chg)}
 .side .r.exam b{color:var(--now)}
+
+/* 식사 — 접혀 있다가 눌러야 펼친다 */
+.mealhead{
+  display:flex; align-items:baseline; gap:8px; width:100%;
+  background:none; border:0; padding:0; text-align:left; cursor:pointer;
+  font:inherit; color:inherit;
+}
+.slot.meal .mealhead .name{color:var(--meal); font-size:13px; letter-spacing:.02em; flex:none}
+/* 접혔을 때 첫 두 가지만 흘려 보여 준다 — 열어 볼지 정할 거리. */
+.mealhead .peek{
+  flex:1 1 auto; min-width:0; font-size:11.5px; font-weight:650; color:var(--ink-3);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.mealhead .chev{
+  flex:none; width:18px; height:18px; line-height:16px; text-align:center;
+  border:1px solid var(--meal-line); border-radius:6px;
+  font-size:12px; font-weight:700; color:var(--meal); background:var(--card);
+}
+.mealhead:hover .chev{background:var(--meal); color:var(--card); border-color:var(--meal)}
+.mealhead:focus-visible{outline:2px solid var(--meal); outline-offset:3px; border-radius:4px}
+.slot.meal.open .mealhead .peek{display:none}
