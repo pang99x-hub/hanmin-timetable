@@ -53,6 +53,9 @@ const beforeDesk = deskCalls;
 const beforeData = dataCalls;
 
 console.log('\n[1] 정해 두기 전에는 작은 단추 하나만');
+/* 자리 — 시간표 위를 가로지르지 않고 머리줄 오른쪽에 선다(2026-09-07). */
+if (!app.querySelector('.top .right .dday-empty')) fail('머리줄 오른쪽에 있지 않다');
+else ok('머리줄 오른쪽에 있다');
 if (!byText('.dday-empty button', '디데이 설정')) fail('«디데이 설정» 단추가 없다');
 else ok('«디데이 설정» 단추가 있다');
 if (find('.dday')) fail('정하지도 않았는데 큰 칸이 떠 있다');
@@ -76,6 +79,10 @@ else if (bar.querySelector('strong').textContent !== 'D-73') fail('남은 날이
 else ok('D-73 이 크게 뜬다');
 if (!bar || !bar.textContent.includes('수능')) fail('이름이 안 보인다');
 else ok('이름 «수능» 이 함께 보인다');
+if (!app.querySelector('.top .right .dday')) fail('카드가 머리줄 오른쪽에 없다');
+else ok('카드가 머리줄 오른쪽에 선다');
+if (app.querySelector('.top') !== app.querySelector('.dday').closest('.top')) fail('머리줄 밖에 있다');
+else ok('시간표를 아래로 밀지 않는다');
 
 console.log('\n[3] 그날과 지난 날');
 const set = (offset) => {

@@ -419,9 +419,14 @@ function myChangeCount(date) {
 }
 
 /* ── 그리기 ── */
-/* 시간표 위에 놓는 디데이 칸. 정해 두지 않았으면 작은 단추 하나로만 있는다. */
-function ddayBar() {
-  if (state.ddayEdit) return ddayEditor();
+/*
+ * 머리줄 오른쪽에 놓는 디데이 카드.
+ *
+ * 시간표 위를 가로로 지르던 것을 옮겼다(2026-09-07). 디데이는 «지금 몇 교시»보다
+ * 급한 정보가 아니다 — 눈에 들어오되 시간표를 아래로 밀지는 않는 자리가 맞다.
+ * 고치는 칸은 넓어야 하므로 그때만 머리줄 아래에 펼친다.
+ */
+function ddayCard() {
   if (!state.dday) {
     const box = el('div', 'dday-empty');
     const add = el('button', null, '디데이 설정');
@@ -576,7 +581,7 @@ function render() {
   }
   app.innerHTML = '';
   app.appendChild(header());
-  app.appendChild(ddayBar());
+  if (state.ddayEdit) app.appendChild(ddayEditor());
   const cols = document.createElement('div');
   cols.className = state.view === 'day' ? 'cols both' : 'cols';
   if (state.view === 'day') { cols.appendChild(todayPanel()); cols.appendChild(weekPanel()); }
@@ -643,6 +648,7 @@ function header() {
     // 반은 창구가 정해 준 것이라 사람이 고칠 자리가 아니다. 표시만 한다.
     right.appendChild(el('span', 'me', state.me.classId));
   }
+  right.appendChild(ddayCard());
   top.appendChild(right);
   box.appendChild(top);
 
