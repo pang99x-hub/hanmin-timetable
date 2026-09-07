@@ -356,6 +356,16 @@ function header() {
   const box = el('div');
   const top = el('div', 'top');
   const left = el('div');
+  /*
+   * 무엇을 보고 있는 화면인지 한 줄로 밝힌다.
+   *
+   * 날짜만 큼직하게 있으면 «무슨 앱인지»는 주소창에만 남는다 — 홈 화면에 놓고 쓰는
+   * 사람에게는 주소창도 없다. 학교 이름은 작고 넓은 자간으로, 「시간표」만 색을 준다.
+   */
+  const brand = el('div', 'brand');
+  brand.appendChild(el('span', null, '한민고등학교'));
+  brand.appendChild(el('b', null, '시간표'));
+  left.appendChild(brand);
   const title = el('h1', 'title');
   title.append(state.view === 'month'
     ? `${state.cursor.getFullYear()}년 ${state.cursor.getMonth() + 1}월`
@@ -397,7 +407,7 @@ function header() {
 
   const tabs = el('div', 'tabs');
   tabs.setAttribute('role', 'tablist');
-  for (const [key, label] of [['day', '오늘'], ['week', '주'], ['month', '월']]) {
+  for (const [key, label] of [['day', '일'], ['week', '주'], ['month', '월']]) {
     const btn = el('button', null, label);
     btn.setAttribute('role', 'tab');
     btn.setAttribute('aria-selected', String(state.view === key));
@@ -448,7 +458,13 @@ function move(step) {
 /* ── 오늘 ── */
 function todayPanel() {
   const panel = el('div', 'panel');
-  panel.appendChild(el('h2', null, '오늘'));
+  /*
+   * 탭을 «일»로 고쳤으니 머리글도 따라간다. 다른 날을 보는 중에 «오늘»이라고 적혀
+   * 있으면 그것은 틀린 말이다.
+   */
+  panel.appendChild(el('h2', null, sameDay(state.cursor, new Date())
+    ? '오늘'
+    : `${state.cursor.getMonth() + 1}/${state.cursor.getDate()} ${DAYS[(state.cursor.getDay() + 6) % 7] || ''}`));
   const day = el('div', 'day');
   const periods = state.school.periods || [];
   const meals = state.school.mealTimes || {};
