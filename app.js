@@ -582,6 +582,11 @@ function render() {
   app.innerHTML = '';
   app.appendChild(header());
   if (state.ddayEdit) app.appendChild(ddayEditor());
+  /*
+   * 일정 적는 칸은 어느 화면에서 열든 같은 자리에 뜬다 — 달력에서 눌렀는데 저 아래
+   * 목록 안에서 열리면 사람이 그것을 찾아 내려가야 한다.
+   */
+  if (state.eventEdit) app.appendChild(eventEditor());
   const cols = document.createElement('div');
   cols.className = state.view === 'day' ? 'cols both' : 'cols';
   if (state.view === 'day') { cols.appendChild(todayPanel()); cols.appendChild(weekPanel()); }
@@ -848,16 +853,12 @@ function todayPanel() {
   }
   if (state.calNote) box.appendChild(el('div', 'ev-note', state.calNote));
   for (const item of allDay) box.appendChild(eventChip(item));
-  if (state.eventEdit) {
-    box.appendChild(eventEditor());
-  } else {
-    const add = el('button', 'ev-add', '＋ 일정 추가');
-    add.onclick = () => {
-      state.eventEdit = { date: iso(state.cursor), period: null, title: '' };
-      render();
-    };
-    box.appendChild(add);
-  }
+  const add = el('button', 'ev-add', '＋ 일정 추가');
+  add.onclick = () => {
+    state.eventEdit = { date: iso(state.cursor), period: null, title: '' };
+    render();
+  };
+  box.appendChild(add);
   panel.appendChild(box);
   return panel;
 }
@@ -979,6 +980,31 @@ function monthPanel() {
         if (myChangeCount(date) > 0) {
           const dots = el('span', 'dots'); dots.appendChild(el('i')); td.appendChild(dots);
         }
+        /*
+         * 내가 적은 일정은 그 날짜 칸에 바로 보여 준다. 학교가 정한 일정(tag)과 색이
+         * 다르다 — 지워도 되는 것과 아닌 것을 가르지 못하면 손을 못 댄다.
+         */
+        for (const item of eventsOn(date).slice(0, 2)) {
+          const chip = el('span', 'mine', item.period ? `${item.period}교시 ${item.title}` : item.title);
+          chip.onclick = (e) => { e.stopPropagation(); state.eventEdit = { ...item }; render(); };
+          td.appendChild(chip);
+        }
+        const more = eventsOn(date).length - 2;
+        if (more > 0) td.appendChild(el('span', 'mine more', `외 ${more}`));
+
+        /*
+         * 달력에서 바로 적는다. 칸을 누르면 그날 시간표로 가는 길은 그대로 두고,
+         * 적는 것은 ＋ 로 가른다 — 한 번 누르는 것에 두 가지 뜻을 담지 않는다.
+         */
+        const plus = el('button', 'add', '＋');
+        plus.setAttribute('aria-label', `${date.getMonth() + 1}월 ${date.getDate()}일 일정 추가`);
+        plus.onclick = (e) => {
+          e.stopPropagation();
+          state.eventEdit = { date: iso(date), period: null, title: '' };
+          render();
+        };
+        td.appendChild(plus);
+
         td.onclick = () => { state.cursor = date; state.view = 'day'; render(); };
       }
       row.appendChild(td);
@@ -995,17 +1021,30 @@ function calendarSide() {
   side.appendChild(el('h3', null, '다가오는 일정'));
   const today = iso(new Date());
   const grade = myGrade();
-  const soon = ((state.calendar && state.calendar.days) || [])
+  /*
+   * 학교가 정한 일정과 내가 적은 일정을 한 줄로 세운다 — 다가오는 것을 볼 때 그 둘을
+   * 갈라 놓으면 «둘 다 확인»이 매번 두 번 보는 일이 된다. 대신 색으로 구분한다.
+   */
+  const school = ((state.calendar && state.calendar.days) || [])
     .filter((day) => day.date >= today)
     .filter((day) => !grade || !day.grades || !day.grades.length || day.grades.includes(grade))
-    .slice(0, 5);
-  if (!state.calendar) side.appendChild(el('p', 'none', '학사일정은 아직 준비 중입니다'));
+    .map((day) => ({ date: day.date, kind: day.kind, text: day.labels.join(' · '), mine: false }));
+  const mine = state.events
+    .filter((item) => item.date >= today)
+    .map((item) => ({
+      date: item.date, kind: 'mine', mine: true, item,
+      text: item.period ? `${item.period}교시 ${item.title}` : item.title,
+    }));
+  const soon = [...school, ...mine].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6);
+
+  if (!state.calendar && mine.length === 0) side.appendChild(el('p', 'none', '학사일정은 아직 준비 중입니다'));
   else if (soon.length === 0) side.appendChild(el('p', 'none', '등록된 일정이 없습니다'));
   else for (const day of soon) {
     const date = parse(day.date);
-    const row = el('div', `r cal ${day.kind}`);
+    const row = el(day.mine ? 'button' : 'div', `r cal ${day.kind}`);
     row.appendChild(el('b', null, `${date.getMonth() + 1}/${date.getDate()}`));
-    row.appendChild(el('span', null, day.labels.join(' · ')));
+    row.appendChild(el('span', null, day.text));
+    if (day.mine) row.onclick = () => { state.eventEdit = { ...day.item }; render(); };
     side.appendChild(row);
   }
   return side;
