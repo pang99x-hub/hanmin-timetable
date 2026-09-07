@@ -126,5 +126,27 @@ console.log('\n[4] 주간표에는 급식 줄이 없다');
     !w.document.querySelector('.wk').textContent.includes('급식'));
 }
 
+/*
+ * 「이번 주 바뀐 수업」은 칸을 떠나 줄로 선다 — 거기서는 교시를 글자로 적어야 한다.
+ * 칸 안에서는 자리가 곧 교시라 빠져 있어도 티가 안 났고, 목록에서 «undefined교시»로
+ * 새어 나왔다(2026-09-07 제보).
+ */
+console.log('\n[5] 바뀐 수업 목록에 교시가 적힌다');
+{
+  // 9/10(목) 5교시 「고전과 윤리」 보강 — 그 강좌를 듣는 학생이라야 목록에 뜬다.
+  const w = await open({ classId:'3-1', sections: pick('고전과 윤리') });
+  w.eval("state.cursor = parse('2026-09-10'); state.view='week'; render();");
+  const app = w.document.getElementById('app');
+  const side = [...app.querySelectorAll('.side')].find((n) => n.textContent.includes('바뀐 수업'));
+  check('«이번 주 바뀐 수업» 칸이 있다', Boolean(side));
+  check('교시 자리에 undefined 가 없다', Boolean(side) && !side.textContent.includes('undefined'));
+  const rows = side ? [...side.querySelectorAll('.r b')] : [];
+  // 바뀐 수업이 실제로 있어야 이 검사가 뜻이 있다.
+  check('그 주에 바뀐 수업이 있다', rows.length > 0);
+  check(`교시 표기가 «요일 N교시» 모양 (${rows.length}건)`,
+    rows.every((n) => /^[월화수목금] \d+교시$/.test(n.textContent.trim())),
+    rows.map((n) => n.textContent).join(' / '));
+}
+
 console.log(fail.length ? `\n실패 ${fail.length}건: ${fail.join(', ')}` : '\n전부 통과');
 process.exit(fail.length ? 1 : 0);
