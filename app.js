@@ -23,8 +23,9 @@
 
 const DAYS = ['월', '화', '수', '목', '금'];
 const KEY = 'hanmin.timetable.me.v1';
-/* 디데이는 이 기기에만 남는다. 서버로 보내지 않고, 서버에서 받지도 않는다. */
+/* 디데이와 내 일정은 이 기기에만 남는다. 서버로 보내지 않고, 서버에서 받지도 않는다. */
 const DDAY_KEY = 'hanmin.timetable.dday.v1';
+const EVENTS_KEY = 'hanmin.timetable.events.v1';
 const DATA = 'data/';
 
 /* 창구와 구글 로그인. 학교가 바뀌면 이 두 줄만 고친다. */
@@ -51,6 +52,9 @@ const state = {
   loadedAt: null,
   dday: null,        // { label, date } — 이 기기에만 남는다
   ddayEdit: false,   // 고치는 중인가
+  events: [],        // [{ id, date, period, title }] — 이 기기에만 남는다
+  eventEdit: null,   // 적는 중인 일정 { id?, date, period, title }
+  calNote: null,     // 캘린더에 못 올렸을 때 사람에게 할 말
 };
 
 /* ── 날짜 도구 ── 시간대에 흔들리지 않게 로컬 기준으로만 다룬다. */
@@ -91,12 +95,15 @@ async function boot() {
 
   try { state.me = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { state.me = null; }
   state.dday = loadDday();
+  state.events = loadEvents();
   // 주말에 열면 다음 수업일부터 보여 준다 — 빈 주말을 띄워 놓을 이유가 없다.
   let cur = new Date();
   while (!isWeekday(cur)) cur = addDays(cur, 1);
   state.cursor = cur;
 
   render();
+  // 권한을 이미 준 기기면 캘린더에 있는 것을 조용히 가져온다. 없으면 아무 일도 없다.
+  if (state.me && state.me.classId) pullEventsFromCalendar();
   window.addEventListener('keydown', (event) => {
     if (event.target instanceof HTMLInputElement) return;
     if (event.key === 'ArrowLeft') { move(-1); event.preventDefault(); }
@@ -149,6 +156,57 @@ function daysUntil(dateStr) {
 function ddayText(left) {
   if (left === 0) return 'D-DAY';
   return left > 0 ? `D-${left}` : `D+${-left}`;
+}
+
+/* ── 내 일정 ─────────────────────────────────────────────────────────
+ * 학생이 직접 적는 일정. 수행평가·과제 제출·동아리 모임 같은 것들이다.
+ *
+ * 디데이와 같은 자리에 산다 — **이 기기의 저장소**. 서버에 묻지 않으므로 아무리 많이
+ * 적어도 늘어나는 요청이 없다. 대신 폰에서 적은 것은 폰에만 있다. 기기를 따라다니게
+ * 하려면 그것을 맡아 줄 서버가 있어야 하는데, 그건 다른 결정이다.
+ *
+ * 교시를 붙일 수 있다. 「3교시 수행평가」는 그 교시 칸에 붙어야 쓸모가 있다 —
+ * 하루 아래 목록에만 있으면 수업을 보다가 다시 목록을 찾아 내려가야 한다.
+ * 교시 없이 적으면 그날 전체의 일정이 된다.
+ *
+ * 학교가 정한 학사일정(고사·행사)과 색을 달리한다. 내가 적은 것과 학교가 정한 것을
+ * 구분하지 못하면, 지워도 되는지 알 수 없다.
+ */
+function loadEvents() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(EVENTS_KEY) || '[]');
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .filter((item) => item && /^\d{4}-\d{2}-\d{2}$/.test(item.date) && String(item.title || '').trim())
+      .map((item) => ({
+        id: String(item.id || newEventId()),
+        date: item.date,
+        period: Number.isInteger(item.period) && item.period > 0 ? item.period : null,
+        title: String(item.title).trim().slice(0, 40),
+      }));
+  } catch { return []; }
+}
+
+function saveEvents(next) {
+  state.events = next;
+  localStorage.setItem(EVENTS_KEY, JSON.stringify(next));
+}
+
+function newEventId() {
+  return `e${Date.now().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`;
+}
+
+/** 그 날 내 일정. 교시가 붙은 것이 먼저, 그 안에서는 교시 순. */
+function eventsOn(date) {
+  const key = iso(date);
+  return state.events
+    .filter((item) => item.date === key)
+    .sort((a, b) => (a.period ?? 99) - (b.period ?? 99));
+}
+
+/** 그 날 그 교시에 붙은 일정. */
+function eventsAt(date, period) {
+  return eventsOn(date).filter((item) => item.period === period);
 }
 
 /* ── 내 시간표 만들기 ────────────────────────────────────────────────
@@ -420,6 +478,90 @@ function ddayEditor() {
   return box;
 }
 
+/* 일정 한 줄. 누르면 고친다. */
+function eventChip(item) {
+  const chip = el('button', 'ev');
+  chip.setAttribute('aria-label', `일정 «${item.title}» 고치기`);
+  if (!item.gcalId) chip.classList.add('local');
+  chip.append(el('span', 'tt', item.title));
+  chip.onclick = (e) => {
+    e.stopPropagation();
+    state.eventEdit = { ...item };
+    render();
+  };
+  return chip;
+}
+
+/*
+ * 일정 적는 칸.
+ *
+ * 교시는 골라도 되고 안 골라도 된다. 「3교시 수행평가」는 그 교시 칸에 붙고,
+ * 교시 없이 적으면 그날 전체의 일정이 된다.
+ */
+function eventEditor() {
+  const draft = state.eventEdit;
+  const box = el('div', 'ev-edit');
+
+  const title = document.createElement('input');
+  title.type = 'text';
+  title.maxLength = 40;
+  title.placeholder = '무엇을 (예: 수행평가, 과제 제출)';
+  title.value = draft.title || '';
+  title.setAttribute('aria-label', '일정 내용');
+
+  const when = document.createElement('input');
+  when.type = 'date';
+  when.value = draft.date;
+  when.setAttribute('aria-label', '일정 날짜');
+
+  const period = document.createElement('select');
+  period.setAttribute('aria-label', '교시');
+  const none = document.createElement('option');
+  none.value = ''; none.textContent = '하루 종일';
+  period.appendChild(none);
+  for (const p of (state.school.periods || [])) {
+    const opt = document.createElement('option');
+    opt.value = String(p.period);
+    opt.textContent = `${p.period}교시`;
+    period.appendChild(opt);
+  }
+  period.value = draft.period ? String(draft.period) : '';
+
+  const ok = el('button', 'ok', '저장');
+  ok.onclick = () => {
+    const text = title.value.trim();
+    if (!text || !when.value) return;
+    const next = {
+      id: draft.id || newEventId(),
+      date: when.value,
+      period: period.value ? Number(period.value) : null,
+      title: text,
+      gcalId: draft.gcalId || null,
+    };
+    const rest = state.events.filter((item) => item.id !== next.id);
+    saveEvents([...rest, next]);
+    state.eventEdit = null;
+    render();
+    pushEventToCalendar(next);
+  };
+
+  const cancel = el('button', null, '취소');
+  cancel.onclick = () => { state.eventEdit = null; render(); };
+
+  box.append(title, when, period, ok, cancel);
+  if (draft.id) {
+    const remove = el('button', 'del', '지우기');
+    remove.onclick = () => {
+      saveEvents(state.events.filter((item) => item.id !== draft.id));
+      state.eventEdit = null;
+      render();
+      removeEventFromCalendar(draft);
+    };
+    box.appendChild(remove);
+  }
+  return box;
+}
+
 function render() {
   const app = document.getElementById('app');
   if (state.teacher && !state.me) {
@@ -541,6 +683,7 @@ function header() {
 }
 
 function move(step) {
+  state.eventEdit = null;
   if (state.view === 'week') state.cursor = addDays(mondayOf(state.cursor), step * 7);
   else if (state.view === 'month') {
     const next = new Date(state.cursor);
@@ -661,6 +804,8 @@ function todayPanel() {
       if (line) cell.appendChild(el('div', 'by', line));
       if (chg && chg.origTeacher) cell.appendChild(el('span', 'was', chg.origTeacher));
     }
+    // 그 교시에 붙여 둔 내 일정. 수업 아래에 붙어야 «3교시에 뭐 있더라»가 한눈에 온다.
+    for (const item of eventsAt(state.cursor, period.period)) cell.appendChild(eventChip(item));
     if (chg) slot.classList.add('chg');
     if (isToday && !chg && lesson && now.toTimeString().slice(0, 5) >= period.startTime
         && now.toTimeString().slice(0, 5) < period.endTime) {
@@ -672,6 +817,42 @@ function todayPanel() {
   if (!day.dataset.lunch) addMeal('중식', meals.lunch, 'lunch');
   addMeal('석식', meals.dinner, 'dinner');
   panel.appendChild(day);
+
+  /*
+   * 교시를 안 붙인 일정과 «일정 추가».
+   *
+   * 교시에 붙인 것은 위 칸에 이미 있으므로 여기서 또 세우지 않는다 — 같은 것을 두 번
+   * 보여 주면 둘이 다른 것인 줄 안다.
+   */
+  const allDay = eventsOn(state.cursor).filter((item) => item.period === null);
+  const box = el('div', 'evs');
+  /*
+   * 캘린더에 못 올린 것이 있으면 그렇게 말한다. 「저장됐다」고 믿게 두고 기기를 바꾸면
+   * 그때 사라진 것을 안다 — 그게 가장 나쁘다.
+   */
+  if (eventsOn(state.cursor).some((item) => !item.gcalId)) {
+    const warn = el('button', 'ev-sync', '이 기기에만 있음 · 구글 캘린더에 올리기');
+    warn.onclick = async () => {
+      state.calNote = null;
+      for (const item of state.events.filter((row) => !row.gcalId)) {
+        await pushEventToCalendar(item);
+      }
+    };
+    box.appendChild(warn);
+  }
+  if (state.calNote) box.appendChild(el('div', 'ev-note', state.calNote));
+  for (const item of allDay) box.appendChild(eventChip(item));
+  if (state.eventEdit) {
+    box.appendChild(eventEditor());
+  } else {
+    const add = el('button', 'ev-add', '＋ 일정 추가');
+    add.onclick = () => {
+      state.eventEdit = { date: iso(state.cursor), period: null, title: '' };
+      render();
+    };
+    box.appendChild(add);
+  }
+  panel.appendChild(box);
   return panel;
 }
 
@@ -822,6 +1003,155 @@ function calendarSide() {
     side.appendChild(row);
   }
   return side;
+}
+
+/* ── 구글 캘린더 ─────────────────────────────────────────────────────
+ * 적어 둔 일정을 **학생 자기 구글 캘린더**에 함께 적는다.
+ *
+ * 우리 서버에 두지 않는 이유는 둘이다. 기기를 바꿔도 따라오고, 학생이 이미 쓰는
+ * 캘린더 앱에서 알림이 온다 — 이 앱을 열어야만 보이는 일정은 잊어버리기 쉽다.
+ * 그리고 그 자료는 우리 것이 아니라 학생 것이다.
+ *
+ * 기기 저장이 여전히 원본이다. 캘린더는 그 위에 얹는다. 권한을 안 줬거나 망이
+ * 끊겼으면 기기에만 남고, 화면은 그것을 «이 기기에만»이라고 말한다 — 됐다고
+ * 믿게 두지 않는다.
+ *
+ * 우리가 적은 것만 되받아 온다(extendedProperties.private.hanmin). 학생 캘린더에
+ * 있는 다른 일정까지 이 앱이 읽어 화면에 늘어놓을 이유가 없다.
+ */
+const CAL_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
+const CAL_API = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+const CAL_MARK = 'hanmin-timetable';
+
+const cal = { token: null, until: 0, client: null, denied: false };
+
+/**
+ * 권한 토큰 받기.
+ *
+ * `quiet` 면 창을 띄우지 않는다 — 화면을 열자마자 동의 창이 뜨면 학생은 먼저 닫고 본다.
+ * 이미 한 번 허락했으면 조용히 받아 오고, 아니면 그냥 포기하고 기기 저장으로 남는다.
+ */
+function calToken(quiet) {
+  if (cal.token && Date.now() < cal.until) return Promise.resolve(cal.token);
+  if (cal.denied && quiet) return Promise.resolve(null);
+  return loadGoogle().then((ready) => {
+    if (!ready || !window.google || !google.accounts || !google.accounts.oauth2) return null;
+    return new Promise((resolve) => {
+      if (!cal.client) {
+        cal.client = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: CAL_SCOPE,
+          callback: (res) => {
+            if (res && res.access_token) {
+              cal.token = res.access_token;
+              // 만료 조금 전에 새로 받는다. 경계에서 401 을 맞고 한 번 실패할 이유가 없다.
+              cal.until = Date.now() + (Number(res.expires_in || 3600) - 120) * 1000;
+              cal.denied = false;
+            } else {
+              cal.denied = true;
+            }
+            resolve(cal.token && Date.now() < cal.until ? cal.token : null);
+          },
+          error_callback: () => { cal.denied = true; resolve(null); },
+        });
+      }
+      cal.client.requestAccessToken({ prompt: quiet ? '' : 'consent' });
+    });
+  }).catch(() => null);
+}
+
+/** 일정 하나를 캘린더가 아는 모양으로. 교시가 있으면 그 시각, 없으면 하루 종일. */
+function calBody(item) {
+  const body = {
+    summary: item.title,
+    extendedProperties: { private: { hanmin: CAL_MARK, period: String(item.period ?? '') } },
+  };
+  const slot = (state.school.periods || []).find((p) => p.period === item.period);
+  if (item.period && slot && slot.startTime && slot.endTime) {
+    body.start = { dateTime: `${item.date}T${slot.startTime}:00`, timeZone: 'Asia/Seoul' };
+    body.end = { dateTime: `${item.date}T${slot.endTime}:00`, timeZone: 'Asia/Seoul' };
+    body.summary = `${item.period}교시 ${item.title}`;
+  } else {
+    const next = addDays(parse(item.date), 1);
+    body.start = { date: item.date };
+    body.end = { date: iso(next) };   // 캘린더의 하루 종일은 끝날을 다음 날로 적는다
+  }
+  return body;
+}
+
+async function calFetch(url, init, quiet) {
+  const token = await calToken(quiet);
+  if (!token) return null;
+  const res = await fetch(url, {
+    ...init,
+    headers: { ...(init && init.headers), Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  });
+  if (res.status === 401) { cal.token = null; cal.until = 0; return null; }
+  if (!res.ok) return null;
+  return res.status === 204 ? {} : res.json();
+}
+
+/** 적거나 고친 것을 캘린더에도. 실패하면 기기에만 남는다 — 다음에 다시 올린다. */
+async function pushEventToCalendar(item) {
+  const saved = await calFetch(
+    item.gcalId ? `${CAL_API}/${encodeURIComponent(item.gcalId)}` : CAL_API,
+    { method: item.gcalId ? 'PATCH' : 'POST', body: JSON.stringify(calBody(item)) },
+    false,
+  );
+  if (!saved || !saved.id) {
+    /*
+     * 눌렀는데 아무 일도 안 일어나는 화면을 두지 않는다. 사람은 그럴 때 «고장»이라고
+     * 읽고, 다음에는 안 누른다. 안 된 이유와 그래도 남아 있다는 것을 함께 말한다.
+     */
+    state.calNote = '구글 캘린더에 올리지 못했습니다. 일정은 이 기기에 그대로 있습니다.';
+    render();
+    return;
+  }
+  state.calNote = null;
+  const next = state.events.map((row) => (row.id === item.id ? { ...row, gcalId: saved.id } : row));
+  saveEvents(next);
+  render();
+}
+
+async function removeEventFromCalendar(item) {
+  if (!item.gcalId) return;
+  await calFetch(`${CAL_API}/${encodeURIComponent(item.gcalId)}`, { method: 'DELETE' }, true);
+}
+
+/**
+ * 캘린더에 있는 것을 이 기기로 가져온다 — 기기를 바꿨을 때 빈 화면으로 시작하지 않게.
+ *
+ * 조용히 시도한다. 권한이 없으면 아무 일도 일어나지 않는다.
+ */
+async function pullEventsFromCalendar() {
+  const from = addDays(new Date(), -30);
+  const to = addDays(new Date(), 180);
+  const query = new URLSearchParams({
+    privateExtendedProperty: `hanmin=${CAL_MARK}`,
+    timeMin: `${iso(from)}T00:00:00Z`,
+    timeMax: `${iso(to)}T00:00:00Z`,
+    singleEvents: 'true',
+    maxResults: '250',
+  });
+  const found = await calFetch(`${CAL_API}?${query}`, { method: 'GET' }, true);
+  if (!found || !Array.isArray(found.items)) return;
+
+  const byGcal = new Map(state.events.filter((row) => row.gcalId).map((row) => [row.gcalId, row]));
+  const merged = [...state.events];
+  for (const remote of found.items) {
+    if (byGcal.has(remote.id)) continue;
+    const date = (remote.start && (remote.start.date || String(remote.start.dateTime || '').slice(0, 10))) || '';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    const raw = (remote.extendedProperties && remote.extendedProperties.private) || {};
+    const period = Number(raw.period) > 0 ? Number(raw.period) : null;
+    const title = String(remote.summary || '').replace(/^\d+교시\s*/, '').trim();
+    if (!title) continue;
+    merged.push({ id: newEventId(), date, period, title, gcalId: remote.id });
+  }
+  if (merged.length !== state.events.length) {
+    saveEvents(merged);
+    render();
+  }
 }
 
 /* ── 로그인 ───────────────────────────────────────────────────────────
