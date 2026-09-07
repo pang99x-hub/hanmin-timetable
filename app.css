@@ -168,6 +168,10 @@ button{font-family:inherit; cursor:pointer}
 .ev-edit button.ok{color:#fff; background:var(--now); border-color:var(--now)}
 .ev-edit button.del{margin-left:auto; color:var(--chg); border-color:var(--chg-line)}
 
+/* 하루 시간표에서 수업을 누르면 그 교시에 일정을 단다. */
+.day .cell.pick{cursor:pointer}
+.day .slot:not(.meal) .cell.pick:hover{border-color:var(--now-line)}
+
 /* ── 넓은 화면: 오늘 + 주 나란히 ── */
 .cols{display:grid; gap:22px; margin-top:16px}
 /*
@@ -275,17 +279,24 @@ button{font-family:inherit; cursor:pointer}
           overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%}
 .mo .mine.more{background:none; border:none; color:var(--ink-4); padding-left:1px}
 
-/* 달력에서 바로 적기. 칸을 누르는 것과 뜻이 겹치지 않게 따로 둔다. */
-.mo .add{position:absolute; right:2px; top:2px; width:18px; height:18px; padding:0;
-         display:grid; place-items:center; border:none; border-radius:6px; cursor:pointer;
-         background:none; color:var(--ink-4); font-size:12px; line-height:1; opacity:.45}
-.mo .add:hover, .mo .add:focus-visible{opacity:1; color:var(--now); background:var(--now-soft)}
-@media (hover:none){ .mo .add{opacity:.7} }
+/* 날짜 칸을 누르면 일정 적기, 날짜 숫자를 누르면 그날 시간표. */
+.mo td.pick{cursor:pointer}
+.mo td.pick:hover{border-color:var(--now-line)}
+.mo .d.go{cursor:pointer; padding:1px 3px; margin:-1px -3px; border-radius:5px}
+.mo .d.go:hover{color:var(--now); background:var(--now-soft)}
 
 /* 다가오는 일정에서 내 것 — 누르면 고친다. */
 .side .r.mine{width:100%; text-align:left; background:none; border:none; cursor:pointer;
               font:inherit; padding:0}
 .side .r.mine b{color:var(--now)}
+
+/* 주간표 칸에 붙은 내 일정. 수업을 누르면 그 수업에 일정을 단다. */
+.wk td.pick{cursor:pointer}
+.wk td.pick:hover{border-color:var(--now-line)}
+.wk .mine{display:block; width:100%; margin-top:3px; padding:1px 4px; border-radius:4px;
+          font-size:9px; font-weight:700; line-height:1.3; text-align:left; cursor:pointer;
+          color:var(--now); background:var(--now-soft); border:1px solid var(--now-line);
+          overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 
 /* ── 목록·안내 ── */
 .side{margin-top:16px; padding-top:13px; border-top:1px solid var(--line-2)}
