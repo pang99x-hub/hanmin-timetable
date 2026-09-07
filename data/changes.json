@@ -820,6 +820,19 @@
       "period": 1
     },
     {
+      "classId": "3-3",
+      "date": "2026-09-07",
+      "fromDate": "2026-09-10",
+      "fromPeriod": 6,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "심화 영어Ⅱ",
+      "newTeacher": "임연정",
+      "origSubject": "확률과 통계",
+      "origTeacher": "박소예",
+      "period": 4
+    },
+    {
       "classId": "3-4",
       "date": "2026-09-07",
       "fromDate": null,
@@ -1093,6 +1106,19 @@
       "period": 6
     },
     {
+      "classId": "3-3",
+      "date": "2026-09-10",
+      "fromDate": "2026-09-07",
+      "fromPeriod": 4,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "확률과 통계",
+      "newTeacher": "박소예",
+      "origSubject": "심화 영어Ⅱ",
+      "origTeacher": "임연정",
+      "period": 6
+    },
+    {
       "classId": "1-10",
       "date": "2026-09-11",
       "fromDate": null,
@@ -1156,6 +1182,32 @@
       "origSubject": "경제 수학",
       "origTeacher": "이태훈",
       "period": 4
+    },
+    {
+      "classId": "2-6",
+      "date": "2026-09-11",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "화학실험실",
+      "newSubject": null,
+      "newTeacher": "김서연",
+      "origSubject": "과학창의연구",
+      "origTeacher": "박경민",
+      "period": 6
+    },
+    {
+      "classId": "2-6",
+      "date": "2026-09-11",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "화학실험실",
+      "newSubject": null,
+      "newTeacher": "김예리",
+      "origSubject": "과학창의연구",
+      "origTeacher": "박경민",
+      "period": 7
     },
     {
       "classId": "2-8",
