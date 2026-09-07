@@ -138,6 +138,34 @@ button{font-family:inherit; cursor:pointer}
 .dday-edit button.ok{color:#fff; background:var(--now); border-color:var(--now)}
 .dday-edit button.del{margin-left:auto; color:var(--chg); border-color:var(--chg-line)}
 
+/* ── 내 일정 ──
+ * 학교가 정한 일정(고사·행사)과 색을 달리한다 — 지워도 되는 것과 아닌 것을 가른다.
+ */
+.ev{display:block; width:100%; margin-top:5px; padding:4px 8px; text-align:left; cursor:pointer;
+    font-size:11.5px; font-weight:650; color:var(--now); background:var(--now-soft);
+    border:1px solid var(--now-line); border-radius:7px}
+.ev.local{border-style:dashed}
+.ev .tt{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block}
+
+.evs{display:flex; flex-direction:column; gap:5px; align-items:flex-start; margin-top:12px}
+.evs .ev{width:auto; max-width:100%; margin-top:0}
+.ev-add{padding:5px 11px; font-size:11.5px; font-weight:700; color:var(--ink-4);
+        background:none; border:1px dashed var(--line); border-radius:9px; cursor:pointer}
+.ev-add:hover{color:var(--now); border-color:var(--now-line)}
+.ev-sync{padding:5px 10px; font-size:11px; font-weight:700; color:var(--chg);
+         background:var(--chg-soft); border:1px solid var(--chg-line); border-radius:8px; cursor:pointer}
+
+.ev-note{font-size:11px; line-height:1.5; color:var(--chg)}
+.ev-edit{display:flex; flex-wrap:wrap; gap:6px; align-items:center; width:100%;
+         padding:12px 14px; background:var(--card); border:1px solid var(--line); border-radius:12px}
+.ev-edit input, .ev-edit select{padding:7px 10px; font:inherit; font-size:13px; color:var(--ink);
+         background:var(--paper); border:1px solid var(--line); border-radius:9px}
+.ev-edit input[type="text"]{flex:1; min-width:150px}
+.ev-edit button{padding:7px 12px; font-size:12.5px; font-weight:700; color:var(--ink-2);
+         background:var(--paper); border:1px solid var(--line); border-radius:9px; cursor:pointer}
+.ev-edit button.ok{color:#fff; background:var(--now); border-color:var(--now)}
+.ev-edit button.del{margin-left:auto; color:var(--chg); border-color:var(--chg-line)}
+
 /* ── 넓은 화면: 오늘 + 주 나란히 ── */
 .cols{display:grid; gap:22px; margin-top:16px}
 /*
