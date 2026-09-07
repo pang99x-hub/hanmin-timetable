@@ -357,12 +357,23 @@ function changeForCell(list, period, lesson) {
   const found = [...here, ...extra];
   if (!found.length) return null;
   const cancel = found.find((chg) => chg.kind === 'cancel');
-  if (cancel) return { kind: 'cancel', subject: null, teacher: null, note: '수업 없음', stack: found };
+  /*
+   * 교시를 함께 돌려준다.
+   *
+   * 이 함수는 «어느 칸의 변경인가»를 이미 알고 부르는데(period 를 받는다), 돌려줄 때
+   * 그것을 빼먹고 있었다. 표에는 칸 자리가 곧 교시라 티가 안 났고, 「이번 주 바뀐 수업」
+   * 목록처럼 칸을 떠나 줄로 세우는 자리에서 «수 undefined교시» 로 새어 나왔다
+   * (2026-09-07 제보). 아는 것을 안 담아 보낸 쪽이 잘못이다.
+   */
+  if (cancel) {
+    return { kind: 'cancel', period, subject: null, teacher: null, note: '수업 없음', stack: found };
+  }
   const swap = found.find((chg) => chg.kind === 'swap');
   const substitute = found.find((chg) => chg.kind === 'substitute');
   const base = swap ?? substitute ?? found[0];
   return {
     kind: substitute ? 'substitute' : base.kind,
+    period,
     subject: (swap && (swap.newSubject || swap.origSubject)) || lesson.subject,
     teacher: (substitute && substitute.newTeacher) || (swap && swap.newTeacher) || null,
     // 보강·교체로 교실이 바뀌기도 한다. 이동수업은 «어디로 가나»가 곧 정보라
