@@ -65,6 +65,16 @@ button{font-family:inherit; cursor:pointer}
 
 /* ── 머리 ── */
 .top{display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap}
+/*
+ * 브랜드 머리 — 학교 이름은 작고 넓은 자간으로, 「시간표」만 색을 준다.
+ * 큰 날짜와 자리를 다투지 않게 크기를 확실히 낮춘다.
+ */
+.brand{display:flex; align-items:baseline; gap:6px; margin:0 0 5px;
+       font-size:11.5px; font-weight:700; letter-spacing:.18em; color:var(--ink-4);
+       text-transform:none}
+.brand b{font-weight:800; color:var(--now); letter-spacing:.18em}
+@media (min-width:900px){ .brand{font-size:12.5px} }
+
 .title{font-size:24px; font-weight:800; letter-spacing:-.03em; line-height:1.15; margin:0}
 .title em{font-style:normal; color:var(--ink-3); font-size:15px; font-weight:750; margin-left:5px}
 @media (min-width:900px){ .title{font-size:28px} }
@@ -107,7 +117,13 @@ button{font-family:inherit; cursor:pointer}
  * 스크롤을 늘릴 뿐이다(2026-09-06 지적). 주간은 탭으로 언제든 볼 수 있다.
  */
 @media (min-width:980px){
-  .cols.both{grid-template-columns:minmax(0,310px) minmax(0,1fr)}
+  /*
+   * 두 표가 붙어 있으면 어디까지가 하루고 어디부터가 한 주인지 눈이 매번 다시 찾는다.
+   * 사이를 넉넉히 벌리고 가는 선을 하나 세운다 — 선은 공백보다 적은 자리로 같은 말을
+   * 한다(2026-09-07 지적).
+   */
+  .cols.both{grid-template-columns:minmax(0,310px) minmax(0,1fr); gap:32px}
+  .cols.both > .panel + .panel{padding-left:30px; border-left:1px solid var(--line-2)}
 }
 @media (max-width:979px){
   .cols.both > .panel + .panel{display:none}
