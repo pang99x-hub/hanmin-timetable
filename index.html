@@ -13,12 +13,20 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="시간표">
-<link rel="stylesheet" href="app.css">
+<!--
+  주소 뒤의 v 는 **바뀔 때마다 손으로 올린다.**
+
+  깃허브 페이지스는 app.js 를 10분(max-age=600) 동안 브라우저가 붙잡게 한다. 고쳐서
+  올려도 그동안은 옛 파일이 돌고, 사람은 «안 고쳐졌다»고 본다 — 실제로 그렇게 한 번
+  헛돌았다(2026-09-07 «교시가 안 나온다»). 주소가 달라지면 캐시는 다른 파일로 보고
+  새로 받는다.
+-->
+<link rel="stylesheet" href="app.css?v=20260907a">
 </head>
 <body>
 <div class="wrap"><div id="app">
   <div class="notice">시간표를 불러오는 중입니다…</div>
 </div></div>
-<script src="app.js"></script>
+<script src="app.js?v=20260907a"></script>
 </body>
 </html>
