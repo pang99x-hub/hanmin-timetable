@@ -23,6 +23,8 @@
 
 const DAYS = ['월', '화', '수', '목', '금'];
 const KEY = 'hanmin.timetable.me.v1';
+/* 디데이는 이 기기에만 남는다. 서버로 보내지 않고, 서버에서 받지도 않는다. */
+const DDAY_KEY = 'hanmin.timetable.dday.v1';
 const DATA = 'data/';
 
 /* 창구와 구글 로그인. 학교가 바뀌면 이 두 줄만 고친다. */
@@ -47,6 +49,8 @@ const state = {
   view: 'day',       // day | week | month
   cursor: new Date(),
   loadedAt: null,
+  dday: null,        // { label, date } — 이 기기에만 남는다
+  ddayEdit: false,   // 고치는 중인가
 };
 
 /* ── 날짜 도구 ── 시간대에 흔들리지 않게 로컬 기준으로만 다룬다. */
@@ -86,6 +90,7 @@ async function boot() {
   state.loadedAt = classes.generatedAt || null;
 
   try { state.me = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { state.me = null; }
+  state.dday = loadDday();
   // 주말에 열면 다음 수업일부터 보여 준다 — 빈 주말을 띄워 놓을 이유가 없다.
   let cur = new Date();
   while (!isWeekday(cur)) cur = addDays(cur, 1);
@@ -111,6 +116,40 @@ const save = () => {
   if (state.viewing) return;
   localStorage.setItem(KEY, JSON.stringify(state.me));
 };
+
+/* ── 디데이 ──────────────────────────────────────────────────────────
+ * 학생이 직접 정한 날까지 며칠 남았는지 시간표 위에 크게 띄운다.
+ *
+ * 자료를 주고받지 않는다. 날짜도 이름도 이 기기의 저장소에만 있다 — 서버에 물을 것이
+ * 없으니 시험 기간에 900명이 한꺼번에 열어도 늘어나는 것이 없다.
+ *
+ * 교사가 학생 화면을 보는 중이면 그 학생의 디데이가 아니라 **교사 자기 것**이 뜬다.
+ * 남의 기기 저장소를 들여다볼 방법도 없고, 그래야 할 이유도 없다.
+ */
+function loadDday() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(DDAY_KEY) || 'null');
+    if (!raw || !raw.date || !/^\d{4}-\d{2}-\d{2}$/.test(raw.date)) return null;
+    return { label: String(raw.label || '').slice(0, 20), date: raw.date };
+  } catch { return null; }
+}
+
+function saveDday(next) {
+  if (next) localStorage.setItem(DDAY_KEY, JSON.stringify(next));
+  else localStorage.removeItem(DDAY_KEY);
+  state.dday = next;
+}
+
+/** 오늘부터 그 날까지 며칠. 지난 날은 음수. 시각은 보지 않는다 — 날짜만 센다. */
+function daysUntil(dateStr) {
+  const today = parse(iso(new Date()));
+  return Math.round((parse(dateStr) - today) / 86400000);
+}
+
+function ddayText(left) {
+  if (left === 0) return 'D-DAY';
+  return left > 0 ? `D-${left}` : `D+${-left}`;
+}
 
 /* ── 내 시간표 만들기 ────────────────────────────────────────────────
  * 반 시간표 + 내가 고른 강좌. 강좌를 아직 안 고른 밴드는 «고르기»로 남긴다 —
@@ -322,6 +361,65 @@ function myChangeCount(date) {
 }
 
 /* ── 그리기 ── */
+/* 시간표 위에 놓는 디데이 칸. 정해 두지 않았으면 작은 단추 하나로만 있는다. */
+function ddayBar() {
+  if (state.ddayEdit) return ddayEditor();
+  if (!state.dday) {
+    const box = el('div', 'dday-empty');
+    const add = el('button', null, '디데이 설정');
+    add.onclick = () => { state.ddayEdit = true; render(); };
+    box.appendChild(add);
+    return box;
+  }
+
+  const left = daysUntil(state.dday.date);
+  const box = el('button', 'dday');
+  box.setAttribute('aria-label', '디데이 고치기');
+  box.onclick = () => { state.ddayEdit = true; render(); };
+  const big = el('strong', left === 0 ? 'now' : null, ddayText(left));
+  box.appendChild(big);
+  const side = el('span', 'meta');
+  if (state.dday.label) side.appendChild(el('b', null, state.dday.label));
+  const when = parse(state.dday.date);
+  side.appendChild(el('span', null,
+    `${when.getFullYear()}. ${when.getMonth() + 1}. ${when.getDate()}. ${'일월화수목금토'[when.getDay()]}`));
+  box.appendChild(side);
+  return box;
+}
+
+function ddayEditor() {
+  const box = el('div', 'dday-edit');
+  const name = document.createElement('input');
+  name.type = 'text';
+  name.maxLength = 20;
+  name.placeholder = '이름 (예: 수능, 기말고사)';
+  name.value = state.dday ? state.dday.label : '';
+  name.setAttribute('aria-label', '디데이 이름');
+
+  const when = document.createElement('input');
+  when.type = 'date';
+  when.value = state.dday ? state.dday.date : '';
+  when.setAttribute('aria-label', '디데이 날짜');
+
+  const ok = el('button', 'ok', '저장');
+  ok.onclick = () => {
+    if (!when.value) return;
+    saveDday({ label: name.value.trim(), date: when.value });
+    state.ddayEdit = false;
+    render();
+  };
+  const cancel = el('button', null, '취소');
+  cancel.onclick = () => { state.ddayEdit = false; render(); };
+
+  box.append(name, when, ok, cancel);
+  if (state.dday) {
+    const remove = el('button', 'del', '지우기');
+    remove.onclick = () => { saveDday(null); state.ddayEdit = false; render(); };
+    box.appendChild(remove);
+  }
+  return box;
+}
+
 function render() {
   const app = document.getElementById('app');
   if (state.teacher && !state.me) {
@@ -336,6 +434,7 @@ function render() {
   }
   app.innerHTML = '';
   app.appendChild(header());
+  app.appendChild(ddayBar());
   const cols = document.createElement('div');
   cols.className = state.view === 'day' ? 'cols both' : 'cols';
   if (state.view === 'day') { cols.appendChild(todayPanel()); cols.appendChild(weekPanel()); }

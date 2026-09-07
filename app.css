@@ -108,6 +108,36 @@ button{font-family:inherit; cursor:pointer}
 .rotate{margin:14px 0 0; padding:10px 13px; border-radius:10px; background:var(--chg-soft);
         border:1px solid var(--chg-line); color:var(--chg); font-size:13px; font-weight:750}
 
+/* ── 디데이 ──
+ * 시간표 위에 크게 하나. 남은 날이 먼저 읽히고, 이름과 날짜는 옆에서 거든다.
+ */
+.dday{display:flex; align-items:baseline; gap:12px; width:100%; margin-top:14px;
+      padding:14px 18px; text-align:left; cursor:pointer;
+      background:var(--now-soft); border:1px solid var(--now-line); border-radius:14px}
+.dday strong{font-size:34px; font-weight:850; letter-spacing:-.035em; line-height:1;
+             color:var(--now); font-variant-numeric:tabular-nums}
+.dday strong.now{letter-spacing:-.02em}
+.dday .meta{display:flex; flex-direction:column; gap:2px; min-width:0}
+.dday .meta b{font-size:14px; font-weight:750; color:var(--ink);
+              overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.dday .meta span{font-size:11.5px; color:var(--ink-3)}
+@media (min-width:900px){ .dday strong{font-size:42px} }
+
+.dday-empty{margin-top:12px}
+.dday-empty button{padding:5px 11px; font-size:11.5px; font-weight:700; color:var(--ink-4);
+                   background:none; border:1px dashed var(--line); border-radius:9px; cursor:pointer}
+.dday-empty button:hover{color:var(--now); border-color:var(--now-line)}
+
+.dday-edit{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:14px;
+           padding:12px 14px; background:var(--card); border:1px solid var(--line); border-radius:14px}
+.dday-edit input{padding:7px 10px; font:inherit; font-size:13px; color:var(--ink);
+                 background:var(--paper); border:1px solid var(--line); border-radius:9px}
+.dday-edit input[type="text"]{flex:1; min-width:140px}
+.dday-edit button{padding:7px 12px; font-size:12.5px; font-weight:700; color:var(--ink-2);
+                  background:var(--paper); border:1px solid var(--line); border-radius:9px; cursor:pointer}
+.dday-edit button.ok{color:#fff; background:var(--now); border-color:var(--now)}
+.dday-edit button.del{margin-left:auto; color:var(--chg); border-color:var(--chg-line)}
+
 /* ── 넓은 화면: 오늘 + 주 나란히 ── */
 .cols{display:grid; gap:22px; margin-top:16px}
 /*
