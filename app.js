@@ -794,7 +794,7 @@ function todayPanel() {
       cell.appendChild(el('div', 'by', '어떤 강좌를 듣는지 골라 주세요'));
       const wrap = el('div', 'pick');
       const btn = el('button', null, '고르기');
-      btn.onclick = () => openPicker(lesson.band);
+      btn.onclick = (e) => { e.stopPropagation(); openPicker(lesson.band); };
       wrap.appendChild(btn);
       cell.appendChild(wrap);
     } else {
@@ -817,6 +817,18 @@ function todayPanel() {
     }
     // 그 교시에 붙여 둔 내 일정. 수업 아래에 붙어야 «3교시에 뭐 있더라»가 한눈에 온다.
     for (const item of eventsAt(state.cursor, period.period)) cell.appendChild(eventChip(item));
+
+    /*
+     * 수업을 누르면 그 교시에 일정을 단다. 날짜와 교시가 이미 정해져 있으니 사람이
+     * 고를 것은 «무엇을» 하나뿐이다. 공강도 마찬가지다 — 빈 시간에 할 일을 적는다.
+     */
+    cell.classList.add('pick');
+    cell.setAttribute('role', 'button');
+    cell.setAttribute('aria-label', `${period.period}교시에 일정 추가`);
+    cell.onclick = () => {
+      state.eventEdit = { date: iso(state.cursor), period: period.period, title: '' };
+      render();
+    };
     if (chg) slot.classList.add('chg');
     if (isToday && !chg && lesson && now.toTimeString().slice(0, 5) >= period.startTime
         && now.toTimeString().slice(0, 5) < period.endTime) {
@@ -896,6 +908,7 @@ function weekPanel() {
     pn.appendChild(el('em', null, period.startTime));
     row.appendChild(pn);
     for (let i = 0; i < 5; i += 1) {
+      const date = addDays(mon, i);
       const lesson = byDay[i].lessons.get(period.period);
       const chg = changeForCell(byDay[i].changes, period.period, lesson);
       const td = el('td');
@@ -908,6 +921,27 @@ function weekPanel() {
         ? `${chg.teacher ?? ''} ${chg.note}`.trim()
         : lesson.teacher;
       if (who) td.appendChild(el('small', null, who));
+
+      /*
+       * 그 수업에 적어 둔 일정. 「목요일 3교시 수행평가」는 주간표를 훑을 때 보여야
+       * 쓸모가 있다 — 한 주를 보는 화면에서 그것만 안 보이면 다시 날짜별로 들어가야 한다.
+       */
+      const mine = eventsAt(date, period.period);
+      for (const item of mine) {
+        const chip = el('button', 'mine', item.title);
+        chip.onclick = (e) => { e.stopPropagation(); state.eventEdit = { ...item }; render(); };
+        td.appendChild(chip);
+      }
+
+      /*
+       * 수업을 누르면 그 수업에 일정을 단다. 날짜와 교시가 이미 정해져 있으므로
+       * 사람이 고를 것은 «무엇을» 하나뿐이다.
+       */
+      td.classList.add('pick');
+      td.onclick = () => {
+        state.eventEdit = { date: iso(date), period: period.period, title: '' };
+        render();
+      };
       row.appendChild(td);
     }
     table.appendChild(row);
@@ -970,7 +1004,8 @@ function monthPanel() {
       if (outside) td.classList.add('out');
       else { any = true; if (!isWeekday(date)) td.classList.add('off'); }
       if (sameDay(date, new Date())) td.classList.add('today');
-      td.appendChild(el('span', 'd', String(date.getDate())));
+      const num = el('span', 'd', String(date.getDate()));
+      td.appendChild(num);
       if (!outside) {
         const ev = calendarOn(date);
         if (ev) {
@@ -993,19 +1028,26 @@ function monthPanel() {
         if (more > 0) td.appendChild(el('span', 'mine more', `외 ${more}`));
 
         /*
-         * 달력에서 바로 적는다. 칸을 누르면 그날 시간표로 가는 길은 그대로 두고,
-         * 적는 것은 ＋ 로 가른다 — 한 번 누르는 것에 두 가지 뜻을 담지 않는다.
+         * 날짜를 누르면 그날 일정을 적는다. 달력에서 하고 싶은 일이 그것이기 때문이다.
+         *
+         * 그날 시간표로 가는 길은 **날짜 숫자**에 남긴다 — 구글 캘린더도 그렇게 나눈다.
+         * 한 칸에 두 가지 뜻을 담되, 누르는 자리로 가른다.
          */
-        const plus = el('button', 'add', '＋');
-        plus.setAttribute('aria-label', `${date.getMonth() + 1}월 ${date.getDate()}일 일정 추가`);
-        plus.onclick = (e) => {
+        num.classList.add('go');
+        num.setAttribute('role', 'button');
+        num.setAttribute('aria-label', `${date.getMonth() + 1}월 ${date.getDate()}일 시간표 보기`);
+        num.onclick = (e) => {
           e.stopPropagation();
+          state.cursor = date; state.view = 'day'; render();
+        };
+
+        td.classList.add('pick');
+        td.setAttribute('role', 'button');
+        td.setAttribute('aria-label', `${date.getMonth() + 1}월 ${date.getDate()}일 일정 추가`);
+        td.onclick = () => {
           state.eventEdit = { date: iso(date), period: null, title: '' };
           render();
         };
-        td.appendChild(plus);
-
-        td.onclick = () => { state.cursor = date; state.view = 'day'; render(); };
       }
       row.appendChild(td);
     }
