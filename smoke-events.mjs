@@ -119,7 +119,33 @@ else ok(`캘린더에서 ${calStore.size}건을 되받았다`);
 if (!w.eval("state.events.some((e) => e.period === 2 && e.title === '발표')")) fail('교시가 안 따라왔다');
 else ok('교시와 제목이 그대로 따라온다');
 
-console.log('\n[7] 우리 서버에는 아무것도 가지 않는다');
+console.log('\n[7] 달력에서 바로 적는다');
+w.eval("state.eventEdit = null; state.view = 'month'; render();");
+const cells = [...app.querySelectorAll('.mo td')].filter((td) => !td.classList.contains('out'));
+const plus = cells.find((td) => td.querySelector('.add'));
+if (!plus) fail('달력 칸에 ＋ 가 없다');
+else ok('달력 칸마다 ＋ 가 있다');
+plus.querySelector('.add').click();
+if (!app.querySelector('.ev-edit')) fail('＋ 를 눌러도 적는 칸이 안 열린다');
+else ok('＋ 를 누르면 그 자리에서 적는 칸이 열린다');
+const label = plus.querySelector('.add').getAttribute('aria-label');
+const picked = app.querySelector('.ev-edit input[type="date"]').value;
+if (!label.includes(String(Number(picked.slice(8)))) ) fail(`누른 날짜가 안 들어갔다 — ${label} vs ${picked}`);
+else ok(`누른 날짜가 그대로 들어간다 — ${picked}`);
+// 칸을 누르는 것과 뜻이 겹치지 않아야 한다.
+w.eval("state.eventEdit = null; render();");
+const before = w.eval('state.view');
+[...app.querySelectorAll('.mo td')].find((td) => !td.classList.contains('out')).click();
+if (w.eval('state.view') === before) fail('칸을 눌러도 그날로 가지 않는다');
+else ok('칸을 누르면 종전대로 그날 시간표로 간다');
+
+console.log('\n[8] 적어 둔 일정이 달력 칸에 보인다');
+w.eval(`state.view='month'; saveEvents([{ id:'m', date:'${today}', period:4, title:'모의고사', gcalId:'g0' }]); render();`);
+const shown = [...app.querySelectorAll('.mo .mine')].some((n) => n.textContent.includes('모의고사'));
+if (!shown) fail('달력 칸에 안 보인다');
+else ok('«4교시 모의고사» 가 그 날짜 칸에 보인다');
+
+console.log('\n[9] 우리 서버에는 아무것도 가지 않는다');
 if (deskCalls !== beforeDesk) fail(`창구를 ${deskCalls - beforeDesk}번 불렀다`);
 else ok('창구 호출이 늘지 않았다');
 if (dataCalls !== beforeData) fail(`정적 파일을 ${dataCalls - beforeData}번 더 받았다`);
