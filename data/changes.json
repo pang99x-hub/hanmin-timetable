@@ -1,32 +1,6 @@
 {
   "changes": [
     {
-      "classId": "2-5",
-      "date": "2026-08-26",
-      "fromDate": "2026-09-01",
-      "fromPeriod": 5,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "확률과 통계",
-      "newTeacher": "신창수",
-      "origSubject": "역학과 에너지",
-      "origTeacher": "신성용",
-      "period": 5
-    },
-    {
-      "classId": "2-7",
-      "date": "2026-08-26",
-      "fromDate": "2026-09-01",
-      "fromPeriod": 2,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "확률과 통계",
-      "newTeacher": "신창수",
-      "origSubject": "미적분Ⅱ",
-      "origTeacher": "최인애",
-      "period": 2
-    },
-    {
       "classId": "3-1",
       "date": "2026-08-31",
       "fromDate": "2026-09-02",
@@ -64,58 +38,6 @@
       "origSubject": "통합사회2",
       "origTeacher": "김제희",
       "period": 5
-    },
-    {
-      "classId": "1-8",
-      "date": "2026-09-01",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "윤길성",
-      "origSubject": "공통영어2",
-      "origTeacher": "신동현",
-      "period": 5
-    },
-    {
-      "classId": "2-5",
-      "date": "2026-09-01",
-      "fromDate": "2026-08-26",
-      "fromPeriod": 5,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "역학과 에너지",
-      "newTeacher": "신성용",
-      "origSubject": "확률과 통계",
-      "origTeacher": "신창수",
-      "period": 5
-    },
-    {
-      "classId": "2-7",
-      "date": "2026-09-01",
-      "fromDate": "2026-08-26",
-      "fromPeriod": 2,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "미적분Ⅱ",
-      "newTeacher": "최인애",
-      "origSubject": "확률과 통계",
-      "origTeacher": "신창수",
-      "period": 2
-    },
-    {
-      "classId": "3-8",
-      "date": "2026-09-01",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "정윤진",
-      "origSubject": "나라사랑과 보훈",
-      "origTeacher": "안기종",
-      "period": 4
     },
     {
       "classId": "1-2",
@@ -2276,7 +2198,7 @@
       "period": 5
     }
   ],
-  "from": "2026-09-01",
+  "from": "2026-09-02",
   "schema": 1,
-  "to": "2026-10-13"
+  "to": "2026-10-14"
 }
