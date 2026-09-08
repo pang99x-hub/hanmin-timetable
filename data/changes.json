@@ -885,6 +885,19 @@
       "period": 2
     },
     {
+      "classId": "1-13",
+      "date": "2026-09-08",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "장현화",
+      "origSubject": "한문",
+      "origTeacher": "김용욱",
+      "period": 5
+    },
+    {
       "classId": "1-2",
       "date": "2026-09-08",
       "fromDate": "2026-09-10",
@@ -1080,6 +1093,58 @@
       "period": 1
     },
     {
+      "classId": "3-4",
+      "date": "2026-09-09",
+      "fromDate": "2026-09-10",
+      "fromPeriod": 2,
+      "kind": "swap",
+      "newRoom": "합창실",
+      "newSubject": "음악",
+      "newTeacher": "송인호",
+      "origSubject": "고전과 윤리",
+      "origTeacher": "이동혁",
+      "period": 1
+    },
+    {
+      "classId": "3-5",
+      "date": "2026-09-09",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "이재훈",
+      "origSubject": "창체",
+      "origTeacher": "채원식",
+      "period": 5
+    },
+    {
+      "classId": "3-5",
+      "date": "2026-09-09",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "이재훈",
+      "origSubject": "창체",
+      "origTeacher": "채원식",
+      "period": 6
+    },
+    {
+      "classId": "3-5",
+      "date": "2026-09-09",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "이재훈",
+      "origSubject": "창체",
+      "origTeacher": "채원식",
+      "period": 7
+    },
+    {
       "classId": "3-9",
       "date": "2026-09-09",
       "fromDate": "2026-09-11",
@@ -1132,6 +1197,19 @@
       "period": 6
     },
     {
+      "classId": "2-13",
+      "date": "2026-09-10",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "박소현",
+      "origSubject": "화법과 언어",
+      "origTeacher": "임혜림",
+      "period": 7
+    },
+    {
       "classId": "3-3",
       "date": "2026-09-10",
       "fromDate": "2026-09-07",
@@ -1143,6 +1221,19 @@
       "origSubject": "심화 영어Ⅱ",
       "origTeacher": "임연정",
       "period": 6
+    },
+    {
+      "classId": "3-4",
+      "date": "2026-09-10",
+      "fromDate": "2026-09-09",
+      "fromPeriod": 1,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "고전과 윤리",
+      "newTeacher": "이동혁",
+      "origSubject": "음악",
+      "origTeacher": "송인호",
+      "period": 2
     },
     {
       "classId": "1-10",
