@@ -950,6 +950,19 @@
       "period": 3
     },
     {
+      "classId": "3-10",
+      "date": "2026-09-08",
+      "fromDate": "2026-09-09",
+      "fromPeriod": 1,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "화법과 작문",
+      "newTeacher": "김관우",
+      "origSubject": "화법과 작문",
+      "origTeacher": "이재훈",
+      "period": 6
+    },
+    {
       "classId": "3-8",
       "date": "2026-09-08",
       "fromDate": null,
@@ -1052,6 +1065,19 @@
       "origSubject": "화학 반응의 세계",
       "origTeacher": "김예리",
       "period": 5
+    },
+    {
+      "classId": "3-10",
+      "date": "2026-09-09",
+      "fromDate": "2026-09-08",
+      "fromPeriod": 6,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "화법과 작문",
+      "newTeacher": "이재훈",
+      "origSubject": "화법과 작문",
+      "origTeacher": "김관우",
+      "period": 1
     },
     {
       "classId": "3-9",
@@ -1324,6 +1350,19 @@
       "newTeacher": "김제희",
       "origSubject": "한국사2",
       "origTeacher": "김여운",
+      "period": 2
+    },
+    {
+      "classId": "3-1",
+      "date": "2026-09-14",
+      "fromDate": "2026-09-18",
+      "fromPeriod": 5,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "심화 영어Ⅱ",
+      "newTeacher": "임연정",
+      "origSubject": "나라사랑과 보훈",
+      "origTeacher": "김성자",
       "period": 2
     },
     {
@@ -1639,6 +1678,19 @@
       "period": 2
     },
     {
+      "classId": "3-3",
+      "date": "2026-09-17",
+      "fromDate": "2026-09-18",
+      "fromPeriod": 5,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "나라사랑과 보훈",
+      "newTeacher": "김성자",
+      "origSubject": "심화 영어Ⅱ",
+      "origTeacher": "임연정",
+      "period": 6
+    },
+    {
       "classId": "3-9",
       "date": "2026-09-17",
       "fromDate": null,
@@ -1691,6 +1743,19 @@
       "period": 6
     },
     {
+      "classId": "3-1",
+      "date": "2026-09-18",
+      "fromDate": "2026-09-14",
+      "fromPeriod": 2,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "나라사랑과 보훈",
+      "newTeacher": "김성자",
+      "origSubject": "심화 영어Ⅱ",
+      "origTeacher": "임연정",
+      "period": 5
+    },
+    {
       "classId": "3-10",
       "date": "2026-09-18",
       "fromDate": null,
@@ -1741,6 +1806,19 @@
       "origSubject": "심화 영어Ⅱ",
       "origTeacher": "김인정",
       "period": 3
+    },
+    {
+      "classId": "3-3",
+      "date": "2026-09-18",
+      "fromDate": "2026-09-17",
+      "fromPeriod": 6,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "심화 영어Ⅱ",
+      "newTeacher": "임연정",
+      "origSubject": "나라사랑과 보훈",
+      "origTeacher": "김성자",
+      "period": 5
     },
     {
       "classId": "1-10",
