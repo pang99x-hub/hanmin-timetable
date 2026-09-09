@@ -265,12 +265,12 @@
       "date": "2026-09-03",
       "fromDate": "2026-09-03",
       "fromPeriod": 1,
-      "kind": "substitute",
+      "kind": "swap",
       "newRoom": null,
       "newSubject": "확률과 통계",
-      "newTeacher": "최인애",
-      "origSubject": "확률과 통계",
-      "origTeacher": "박소현",
+      "newTeacher": "박소현",
+      "origSubject": "영어Ⅱ",
+      "origTeacher": "장현화",
       "period": 7
     },
     {
@@ -278,12 +278,12 @@
       "date": "2026-09-03",
       "fromDate": "2026-09-03",
       "fromPeriod": 1,
-      "kind": "swap",
+      "kind": "substitute",
       "newRoom": null,
       "newSubject": "확률과 통계",
-      "newTeacher": "박소현",
-      "origSubject": "영어Ⅱ",
-      "origTeacher": "장현화",
+      "newTeacher": "최인애",
+      "origSubject": "확률과 통계",
+      "origTeacher": "박소현",
       "period": 7
     },
     {
@@ -911,6 +911,32 @@
       "period": 6
     },
     {
+      "classId": "1-5",
+      "date": "2026-09-09",
+      "fromDate": "2026-09-09",
+      "fromPeriod": 7,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "정보",
+      "newTeacher": "엄태운",
+      "origSubject": "통합과학2",
+      "origTeacher": "임소현",
+      "period": 3
+    },
+    {
+      "classId": "1-5",
+      "date": "2026-09-09",
+      "fromDate": "2026-09-09",
+      "fromPeriod": 3,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "통합과학2",
+      "newTeacher": "임소현",
+      "origSubject": "정보",
+      "origTeacher": "엄태운",
+      "period": 7
+    },
+    {
       "classId": "1-7",
       "date": "2026-09-09",
       "fromDate": "2026-09-08",
@@ -1013,6 +1039,45 @@
       "origSubject": "화법과 작문",
       "origTeacher": "김관우",
       "period": 1
+    },
+    {
+      "classId": "3-13",
+      "date": "2026-09-09",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "김인정",
+      "origSubject": "창체",
+      "origTeacher": "박수진",
+      "period": 5
+    },
+    {
+      "classId": "3-13",
+      "date": "2026-09-09",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "김인정",
+      "origSubject": "창체",
+      "origTeacher": "박수진",
+      "period": 6
+    },
+    {
+      "classId": "3-13",
+      "date": "2026-09-09",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "김인정",
+      "origSubject": "창체",
+      "origTeacher": "박수진",
+      "period": 7
     },
     {
       "classId": "3-4",
@@ -1418,6 +1483,19 @@
       "period": 4
     },
     {
+      "classId": "1-1",
+      "date": "2026-09-15",
+      "fromDate": "2026-09-18",
+      "fromPeriod": 1,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "공통영어2",
+      "newTeacher": "공대현",
+      "origSubject": "공통국어2",
+      "origTeacher": "김지수",
+      "period": 1
+    },
+    {
       "classId": "1-11",
       "date": "2026-09-15",
       "fromDate": "2026-09-16",
@@ -1441,6 +1519,19 @@
       "newTeacher": "김제희",
       "origSubject": "통합사회2",
       "origTeacher": "민준형",
+      "period": 4
+    },
+    {
+      "classId": "1-3",
+      "date": "2026-09-15",
+      "fromDate": "2026-09-18",
+      "fromPeriod": 6,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "공통영어2",
+      "newTeacher": "공대현",
+      "origSubject": "공통국어2",
+      "origTeacher": "김지수",
       "period": 4
     },
     {
@@ -1545,6 +1636,19 @@
       "newTeacher": "김여운",
       "origSubject": "통합사회2",
       "origTeacher": "김제희",
+      "period": 7
+    },
+    {
+      "classId": "1-5",
+      "date": "2026-09-16",
+      "fromDate": "2026-09-18",
+      "fromPeriod": 4,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "통합사회2",
+      "newTeacher": "민준형",
+      "origSubject": "정보",
+      "origTeacher": "엄태운",
       "period": 7
     },
     {
@@ -1717,6 +1821,19 @@
       "period": 6
     },
     {
+      "classId": "1-1",
+      "date": "2026-09-18",
+      "fromDate": "2026-09-15",
+      "fromPeriod": 1,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "공통국어2",
+      "newTeacher": "김지수",
+      "origSubject": "공통영어2",
+      "origTeacher": "공대현",
+      "period": 1
+    },
+    {
       "classId": "1-10",
       "date": "2026-09-18",
       "fromDate": "2026-09-17",
@@ -1727,6 +1844,32 @@
       "newTeacher": "유현웅",
       "origSubject": "공통영어2",
       "origTeacher": "신동현",
+      "period": 4
+    },
+    {
+      "classId": "1-3",
+      "date": "2026-09-18",
+      "fromDate": "2026-09-15",
+      "fromPeriod": 4,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "공통국어2",
+      "newTeacher": "김지수",
+      "origSubject": "공통영어2",
+      "origTeacher": "공대현",
+      "period": 6
+    },
+    {
+      "classId": "1-5",
+      "date": "2026-09-18",
+      "fromDate": "2026-09-16",
+      "fromPeriod": 7,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "정보",
+      "newTeacher": "엄태운",
+      "origSubject": "통합사회2",
+      "origTeacher": "민준형",
       "period": 4
     },
     {
