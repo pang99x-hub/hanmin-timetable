@@ -148,12 +148,12 @@
       "date": "2026-09-03",
       "fromDate": "2026-09-03",
       "fromPeriod": 1,
-      "kind": "swap",
+      "kind": "substitute",
       "newRoom": null,
       "newSubject": "확률과 통계",
-      "newTeacher": "박소현",
-      "origSubject": "영어Ⅱ",
-      "origTeacher": "장현화",
+      "newTeacher": "최인애",
+      "origSubject": "확률과 통계",
+      "origTeacher": "박소현",
       "period": 7
     },
     {
@@ -161,12 +161,12 @@
       "date": "2026-09-03",
       "fromDate": "2026-09-03",
       "fromPeriod": 1,
-      "kind": "substitute",
+      "kind": "swap",
       "newRoom": null,
       "newSubject": "확률과 통계",
-      "newTeacher": "최인애",
-      "origSubject": "확률과 통계",
-      "origTeacher": "박소현",
+      "newTeacher": "박소현",
+      "origSubject": "영어Ⅱ",
+      "origTeacher": "장현화",
       "period": 7
     },
     {
@@ -1951,6 +1951,19 @@
       "period": 3
     },
     {
+      "classId": "1-9",
+      "date": "2026-09-21",
+      "fromDate": "2026-09-22",
+      "fromPeriod": 1,
+      "kind": "swap",
+      "newRoom": "제2음악실",
+      "newSubject": "음악과 융합",
+      "newTeacher": "유현웅",
+      "origSubject": "공통영어2",
+      "origTeacher": "신동현",
+      "period": 4
+    },
+    {
       "classId": "1-10",
       "date": "2026-09-22",
       "fromDate": null,
@@ -1988,6 +2001,19 @@
       "origSubject": "통합과학2",
       "origTeacher": "최다은",
       "period": 2
+    },
+    {
+      "classId": "1-9",
+      "date": "2026-09-22",
+      "fromDate": "2026-09-21",
+      "fromPeriod": 4,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "공통영어2",
+      "newTeacher": "신동현",
+      "origSubject": "음악과 융합",
+      "origTeacher": "유현웅",
+      "period": 1
     },
     {
       "classId": "1-9",
@@ -2274,6 +2300,19 @@
       "origSubject": "창의적 문제 해결 연습",
       "origTeacher": "최다은",
       "period": 6
+    },
+    {
+      "classId": "1-9",
+      "date": "2026-09-30",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "정헌정",
+      "origSubject": "스페인어권 언어와 역사의 이해2",
+      "origTeacher": "신승",
+      "period": 7
     },
     {
       "classId": "1-10",
