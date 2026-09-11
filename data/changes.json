@@ -1158,6 +1158,19 @@
       "period": 2
     },
     {
+      "classId": "2-10",
+      "date": "2026-09-14",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "과학교실(3층)",
+      "newSubject": null,
+      "newTeacher": "최민수",
+      "origSubject": "생물의 유전",
+      "origTeacher": "김상일",
+      "period": 2
+    },
+    {
       "classId": "3-1",
       "date": "2026-09-14",
       "fromDate": "2026-09-18",
@@ -1325,6 +1338,19 @@
       "origSubject": "공통국어2",
       "origTeacher": "김지수",
       "period": 4
+    },
+    {
+      "classId": "2-10",
+      "date": "2026-09-15",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "과학교실(3층)",
+      "newSubject": null,
+      "newTeacher": "최민수",
+      "origSubject": "생물의 유전",
+      "origTeacher": "김상일",
+      "period": 3
     },
     {
       "classId": "3-10",
@@ -1574,6 +1600,19 @@
       "period": 2
     },
     {
+      "classId": "2-9",
+      "date": "2026-09-16",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "최민수",
+      "origSubject": "생물의 유전",
+      "origTeacher": "김상일",
+      "period": 4
+    },
+    {
       "classId": "3-1",
       "date": "2026-09-16",
       "fromDate": null,
@@ -1795,6 +1834,19 @@
       "period": 5
     },
     {
+      "classId": "3-1",
+      "date": "2026-09-17",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "임소현",
+      "origSubject": "생활과 과학",
+      "origTeacher": "김상일",
+      "period": 2
+    },
+    {
       "classId": "3-11",
       "date": "2026-09-17",
       "fromDate": null,
@@ -1964,6 +2016,19 @@
       "period": 6
     },
     {
+      "classId": "2-10",
+      "date": "2026-09-18",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "과학교실(3층)",
+      "newSubject": null,
+      "newTeacher": "임소현",
+      "origSubject": "생물의 유전",
+      "origTeacher": "김상일",
+      "period": 1
+    },
+    {
       "classId": "2-4",
       "date": "2026-09-18",
       "fromDate": "2026-09-16",
@@ -2014,6 +2079,19 @@
       "origSubject": "생물의 유전",
       "origTeacher": "김상일",
       "period": 6
+    },
+    {
+      "classId": "3-1",
+      "date": "2026-09-18",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "최민수",
+      "origSubject": "생활과 과학",
+      "origTeacher": "김상일",
+      "period": 2
     },
     {
       "classId": "3-1",
