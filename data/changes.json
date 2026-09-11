@@ -27,19 +27,6 @@
       "period": 3
     },
     {
-      "classId": "3-1",
-      "date": "2026-09-03",
-      "fromDate": "2026-09-04",
-      "fromPeriod": 3,
-      "kind": "swap",
-      "newRoom": "체육관",
-      "newSubject": "운동과 건강",
-      "newTeacher": "박수진",
-      "origSubject": "철학",
-      "origTeacher": "이동혁",
-      "period": 6
-    },
-    {
       "classId": "1-10",
       "date": "2026-09-04",
       "fromDate": "2026-09-07",
@@ -51,136 +38,6 @@
       "origSubject": "한문",
       "origTeacher": "김용욱",
       "period": 1
-    },
-    {
-      "classId": "1-10",
-      "date": "2026-09-04",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "신성용",
-      "origSubject": "과학탐구실험2",
-      "origTeacher": "김태호",
-      "period": 7
-    },
-    {
-      "classId": "1-11",
-      "date": "2026-09-04",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "정윤진",
-      "origSubject": "한문",
-      "origTeacher": "안기종",
-      "period": 5
-    },
-    {
-      "classId": "1-11",
-      "date": "2026-09-04",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "최민수",
-      "origSubject": "대수",
-      "origTeacher": "손종섭",
-      "period": 6
-    },
-    {
-      "classId": "1-8",
-      "date": "2026-09-04",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "정라경",
-      "origSubject": "공통국어2",
-      "origTeacher": "박광순",
-      "period": 6
-    },
-    {
-      "classId": "2-10",
-      "date": "2026-09-04",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": "생명실험실",
-      "newSubject": null,
-      "newTeacher": "신성용",
-      "origSubject": "과학창의연구",
-      "origTeacher": "김태호",
-      "period": 3
-    },
-    {
-      "classId": "2-12",
-      "date": "2026-09-04",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "고예진",
-      "origSubject": "미적분Ⅱ",
-      "origTeacher": "정라경",
-      "period": 2
-    },
-    {
-      "classId": "2-3",
-      "date": "2026-09-04",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "조성빈",
-      "origSubject": "문학과 영상",
-      "origTeacher": "박광순",
-      "period": 5
-    },
-    {
-      "classId": "2-8",
-      "date": "2026-09-04",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": "생명실험실",
-      "newSubject": null,
-      "newTeacher": "김형태",
-      "origSubject": "과학창의연구",
-      "origTeacher": "김태호",
-      "period": 5
-    },
-    {
-      "classId": "3-1",
-      "date": "2026-09-04",
-      "fromDate": "2026-09-03",
-      "fromPeriod": 6,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "철학",
-      "newTeacher": "이동혁",
-      "origSubject": "운동과 건강",
-      "origTeacher": "박수진",
-      "period": 3
-    },
-    {
-      "classId": "3-11",
-      "date": "2026-09-04",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": "11반 교실",
-      "newSubject": null,
-      "newTeacher": "김형태",
-      "origSubject": "고급 생명과학",
-      "origTeacher": "김태호",
-      "period": 4
     },
     {
       "classId": "1-10",
@@ -2653,7 +2510,7 @@
       "period": 5
     }
   ],
-  "from": "2026-09-04",
+  "from": "2026-09-05",
   "schema": 1,
-  "to": "2026-10-16"
+  "to": "2026-10-17"
 }
