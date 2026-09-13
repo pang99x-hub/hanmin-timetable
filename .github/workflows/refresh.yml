@@ -36,11 +36,20 @@ jobs:
           ANON: ${{ secrets.AX_DATA_ANON_KEY }}
         run: |
           set -euo pipefail
-          code=$(curl -sS -o /tmp/payload.json -w '%{http_code}' -X POST "$DESK" \
-            -H "Authorization: Bearer $ANON" -H "apikey: $ANON" \
-            -H 'Content-Type: application/json' -d '{}')
+          # 교사웹(슈파베이스)이 가끔 한 번 502 를 낸다 — 2026-09-13 «JWT issued at future»처럼
+          # 저쪽 시계가 잠깐 어긋난 경우. 15분마다 도는 일이라 세 번까지 20초 간격으로 다시 묻고,
+          # 그래도 안 되면 그때 실패로 알린다(실패마다 메일이 오므로 일시 오류로 울리지 않게).
+          code=000
+          for attempt in 1 2 3; do
+            code=$(curl -sS -o /tmp/payload.json -w '%{http_code}' -X POST "$DESK" \
+              -H "Authorization: Bearer $ANON" -H "apikey: $ANON" \
+              -H 'Content-Type: application/json' -d '{}' || echo 000)
+            [ "$code" = "200" ] && break
+            echo "교사웹이 $code 로 답했습니다 (시도 $attempt/3)"; head -c 300 /tmp/payload.json || true; echo
+            [ "$attempt" -lt 3 ] && sleep 20
+          done
           if [ "$code" != "200" ]; then
-            echo "::error::교사웹이 $code 로 답했습니다"; head -c 400 /tmp/payload.json; exit 1
+            echo "::error::교사웹이 세 번 모두 $code 로 답했습니다"; exit 1
           fi
           # ok 가 아니면 아래 jq 가 조용히 빈 파일을 쓰고 지나간다 — 여기서 끊는다.
           jq -e '.ok == true' /tmp/payload.json > /dev/null
