@@ -39,11 +39,14 @@ jobs:
           # 교사웹(슈파베이스)이 가끔 한 번 502 를 낸다 — 2026-09-13 «JWT issued at future»처럼
           # 저쪽 시계가 잠깐 어긋난 경우. 15분마다 도는 일이라 세 번까지 20초 간격으로 다시 묻고,
           # 그래도 안 되면 그때 실패로 알린다(실패마다 메일이 오므로 일시 오류로 울리지 않게).
+          # 내가 가진 자료의 지문을 같이 보낸다 — 같으면 교사웹이 자료 없이 «변화 없음»만 답한다(2026-09-13).
+          known=$(cat data/.etag 2>/dev/null || true)
+          body=$(jq -cn --arg k "$known" '{knownEtag: $k}')
           code=000
           for attempt in 1 2 3; do
             code=$(curl -sS -o /tmp/payload.json -w '%{http_code}' -X POST "$DESK" \
               -H "Authorization: Bearer $ANON" -H "apikey: $ANON" \
-              -H 'Content-Type: application/json' -d '{}' || echo 000)
+              -H 'Content-Type: application/json' -d "$body" || echo 000)
             [ "$code" = "200" ] && break
             echo "교사웹이 $code 로 답했습니다 (시도 $attempt/3)"; head -c 300 /tmp/payload.json || true; echo
             [ "$attempt" -lt 3 ] && sleep 20
@@ -53,21 +56,30 @@ jobs:
           fi
           # ok 가 아니면 아래 jq 가 조용히 빈 파일을 쓰고 지나간다 — 여기서 끊는다.
           jq -e '.ok == true' /tmp/payload.json > /dev/null
+          if jq -e '.unchanged == true' /tmp/payload.json > /dev/null; then
+            echo "unchanged=true" >> "$GITHUB_OUTPUT"; echo '변화 없음 — 자료를 받지 않았습니다.'
+          else
+            echo "unchanged=false" >> "$GITHUB_OUTPUT"
+          fi
+        id: fetch
 
       - name: 파일로 나누기
+        if: steps.fetch.outputs.unchanged != 'true'
         run: |
           set -euo pipefail
           for name in school changes meals calendar; do
             jq -S ".$name" /tmp/payload.json > "data/$name.json"
           done
+          jq -r '.etag' /tmp/payload.json > data/.etag
           wc -c data/*.json
 
       - name: 바뀐 것만 커밋
+        if: steps.fetch.outputs.unchanged != 'true'
         run: |
           set -euo pipefail
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add data/school.json data/changes.json data/meals.json data/calendar.json
+          git add data/school.json data/changes.json data/meals.json data/calendar.json data/.etag
           if git diff --cached --quiet; then
             echo '바뀐 것 없음 — 커밋하지 않습니다.'
             exit 0
