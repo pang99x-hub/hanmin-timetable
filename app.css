@@ -391,3 +391,7 @@ span.me{
   background:var(--chg-soft); border:1px solid var(--chg-line); color:var(--chg);
   font-size:12.5px; font-weight:750;
 }
+
+.ax-embedded .foot {display:none}
+.ax-embedded body{background:transparent}
+.ax-embedded .setup h1{font-size:20px}
