@@ -1041,6 +1041,19 @@
       "period": 1
     },
     {
+      "classId": "3-12",
+      "date": "2026-09-15",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "박소현",
+      "origSubject": "심화 수학Ⅰ",
+      "origTeacher": "김선중",
+      "period": 1
+    },
+    {
       "classId": "3-13",
       "date": "2026-09-15",
       "fromDate": null,
