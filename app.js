@@ -662,6 +662,11 @@ function header() {
     const back = el('button', 'me', '다른 학생');
     back.onclick = () => { state.me = null; state.viewing = null; render(); };
     right.appendChild(back);
+    const refresh = el('button', 'me', state.busy ? '조회 중…' : '새로 고침');
+    refresh.disabled = state.busy;
+    refresh.onclick = () => openStudent(state.viewing, true);
+    right.appendChild(refresh);
+    if (state.gateError) right.appendChild(el('span', 'gate-err', state.gateError));
   } else {
     // 반은 창구가 정해 준 것이라 사람이 고칠 자리가 아니다. 표시만 한다.
     right.appendChild(el('span', 'me', state.me.classId));
@@ -1366,9 +1371,14 @@ function loginGate() {
  * 고르는 목록에는 이메일도 강좌도 없다 — 학급·번호·이름뿐이다. 시간표는 고른 뒤에
  * 그 학생 것만 따로 받아 온다. 나가는 개인정보는 적을수록 좋다.
  */
-async function openStudent(target) {
+let axConnection = null;
+const studentReadCache = createTeacherReadCache();
+async function openStudent(target, force = false) {
   state.busy = true; state.gateError = null; render();
   try {
+    if (axConnection) await axConnection.ensureFresh();
+    const data = await studentReadCache.read(state.teacher.profileId || state.teacher.credential, JSON.stringify([target.classId, target.no]), async previous => {
+    const request = async () => {
     const res = await fetch(DESK, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1377,9 +1387,20 @@ async function openStudent(target) {
         ...(state.teacher.axSession ? {axSession:state.teacher.axSession} : {credential:state.teacher.credential}),
         classId: target.classId,
         no: target.no,
+        ...(previous?.version ? {knownVersion:previous.version} : {}),
       }),
     });
-    const data = await res.json();
+    return res.json();
+    };
+    let data = await request();
+    if (!data.ok && axConnection && /AX.*(만료|다시 연결)/.test(data.error || '')) {
+      await axConnection.ensureFresh(true);
+      data = await request();
+    }
+    if (data.ok && data.notModified && previous?.version === data.version) return previous;
+    if (!data.ok || !data.found) throw new Error(data.error || '학생 자료를 찾지 못했습니다.');
+    return data;
+    }, {force});
     if (!data.ok) throw new Error(data.error || '가져오지 못했습니다.');
     if (!data.found) throw new Error('그 학생을 찾지 못했습니다.');
     state.viewing = { classId: data.classId, no: data.no, name: data.name };
@@ -1426,6 +1447,7 @@ function teacherPicker() {
 
   const out = el('button', 'back', '로그아웃');
   out.onclick = () => {
+    studentReadCache.clear();
     state.teacher = null; state.viewing = null; state.pickClass = null;
     if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
     render();
@@ -1509,35 +1531,87 @@ function footer() {
 boot().then(async () => {
  if(!AX_EMBEDDED&&!AX_EXTERNAL)return;
  if(AX_EMBEDDED)document.documentElement.classList.add('ax-embedded');
- await connectAxStudentApp(async ticket => {
-  const response=await fetch(DESK,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'axLogin',ticket})});
-  const data=await response.json();if(!data.ok||data.role!=='teacher'||!data.sessionToken)throw Error('교사 연결 실패');
-  state.teacher={axSession:data.sessionToken,roster:data.roster||[]};state.me=null;state.gateError=null;render();
+ axConnection = await connectAxStudentApp(async (ticket, {renewing}) => {
+  const response=await fetch(DESK,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'axLogin',ticket,renewOnly:renewing})});
+  const data=await response.json();if(!data.ok||data.role!=='teacher'||!data.sessionToken||!data.profileId)throw Error('교사 연결 실패');
+  if(renewing){
+   if(state.teacher?.profileId!==data.profileId)throw Error('로그인 계정이 변경되었습니다. AX에서 다시 열어 주세요.');
+   state.teacher.axSession=data.sessionToken;
+  }else{
+   state.teacher={axSession:data.sessionToken,profileId:data.profileId,roster:data.roster||[]};state.me=null;state.gateError=null;render();
+  }
+  return {expiresIn:data.expiresIn};
  });
 });
 
-// No session token in URL/storage. An AX-origin-bound, one-use handoff.
+/** Teacher data stays in this window only; scope is the current verified identity. */
+function createTeacherReadCache({ ttl = 60_000, limit = 32, now = Date.now } = {}) {
+  let owner;
+  const entries = new Map();
+  function clear() { entries.clear(); owner = undefined; }
+  async function read(scope, key, load, { force = false } = {}) {
+    if (!scope) throw new Error('로그인 상태를 확인해 주세요.');
+    if (scope !== owner) { clear(); owner = scope; }
+    const hit = entries.get(key);
+    if (!force && hit && (hit.pending || hit.expires > now())) return structuredClone(await hit.promise);
+    if (hit) entries.delete(key);
+    while (entries.size >= limit) entries.delete(entries.keys().next().value);
+    const entry = { pending: true, expires: 0, promise: null };
+    entry.promise = Promise.resolve().then(() => load(hit && !hit.pending ? structuredClone(hit.value) : undefined)).then(value => {
+      entry.pending = false; entry.expires = now() + ttl; entry.value = structuredClone(value);
+      return structuredClone(value);
+    }).catch(error => {
+      if (entries.get(key) === entry) entries.delete(key);
+      throw error;
+    });
+    entries.set(key, entry);
+    return structuredClone(await entry.promise);
+  }
+  return { read, clear };
+}
+
+// In-memory credentials, renewed on demand through the original AX window only.
 async function connectAxStudentApp(login) {
  const params=new URLSearchParams(location.search);
  const embedded=params.get('axEmbed')==='1'&&window.parent!==window;
  const host=embedded?window.parent:params.get('axExternal')==='1'?window.opener:null;
  if(!host)return false;
  const origin='https://ax.hanmin.hs.kr';
- const nonce=Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
  if(embedded)document.documentElement.classList.add('ax-embedded');
- let accepted=false;
+ let nonce='',expiresAt=0,inflight=null,accepted=false,disposed=false,connected=false;
+ let timer,timeout,resolve,reject;
+ const clear=()=>{clearInterval(timer);clearTimeout(timeout);};
+ const fail=error=>{clear();const done=reject;inflight=null;resolve=reject=null;done?.(error);};
  const announce=()=>host.postMessage({type:'ax-student-app:ready',nonce},origin);
- const timer=setInterval(announce,1000);
- const timeout=setTimeout(()=>{clearInterval(timer);window.removeEventListener('message',receive);},30000);
+ const ensureFresh=(force=false)=>{
+  if(disposed)return Promise.reject(Error('AX 연결을 다시 열어 주세요.'));
+  if(inflight)return inflight;
+  if(!force&&Date.now()<expiresAt-60_000)return Promise.resolve();
+  if(host.closed)return Promise.reject(Error('AX 창에서 다시 연결해 주세요.'));
+  nonce=Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');accepted=false;
+  inflight=new Promise((yes,no)=>{resolve=yes;reject=no;});
+  timer=setInterval(announce,1000);
+  timeout=setTimeout(()=>fail(Error('AX 연결이 지연되고 있습니다. 다시 시도해 주세요.')),30000);
+  announce();return inflight;
+ };
  async function receive(event){
   if(event.source!==host||event.origin!==origin||event.data?.nonce!==nonce)return;
   if(event.data.type==='ax-student-app:theme'){document.documentElement.dataset.axTheme=event.data.theme==='dark'?'dark':'light';document.documentElement.dataset.theme=document.documentElement.dataset.axTheme;return;}
-  if(accepted||event.data.type!=='ax-student-app:ticket'||! /^[a-f0-9]{64}$/.test(event.data.ticket??''))return;
-  accepted=true;clearInterval(timer);clearTimeout(timeout);
+  if(!inflight||accepted||event.data.type!=='ax-student-app:ticket'||! /^[a-f0-9]{64}$/.test(event.data.ticket??''))return;
+  accepted=true;clearInterval(timer);
+  const requestNonce=nonce;
   document.documentElement.dataset.axTheme=event.data.theme==='dark'?'dark':'light';document.documentElement.dataset.theme=document.documentElement.dataset.axTheme;
-  try{await login(event.data.ticket);host.postMessage({type:'ax-student-app:connected',nonce},origin);}
-  catch{host.postMessage({type:'ax-student-app:error',nonce},origin);}
-  finally{if(!embedded){window.removeEventListener('message',receive);window.opener=null;}}
+  try{
+   const result=await login(event.data.ticket,{renewing:connected});
+   if(disposed||requestNonce!==nonce||!inflight)return;
+   const ttl=Number(result?.expiresIn);
+   expiresAt=Date.now()+(Number.isFinite(ttl)&&ttl>60?Math.min(ttl,21600):900)*1000;
+   connected=true;clear();const done=resolve;inflight=null;resolve=reject=null;
+   host.postMessage({type:'ax-student-app:connected',nonce},origin);done?.();
+  }catch(error){if(!disposed&&requestNonce===nonce&&inflight){expiresAt=0;host.postMessage({type:'ax-student-app:error',nonce},origin);fail(error);}}
  }
- window.addEventListener('message',receive);announce();return true;
+ const dispose=()=>{disposed=true;fail(Error('AX 연결이 종료되었습니다.'));window.removeEventListener('message',receive);};
+ window.addEventListener('message',receive);
+ void ensureFresh().catch(()=>{});
+ return {ensureFresh,dispose};
 }
