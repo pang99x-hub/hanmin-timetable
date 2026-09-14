@@ -1,3 +1,4 @@
+const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' && window.parent!==window;
 /*
  * 한민고 학생 시간표.
  *
@@ -93,7 +94,7 @@ async function boot() {
   state.calendar = calendar;
   state.loadedAt = classes.generatedAt || null;
 
-  try { state.me = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { state.me = null; }
+  try { state.me = !AX_EMBEDDED && JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { state.me = null; }
   state.dday = loadDday();
   state.events = loadEvents();
   // 주말에 열면 다음 수업일부터 보여 준다 — 빈 주말을 띄워 놓을 이유가 없다.
@@ -1313,7 +1314,7 @@ function loginGate() {
   const slot = el('div', 'gsi');
   box.appendChild(slot);
 
-  if (state.busy) {
+  if (AX_EMBEDDED || state.busy) {
     slot.appendChild(el('div', 'waiting', '시간표를 찾는 중입니다…'));
   } else {
     loadGoogle().then((ready) => {
@@ -1372,7 +1373,7 @@ async function openStudent(target) {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'studentView',
-        credential: state.teacher.credential,
+        ...(state.teacher.axSession ? {axSession:state.teacher.axSession} : {credential:state.teacher.credential}),
         classId: target.classId,
         no: target.no,
       }),
@@ -1504,4 +1505,34 @@ function footer() {
   return foot;
 }
 
-boot();
+boot().then(async () => {
+ if(!AX_EMBEDDED)return;
+ document.documentElement.classList.add('ax-embedded');
+ await connectAxStudentApp(async ticket => {
+  const response=await fetch(DESK,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'axLogin',ticket})});
+  const data=await response.json();if(!data.ok||data.role!=='teacher'||!data.sessionToken)throw Error('교사 연결 실패');
+  state.teacher={axSession:data.sessionToken,roster:data.roster||[]};state.me=null;state.gateError=null;render();
+ });
+});
+
+// No session token in URL/storage. A parent-origin-bound, one-use handoff.
+async function connectAxStudentApp(login) {
+ if(new URLSearchParams(location.search).get('axEmbed')!=='1'||window.parent===window)return false;
+ const origin='https://ax.hanmin.hs.kr';
+ const nonce=Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
+ document.documentElement.classList.add('ax-embedded');
+ let accepted=false;
+ const announce=()=>window.parent.postMessage({type:'ax-student-app:ready',nonce},origin);
+ const timer=setInterval(announce,1000);
+ const timeout=setTimeout(()=>{clearInterval(timer);window.removeEventListener('message',receive);},30000);
+ async function receive(event){
+  if(event.source!==window.parent||event.origin!==origin||event.data?.nonce!==nonce)return;
+  if(event.data.type==='ax-student-app:theme'){document.documentElement.dataset.axTheme=event.data.theme==='dark'?'dark':'light';document.documentElement.dataset.theme=document.documentElement.dataset.axTheme;return;}
+  if(accepted||event.data.type!=='ax-student-app:ticket'||! /^[a-f0-9]{64}$/.test(event.data.ticket??''))return;
+  accepted=true;clearInterval(timer);clearTimeout(timeout);
+  document.documentElement.dataset.axTheme=event.data.theme==='dark'?'dark':'light';document.documentElement.dataset.theme=document.documentElement.dataset.axTheme;
+  try{await login(event.data.ticket);window.parent.postMessage({type:'ax-student-app:connected',nonce},origin);}
+  catch{window.parent.postMessage({type:'ax-student-app:error',nonce},origin);}
+ }
+ window.addEventListener('message',receive);announce();return true;
+}
