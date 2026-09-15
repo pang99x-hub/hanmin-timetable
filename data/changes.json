@@ -1431,6 +1431,19 @@
       "period": 7
     },
     {
+      "classId": "3-4",
+      "date": "2026-09-16",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "송인호",
+      "origSubject": "고전과 윤리",
+      "origTeacher": "이동혁",
+      "period": 1
+    },
+    {
       "classId": "3-8",
       "date": "2026-09-16",
       "fromDate": null,
