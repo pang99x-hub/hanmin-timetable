@@ -14,19 +14,6 @@
       "period": 3
     },
     {
-      "classId": "1-8",
-      "date": "2026-09-07",
-      "fromDate": "2026-09-08",
-      "fromPeriod": 3,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "대수",
-      "newTeacher": "신현수",
-      "origSubject": "정보",
-      "origTeacher": "남상천",
-      "period": 4
-    },
-    {
       "classId": "3-3",
       "date": "2026-09-07",
       "fromDate": "2026-09-10",
@@ -38,32 +25,6 @@
       "origSubject": "확률과 통계",
       "origTeacher": "박소예",
       "period": 4
-    },
-    {
-      "classId": "1-1",
-      "date": "2026-09-08",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "신창수",
-      "origSubject": "공통국어2",
-      "origTeacher": "김지수",
-      "period": 1
-    },
-    {
-      "classId": "1-12",
-      "date": "2026-09-08",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "김한겸",
-      "origSubject": "공통국어2",
-      "origTeacher": "김지수",
-      "period": 6
     },
     {
       "classId": "1-13",
@@ -79,19 +40,6 @@
       "period": 2
     },
     {
-      "classId": "1-13",
-      "date": "2026-09-08",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "장현화",
-      "origSubject": "한문",
-      "origTeacher": "김용욱",
-      "period": 5
-    },
-    {
       "classId": "1-2",
       "date": "2026-09-08",
       "fromDate": "2026-09-10",
@@ -103,32 +51,6 @@
       "origSubject": "공통영어2",
       "origTeacher": "최민수",
       "period": 1
-    },
-    {
-      "classId": "1-3",
-      "date": "2026-09-08",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "최다은",
-      "origSubject": "공통국어2",
-      "origTeacher": "김지수",
-      "period": 4
-    },
-    {
-      "classId": "1-6",
-      "date": "2026-09-08",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "박가영",
-      "origSubject": "공통영어2",
-      "origTeacher": "최민수",
-      "period": 2
     },
     {
       "classId": "1-7",
@@ -144,19 +66,6 @@
       "period": 4
     },
     {
-      "classId": "1-8",
-      "date": "2026-09-08",
-      "fromDate": "2026-09-07",
-      "fromPeriod": 4,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "정보",
-      "newTeacher": "남상천",
-      "origSubject": "대수",
-      "origTeacher": "신현수",
-      "period": 3
-    },
-    {
       "classId": "3-10",
       "date": "2026-09-08",
       "fromDate": "2026-09-09",
@@ -167,19 +76,6 @@
       "newTeacher": "김관우",
       "origSubject": "화법과 작문",
       "origTeacher": "이재훈",
-      "period": 6
-    },
-    {
-      "classId": "3-8",
-      "date": "2026-09-08",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "박소현",
-      "origSubject": "확률과 통계",
-      "origTeacher": "김선중",
       "period": 6
     },
     {
@@ -2679,7 +2575,7 @@
       "period": 2
     }
   ],
-  "from": "2026-09-08",
+  "from": "2026-09-09",
   "schema": 1,
-  "to": "2026-10-20"
+  "to": "2026-10-21"
 }
