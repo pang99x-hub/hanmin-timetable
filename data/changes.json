@@ -1743,6 +1743,32 @@
       "period": 1
     },
     {
+      "classId": "2-13",
+      "date": "2026-09-18",
+      "fromDate": "2026-09-18",
+      "fromPeriod": 7,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "확률과 통계",
+      "newTeacher": "박소현",
+      "origSubject": "영어Ⅱ",
+      "origTeacher": "장현화",
+      "period": 3
+    },
+    {
+      "classId": "2-13",
+      "date": "2026-09-18",
+      "fromDate": "2026-09-18",
+      "fromPeriod": 3,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "영어Ⅱ",
+      "newTeacher": "장현화",
+      "origSubject": "확률과 통계",
+      "origTeacher": "박소현",
+      "period": 7
+    },
+    {
       "classId": "2-4",
       "date": "2026-09-18",
       "fromDate": "2026-09-16",
@@ -2276,6 +2302,19 @@
       "period": 4
     },
     {
+      "classId": "2-7",
+      "date": "2026-09-29",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "안기종",
+      "origSubject": "영어Ⅱ",
+      "origTeacher": "박성미",
+      "period": 3
+    },
+    {
       "classId": "1-10",
       "date": "2026-09-30",
       "fromDate": null,
@@ -2380,6 +2419,19 @@
       "period": 1
     },
     {
+      "classId": "2-13",
+      "date": "2026-09-30",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "박소현",
+      "origSubject": "영어Ⅱ",
+      "origTeacher": "박성미",
+      "period": 5
+    },
+    {
       "classId": "1-10",
       "date": "2026-10-01",
       "fromDate": null,
@@ -2443,6 +2495,19 @@
       "origSubject": "영어Ⅱ",
       "origTeacher": "박성미",
       "period": 5
+    },
+    {
+      "classId": "2-4",
+      "date": "2026-10-01",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "안기종",
+      "origSubject": "영어Ⅱ",
+      "origTeacher": "박성미",
+      "period": 3
     },
     {
       "classId": "2-6",
@@ -2523,6 +2588,19 @@
       "period": 1
     },
     {
+      "classId": "2-4",
+      "date": "2026-10-02",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "안기종",
+      "origSubject": "영어Ⅱ",
+      "origTeacher": "박성미",
+      "period": 7
+    },
+    {
       "classId": "2-3",
       "date": "2026-10-06",
       "fromDate": null,
@@ -2534,6 +2612,19 @@
       "origSubject": "영어Ⅱ",
       "origTeacher": "박성미",
       "period": 4
+    },
+    {
+      "classId": "2-7",
+      "date": "2026-10-06",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "안기종",
+      "origSubject": "영어Ⅱ",
+      "origTeacher": "박성미",
+      "period": 3
     },
     {
       "classId": "2-1",
@@ -2549,6 +2640,45 @@
       "period": 1
     },
     {
+      "classId": "2-13",
+      "date": "2026-10-07",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "박소현",
+      "origSubject": "영어Ⅱ",
+      "origTeacher": "박성미",
+      "period": 5
+    },
+    {
+      "classId": "2-6",
+      "date": "2026-10-07",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "안기종",
+      "origSubject": "영어Ⅱ",
+      "origTeacher": "박성미",
+      "period": 2
+    },
+    {
+      "classId": "2-13",
+      "date": "2026-10-08",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "안기종",
+      "origSubject": "영어Ⅱ",
+      "origTeacher": "박성미",
+      "period": 6
+    },
+    {
       "classId": "2-2",
       "date": "2026-10-08",
       "fromDate": null,
@@ -2560,6 +2690,19 @@
       "origSubject": "영어Ⅱ",
       "origTeacher": "박성미",
       "period": 5
+    },
+    {
+      "classId": "2-4",
+      "date": "2026-10-08",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "안기종",
+      "origSubject": "영어Ⅱ",
+      "origTeacher": "박성미",
+      "period": 3
     },
     {
       "classId": "2-6",
