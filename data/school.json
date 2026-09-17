@@ -1,47 +1,47 @@
 {
   "mealTimes": {
-    "breakfast": "06:30",
-    "dinner": "17:50",
-    "lunch": "12:00"
+    "breakfast": null,
+    "dinner": null,
+    "lunch": null
   },
   "name": "한민고등학교",
   "periods": [
     {
-      "endTime": "09:00",
+      "endTime": "08:50",
       "period": 1,
       "startTime": "08:10"
     },
     {
-      "endTime": "10:00",
+      "endTime": "09:40",
       "period": 2,
-      "startTime": "09:10"
+      "startTime": "09:00"
     },
     {
-      "endTime": "11:00",
+      "endTime": "10:30",
       "period": 3,
-      "startTime": "10:10"
+      "startTime": "09:50"
     },
     {
-      "endTime": "12:00",
+      "endTime": "23:20",
       "period": 4,
-      "startTime": "11:10"
+      "startTime": "10:40"
     },
     {
-      "endTime": "13:50",
+      "endTime": "12:40",
       "period": 5,
-      "startTime": "13:00"
+      "startTime": "12:10"
     },
     {
-      "endTime": "14:50",
+      "endTime": "13:20",
       "period": 6,
-      "startTime": "14:00"
+      "startTime": "12:50"
     },
     {
-      "endTime": "15:50",
+      "endTime": "14:00",
       "period": 7,
-      "startTime": "15:00"
+      "startTime": "13:30"
     }
   ],
   "schema": 1,
-  "source": "교사웹 일과표 «2026학년도 2학기 일과표»"
+  "source": "교사웹 일과표 «귀가귀교일 운영»"
 }
