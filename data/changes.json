@@ -1840,10 +1840,10 @@
       "fromPeriod": 6,
       "kind": "swap",
       "newRoom": null,
-      "newSubject": "심화 영어Ⅱ",
-      "newTeacher": "임연정",
-      "origSubject": "나라사랑과 보훈",
-      "origTeacher": "김성자",
+      "newSubject": "화법과 작문",
+      "newTeacher": "이재훈",
+      "origSubject": "심화 영어Ⅱ",
+      "origTeacher": "임연정",
       "period": 5
     },
     {
@@ -1853,10 +1853,10 @@
       "fromPeriod": 6,
       "kind": "swap",
       "newRoom": null,
-      "newSubject": "화법과 작문",
-      "newTeacher": "이재훈",
-      "origSubject": "심화 영어Ⅱ",
-      "origTeacher": "임연정",
+      "newSubject": "심화 영어Ⅱ",
+      "newTeacher": "임연정",
+      "origSubject": "나라사랑과 보훈",
+      "origTeacher": "김성자",
       "period": 5
     },
     {
@@ -2172,6 +2172,19 @@
       "period": 3
     },
     {
+      "classId": "3-1",
+      "date": "2026-09-28",
+      "fromDate": "2026-10-02",
+      "fromPeriod": 1,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "화법과 작문",
+      "newTeacher": "김원영",
+      "origSubject": "확률과 통계",
+      "origTeacher": "김선중",
+      "period": 1
+    },
+    {
       "classId": "1-1",
       "date": "2026-09-29",
       "fromDate": null,
@@ -2274,6 +2287,32 @@
       "origSubject": "영어Ⅱ",
       "origTeacher": "박성미",
       "period": 3
+    },
+    {
+      "classId": "3-2",
+      "date": "2026-09-29",
+      "fromDate": "2026-10-02",
+      "fromPeriod": 6,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "화법과 작문",
+      "newTeacher": "김원영",
+      "origSubject": "심화 영어Ⅱ",
+      "origTeacher": "임연정",
+      "period": 4
+    },
+    {
+      "classId": "3-3",
+      "date": "2026-09-29",
+      "fromDate": "2026-10-02",
+      "fromPeriod": 2,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "화법과 작문",
+      "newTeacher": "김원영",
+      "origSubject": "심화 영어Ⅱ",
+      "origTeacher": "임연정",
+      "period": 1
     },
     {
       "classId": "1-10",
@@ -2573,6 +2612,45 @@
       "origSubject": "영어Ⅱ",
       "origTeacher": "박성미",
       "period": 7
+    },
+    {
+      "classId": "3-1",
+      "date": "2026-10-02",
+      "fromDate": "2026-09-28",
+      "fromPeriod": 1,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "확률과 통계",
+      "newTeacher": "김선중",
+      "origSubject": "화법과 작문",
+      "origTeacher": "김원영",
+      "period": 1
+    },
+    {
+      "classId": "3-2",
+      "date": "2026-10-02",
+      "fromDate": "2026-09-29",
+      "fromPeriod": 4,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "심화 영어Ⅱ",
+      "newTeacher": "임연정",
+      "origSubject": "화법과 작문",
+      "origTeacher": "김원영",
+      "period": 6
+    },
+    {
+      "classId": "3-3",
+      "date": "2026-10-02",
+      "fromDate": "2026-09-29",
+      "fromPeriod": 1,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "심화 영어Ⅱ",
+      "newTeacher": "임연정",
+      "origSubject": "화법과 작문",
+      "origTeacher": "김원영",
+      "period": 2
     },
     {
       "classId": "2-3",
