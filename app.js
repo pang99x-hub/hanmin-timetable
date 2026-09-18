@@ -754,16 +754,17 @@ function todayPanel() {
    * 성가시다. 기기에만 남는다(state).
    */
   const addMeal = (label, time, kind) => {
-    if (!time) return;
     const menu = state.meals && state.meals.days && state.meals.days[iso(state.cursor)];
     const items = menu && menu[kind];
     const lines = Array.isArray(items) ? items
       : typeof items === 'string' && items ? [items] : [];
+    // 식사 시간이 미등록이어도 실제 식단은 표시한다.
+    if (!time && !lines.length) return;
     const open = state.openMeals.has(kind);
 
     const slot = el('div', `slot meal${open ? ' open' : ''}`);
     const gut = el('span', 'gut');
-    gut.append(el('span', 'p', label), el('span', 't', time));
+    gut.append(el('span', 'p', label), el('span', 't', time || ''));
 
     const cell = el('div', 'cell');
     const head = el('button', 'mealhead');
