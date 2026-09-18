@@ -1736,10 +1736,10 @@
       "fromPeriod": 6,
       "kind": "swap",
       "newRoom": null,
-      "newSubject": "화법과 작문",
-      "newTeacher": "이재훈",
-      "origSubject": "심화 영어Ⅱ",
-      "origTeacher": "임연정",
+      "newSubject": "심화 영어Ⅱ",
+      "newTeacher": "임연정",
+      "origSubject": "나라사랑과 보훈",
+      "origTeacher": "김성자",
       "period": 5
     },
     {
@@ -1749,10 +1749,10 @@
       "fromPeriod": 6,
       "kind": "swap",
       "newRoom": null,
-      "newSubject": "심화 영어Ⅱ",
-      "newTeacher": "임연정",
-      "origSubject": "나라사랑과 보훈",
-      "origTeacher": "김성자",
+      "newSubject": "화법과 작문",
+      "newTeacher": "이재훈",
+      "origSubject": "심화 영어Ⅱ",
+      "origTeacher": "임연정",
       "period": 5
     },
     {
@@ -2029,6 +2029,32 @@
       "period": 6
     },
     {
+      "classId": "2-10",
+      "date": "2026-09-23",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "이승현",
+      "origSubject": "확률과 통계",
+      "origTeacher": "조현용",
+      "period": 3
+    },
+    {
+      "classId": "2-12",
+      "date": "2026-09-23",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "이승현",
+      "origSubject": "확률과 통계",
+      "origTeacher": "조현용",
+      "period": 7
+    },
+    {
       "classId": "2-3",
       "date": "2026-09-23",
       "fromDate": "2026-09-18",
@@ -2066,6 +2092,45 @@
       "origSubject": "음악",
       "origTeacher": "고예진",
       "period": 7
+    },
+    {
+      "classId": "2-4",
+      "date": "2026-09-23",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "안기종",
+      "origSubject": "확률과 통계",
+      "origTeacher": "조현용",
+      "period": 6
+    },
+    {
+      "classId": "2-6",
+      "date": "2026-09-23",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "안기종",
+      "origSubject": "확률과 통계",
+      "origTeacher": "조현용",
+      "period": 4
+    },
+    {
+      "classId": "2-8",
+      "date": "2026-09-23",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "안기종",
+      "origSubject": "확률과 통계",
+      "origTeacher": "조현용",
+      "period": 1
     },
     {
       "classId": "3-12",
