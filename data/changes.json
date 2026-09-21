@@ -1589,11 +1589,37 @@
     {
       "classId": "3-11",
       "date": "2026-09-21",
-      "fromDate": null,
-      "fromPeriod": null,
+      "fromDate": "2026-09-21",
+      "fromPeriod": 4,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "사회문제 탐구",
+      "newTeacher": "김제희",
+      "origSubject": "화법과 작문",
+      "origTeacher": "김관우",
+      "period": 1
+    },
+    {
+      "classId": "3-11",
+      "date": "2026-09-21",
+      "fromDate": "2026-09-21",
+      "fromPeriod": 1,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "화법과 작문",
+      "newTeacher": "김관우",
+      "origSubject": "사회문제 탐구",
+      "origTeacher": "김제희",
+      "period": 4
+    },
+    {
+      "classId": "3-11",
+      "date": "2026-09-21",
+      "fromDate": "2026-09-21",
+      "fromPeriod": 1,
       "kind": "substitute",
       "newRoom": null,
-      "newSubject": null,
+      "newSubject": "화법과 작문",
       "newTeacher": "김제희",
       "origSubject": "사회문제 탐구",
       "origTeacher": "조성빈",
@@ -2224,6 +2250,19 @@
       "period": 5
     },
     {
+      "classId": "1-3",
+      "date": "2026-10-01",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "임소현",
+      "origSubject": "창의적 문제 해결 연습",
+      "origTeacher": "강정숙",
+      "period": 6
+    },
+    {
       "classId": "1-8",
       "date": "2026-10-01",
       "fromDate": null,
@@ -2367,6 +2406,19 @@
       "period": 5
     },
     {
+      "classId": "2-12",
+      "date": "2026-10-02",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "13반 교실",
+      "newSubject": null,
+      "newTeacher": "윤희진",
+      "origSubject": "역학과 에너지",
+      "origTeacher": "김현주",
+      "period": 1
+    },
+    {
       "classId": "2-3",
       "date": "2026-10-02",
       "fromDate": null,
@@ -2390,6 +2442,45 @@
       "newTeacher": "안기종",
       "origSubject": "영어Ⅱ",
       "origTeacher": "박성미",
+      "period": 7
+    },
+    {
+      "classId": "2-5",
+      "date": "2026-10-02",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "윤희진",
+      "origSubject": "전자기와 양자",
+      "origTeacher": "김현주",
+      "period": 6
+    },
+    {
+      "classId": "2-6",
+      "date": "2026-10-02",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "신성용",
+      "origSubject": "전자기와 양자",
+      "origTeacher": "김현주",
+      "period": 2
+    },
+    {
+      "classId": "2-7",
+      "date": "2026-10-02",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "윤희진",
+      "origSubject": "역학과 에너지",
+      "origTeacher": "김현주",
       "period": 7
     },
     {
@@ -2549,6 +2640,19 @@
       "period": 3
     },
     {
+      "classId": "2-5",
+      "date": "2026-10-08",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "신성용",
+      "origSubject": "전자기와 양자",
+      "origTeacher": "김현주",
+      "period": 7
+    },
+    {
       "classId": "2-6",
       "date": "2026-10-08",
       "fromDate": null,
@@ -2560,6 +2664,58 @@
       "origSubject": "영어Ⅱ",
       "origTeacher": "박성미",
       "period": 2
+    },
+    {
+      "classId": "2-6",
+      "date": "2026-10-08",
+      "fromDate": "2026-10-13",
+      "fromPeriod": 5,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "고급 대수",
+      "newTeacher": "김준환",
+      "origSubject": "전자기와 양자",
+      "origTeacher": "김현주",
+      "period": 6
+    },
+    {
+      "classId": "2-7",
+      "date": "2026-10-08",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "물리실험실",
+      "newSubject": null,
+      "newTeacher": "김태호",
+      "origSubject": "과학창의연구",
+      "origTeacher": "김현주",
+      "period": 3
+    },
+    {
+      "classId": "2-7",
+      "date": "2026-10-08",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "물리실험실",
+      "newSubject": null,
+      "newTeacher": "강정숙",
+      "origSubject": "과학창의연구",
+      "origTeacher": "김현주",
+      "period": 4
+    },
+    {
+      "classId": "2-6",
+      "date": "2026-10-13",
+      "fromDate": "2026-10-08",
+      "fromPeriod": 6,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "전자기와 양자",
+      "newTeacher": "김현주",
+      "origSubject": "고급 대수",
+      "origTeacher": "김준환",
+      "period": 5
     }
   ],
   "from": "2026-09-14",
