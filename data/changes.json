@@ -92,71 +92,6 @@
       "period": 4
     },
     {
-      "classId": "2-10",
-      "date": "2026-09-15",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": "과학교실(3층)",
-      "newSubject": null,
-      "newTeacher": "최민수",
-      "origSubject": "생물의 유전",
-      "origTeacher": "김상일",
-      "period": 3
-    },
-    {
-      "classId": "3-10",
-      "date": "2026-09-15",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "최다은",
-      "origSubject": "심화 영어Ⅱ",
-      "origTeacher": "김인정",
-      "period": 4
-    },
-    {
-      "classId": "3-11",
-      "date": "2026-09-15",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "최다은",
-      "origSubject": "심화 영어Ⅱ",
-      "origTeacher": "김인정",
-      "period": 1
-    },
-    {
-      "classId": "3-12",
-      "date": "2026-09-15",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "박소현",
-      "origSubject": "심화 수학Ⅰ",
-      "origTeacher": "김선중",
-      "period": 1
-    },
-    {
-      "classId": "3-13",
-      "date": "2026-09-15",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "임소현",
-      "origSubject": "심화 영어Ⅱ",
-      "origTeacher": "김인정",
-      "period": 6
-    },
-    {
       "classId": "3-2",
       "date": "2026-09-15",
       "fromDate": "2026-09-17",
@@ -194,19 +129,6 @@
       "origSubject": "화법과 작문",
       "origTeacher": "김원영",
       "period": 2
-    },
-    {
-      "classId": "3-8",
-      "date": "2026-09-15",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": "9반 교실",
-      "newSubject": null,
-      "newTeacher": "김영훈",
-      "origSubject": "고급 생명과학",
-      "origTeacher": "김상일",
-      "period": 5
     },
     {
       "classId": "1-10",
@@ -1383,12 +1305,12 @@
       "date": "2026-09-21",
       "fromDate": "2026-09-21",
       "fromPeriod": 1,
-      "kind": "swap",
+      "kind": "substitute",
       "newRoom": null,
       "newSubject": "화법과 작문",
-      "newTeacher": "김관우",
+      "newTeacher": "김제희",
       "origSubject": "사회문제 탐구",
-      "origTeacher": "김제희",
+      "origTeacher": "조성빈",
       "period": 4
     },
     {
@@ -1396,12 +1318,12 @@
       "date": "2026-09-21",
       "fromDate": "2026-09-21",
       "fromPeriod": 1,
-      "kind": "substitute",
+      "kind": "swap",
       "newRoom": null,
       "newSubject": "화법과 작문",
-      "newTeacher": "김제희",
+      "newTeacher": "김관우",
       "origSubject": "사회문제 탐구",
-      "origTeacher": "조성빈",
+      "origTeacher": "김제희",
       "period": 4
     },
     {
@@ -2614,7 +2536,7 @@
       "period": 6
     }
   ],
-  "from": "2026-09-15",
+  "from": "2026-09-16",
   "schema": 1,
-  "to": "2026-10-27"
+  "to": "2026-10-28"
 }
