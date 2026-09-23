@@ -14,19 +14,6 @@
       "period": 1
     },
     {
-      "classId": "1-4",
-      "date": "2026-09-14",
-      "fromDate": "2026-09-16",
-      "fromPeriod": 7,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "통합사회2",
-      "newTeacher": "김제희",
-      "origSubject": "한국사2",
-      "origTeacher": "김여운",
-      "period": 2
-    },
-    {
       "classId": "3-1",
       "date": "2026-09-14",
       "fromDate": "2026-09-18",
@@ -51,32 +38,6 @@
       "origSubject": "공통국어2",
       "origTeacher": "김지수",
       "period": 1
-    },
-    {
-      "classId": "1-11",
-      "date": "2026-09-15",
-      "fromDate": "2026-09-16",
-      "fromPeriod": 4,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "대수",
-      "newTeacher": "손종섭",
-      "origSubject": "한문",
-      "origTeacher": "안기종",
-      "period": 2
-    },
-    {
-      "classId": "1-11",
-      "date": "2026-09-15",
-      "fromDate": "2026-09-16",
-      "fromPeriod": 5,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "통합사회2",
-      "newTeacher": "김제희",
-      "origSubject": "통합사회2",
-      "origTeacher": "민준형",
-      "period": 4
     },
     {
       "classId": "1-3",
@@ -131,19 +92,6 @@
       "period": 2
     },
     {
-      "classId": "1-10",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "김여운",
-      "origSubject": "대수",
-      "origTeacher": "손종섭",
-      "period": 6
-    },
-    {
       "classId": "1-11",
       "date": "2026-09-16",
       "fromDate": "2026-09-18",
@@ -157,32 +105,6 @@
       "period": 3
     },
     {
-      "classId": "1-11",
-      "date": "2026-09-16",
-      "fromDate": "2026-09-15",
-      "fromPeriod": 2,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "한문",
-      "newTeacher": "안기종",
-      "origSubject": "대수",
-      "origTeacher": "손종섭",
-      "period": 4
-    },
-    {
-      "classId": "1-11",
-      "date": "2026-09-16",
-      "fromDate": "2026-09-15",
-      "fromPeriod": 4,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "통합사회2",
-      "newTeacher": "민준형",
-      "origSubject": "통합사회2",
-      "origTeacher": "김제희",
-      "period": 5
-    },
-    {
       "classId": "1-12",
       "date": "2026-09-16",
       "fromDate": "2026-09-17",
@@ -194,19 +116,6 @@
       "origSubject": "대수",
       "origTeacher": "손종섭",
       "period": 3
-    },
-    {
-      "classId": "1-4",
-      "date": "2026-09-16",
-      "fromDate": "2026-09-14",
-      "fromPeriod": 2,
-      "kind": "swap",
-      "newRoom": null,
-      "newSubject": "한국사2",
-      "newTeacher": "김여운",
-      "origSubject": "통합사회2",
-      "origTeacher": "김제희",
-      "period": 7
     },
     {
       "classId": "1-5",
@@ -274,19 +183,6 @@
       "period": 2
     },
     {
-      "classId": "2-11",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "박소현",
-      "origSubject": "영어Ⅱ",
-      "origTeacher": "장현화",
-      "period": 5
-    },
-    {
       "classId": "2-12",
       "date": "2026-09-16",
       "fromDate": "2026-09-17",
@@ -326,71 +222,6 @@
       "period": 2
     },
     {
-      "classId": "2-9",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "최민수",
-      "origSubject": "생물의 유전",
-      "origTeacher": "김상일",
-      "period": 4
-    },
-    {
-      "classId": "3-1",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "최다은",
-      "origSubject": "생활과 과학",
-      "origTeacher": "김상일",
-      "period": 1
-    },
-    {
-      "classId": "3-10",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "박가영",
-      "origSubject": "심화 영어Ⅱ",
-      "origTeacher": "장현화",
-      "period": 4
-    },
-    {
-      "classId": "3-11",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "최다은",
-      "origSubject": "심화 영어Ⅱ",
-      "origTeacher": "김인정",
-      "period": 4
-    },
-    {
-      "classId": "3-12",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "고예진",
-      "origSubject": "심화 영어Ⅱ",
-      "origTeacher": "김인정",
-      "period": 2
-    },
-    {
       "classId": "3-12",
       "date": "2026-09-16",
       "fromDate": "2026-09-18",
@@ -402,110 +233,6 @@
       "origSubject": "진로와 직업",
       "origTeacher": "김형태",
       "period": 4
-    },
-    {
-      "classId": "3-12",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "최다은",
-      "origSubject": "창체",
-      "origTeacher": "김상일",
-      "period": 5
-    },
-    {
-      "classId": "3-12",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "엄태운",
-      "origSubject": "창체",
-      "origTeacher": "김상일",
-      "period": 6
-    },
-    {
-      "classId": "3-12",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "엄태운",
-      "origSubject": "창체",
-      "origTeacher": "김상일",
-      "period": 7
-    },
-    {
-      "classId": "3-4",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "송인호",
-      "origSubject": "고전과 윤리",
-      "origTeacher": "이동혁",
-      "period": 1
-    },
-    {
-      "classId": "3-8",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "박가영",
-      "origSubject": "심화 영어Ⅱ",
-      "origTeacher": "장현화",
-      "period": 3
-    },
-    {
-      "classId": "3-8",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "김동은",
-      "origSubject": "창체",
-      "origTeacher": "김선중",
-      "period": 6
-    },
-    {
-      "classId": "3-8",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "김동은",
-      "origSubject": "창체",
-      "origTeacher": "김선중",
-      "period": 7
-    },
-    {
-      "classId": "3-9",
-      "date": "2026-09-16",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
-      "newRoom": null,
-      "newSubject": null,
-      "newTeacher": "박소예",
-      "origSubject": "심화 영어Ⅱ",
-      "origTeacher": "장현화",
-      "period": 1
     },
     {
       "classId": "1-10",
@@ -1177,10 +904,10 @@
       "fromPeriod": 6,
       "kind": "swap",
       "newRoom": null,
-      "newSubject": "화법과 작문",
-      "newTeacher": "이재훈",
-      "origSubject": "심화 영어Ⅱ",
-      "origTeacher": "임연정",
+      "newSubject": "심화 영어Ⅱ",
+      "newTeacher": "임연정",
+      "origSubject": "나라사랑과 보훈",
+      "origTeacher": "김성자",
       "period": 5
     },
     {
@@ -1190,10 +917,10 @@
       "fromPeriod": 6,
       "kind": "swap",
       "newRoom": null,
-      "newSubject": "심화 영어Ⅱ",
-      "newTeacher": "임연정",
-      "origSubject": "나라사랑과 보훈",
-      "origTeacher": "김성자",
+      "newSubject": "화법과 작문",
+      "newTeacher": "이재훈",
+      "origSubject": "심화 영어Ⅱ",
+      "origTeacher": "임연정",
       "period": 5
     },
     {
@@ -2640,7 +2367,7 @@
       "period": 6
     }
   ],
-  "from": "2026-09-16",
+  "from": "2026-09-17",
   "schema": 1,
-  "to": "2026-10-28"
+  "to": "2026-10-29"
 }
