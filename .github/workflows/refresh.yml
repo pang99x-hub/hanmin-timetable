@@ -34,6 +34,9 @@ jobs:
           # 슈파베이스 anon 키. 웹앱에도 박혀 있는 공개 값이라 숨겨야 할 비밀은 아니지만,
           # 이것이 없으면 플랫폼 문지기가 먼저 되돌려보낸다.
           ANON: ${{ secrets.AX_DATA_ANON_KEY }}
+          # 학교별로 복제한 사이트는 저장소 변수에 학교 주소 이름(예: gasang)을 둔다. 비어 있으면
+          # 교사웹이 종전대로 한민고 자료를 준다(2026-09-25 여러 학교).
+          SCHOOL: ${{ vars.AX_SCHOOL_SLUG }}
         run: |
           set -euo pipefail
           # 교사웹(슈파베이스)이 가끔 한 번 502 를 낸다 — 2026-09-13 «JWT issued at future»처럼
@@ -41,7 +44,7 @@ jobs:
           # 그래도 안 되면 그때 실패로 알린다(실패마다 메일이 오므로 일시 오류로 울리지 않게).
           # 내가 가진 자료의 지문을 같이 보낸다 — 같으면 교사웹이 자료 없이 «변화 없음»만 답한다(2026-09-13).
           known=$(cat data/.etag 2>/dev/null || true)
-          body=$(jq -cn --arg k "$known" '{knownEtag: $k}')
+          body=$(jq -cn --arg k "$known" --arg s "${SCHOOL:-}" '{knownEtag: $k} + (if $s == "" then {} else {school: $s} end)')
           code=000
           for attempt in 1 2 3; do
             code=$(curl -sS -o /tmp/payload.json -w '%{http_code}' -X POST "$DESK" \
