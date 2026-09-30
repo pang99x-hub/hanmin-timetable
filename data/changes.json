@@ -655,12 +655,12 @@
       "date": "2026-09-29",
       "fromDate": "2026-10-02",
       "fromPeriod": 2,
-      "kind": "substitute",
+      "kind": "swap",
       "newRoom": null,
       "newSubject": "화법과 작문",
-      "newTeacher": "김관우",
-      "origSubject": "화법과 작문",
-      "origTeacher": "김원영",
+      "newTeacher": "김원영",
+      "origSubject": "심화 영어Ⅱ",
+      "origTeacher": "임연정",
       "period": 1
     },
     {
@@ -668,12 +668,12 @@
       "date": "2026-09-29",
       "fromDate": "2026-10-02",
       "fromPeriod": 2,
-      "kind": "swap",
+      "kind": "substitute",
       "newRoom": null,
       "newSubject": "화법과 작문",
-      "newTeacher": "김원영",
-      "origSubject": "심화 영어Ⅱ",
-      "origTeacher": "임연정",
+      "newTeacher": "김관우",
+      "origSubject": "화법과 작문",
+      "origTeacher": "김원영",
       "period": 1
     },
     {
@@ -820,6 +820,19 @@
       "period": 1
     },
     {
+      "classId": "2-1",
+      "date": "2026-09-30",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "1반 교실",
+      "newSubject": null,
+      "newTeacher": "서보람",
+      "origSubject": "정치와 사회",
+      "origTeacher": "조성빈",
+      "period": 5
+    },
+    {
       "classId": "2-13",
       "date": "2026-09-30",
       "fromDate": null,
@@ -864,19 +877,6 @@
       "fromDate": null,
       "fromPeriod": null,
       "kind": "substitute",
-      "newRoom": "생명실험실",
-      "newSubject": null,
-      "newTeacher": "김형태",
-      "origSubject": "과학창의연구",
-      "origTeacher": "김태호",
-      "period": 6
-    },
-    {
-      "classId": "2-9",
-      "date": "2026-09-30",
-      "fromDate": null,
-      "fromPeriod": null,
-      "kind": "substitute",
       "newRoom": "화학실험실",
       "newSubject": null,
       "newTeacher": "김예리",
@@ -895,6 +895,19 @@
       "newTeacher": "김형태",
       "origSubject": "과학창의연구",
       "origTeacher": "김태호",
+      "period": 6
+    },
+    {
+      "classId": "2-9",
+      "date": "2026-09-30",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "화학실험실",
+      "newSubject": null,
+      "newTeacher": "김예리",
+      "origSubject": "과학창의연구",
+      "origTeacher": "김서연",
       "period": 7
     },
     {
@@ -903,11 +916,11 @@
       "fromDate": null,
       "fromPeriod": null,
       "kind": "substitute",
-      "newRoom": "화학실험실",
+      "newRoom": "생명실험실",
       "newSubject": null,
-      "newTeacher": "김예리",
+      "newTeacher": "김형태",
       "origSubject": "과학창의연구",
-      "origTeacher": "김서연",
+      "origTeacher": "김태호",
       "period": 7
     },
     {
@@ -1314,6 +1327,32 @@
       "period": 4
     },
     {
+      "classId": "2-5",
+      "date": "2026-10-06",
+      "fromDate": "2026-10-07",
+      "fromPeriod": 2,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "고급 대수",
+      "newTeacher": "김준환",
+      "origSubject": "미술",
+      "origTeacher": "이아정",
+      "period": 3
+    },
+    {
+      "classId": "2-5",
+      "date": "2026-10-06",
+      "fromDate": "2026-10-07",
+      "fromPeriod": 1,
+      "kind": "swap",
+      "newRoom": "운동장",
+      "newSubject": "체육2",
+      "newTeacher": "이승현",
+      "origSubject": "미술",
+      "origTeacher": "이아정",
+      "period": 4
+    },
+    {
       "classId": "2-7",
       "date": "2026-10-06",
       "fromDate": "2026-10-08",
@@ -1366,6 +1405,32 @@
       "period": 5
     },
     {
+      "classId": "2-5",
+      "date": "2026-10-07",
+      "fromDate": "2026-10-06",
+      "fromPeriod": 4,
+      "kind": "swap",
+      "newRoom": "미술실(3층)",
+      "newSubject": "미술",
+      "newTeacher": "이아정",
+      "origSubject": "체육2",
+      "origTeacher": "이승현",
+      "period": 1
+    },
+    {
+      "classId": "2-5",
+      "date": "2026-10-07",
+      "fromDate": "2026-10-06",
+      "fromPeriod": 3,
+      "kind": "swap",
+      "newRoom": "미술실(3층)",
+      "newSubject": "미술",
+      "newTeacher": "이아정",
+      "origSubject": "고급 대수",
+      "origTeacher": "김준환",
+      "period": 2
+    },
+    {
       "classId": "2-6",
       "date": "2026-10-07",
       "fromDate": null,
@@ -1377,6 +1442,19 @@
       "origSubject": "영어Ⅱ",
       "origTeacher": "박성미",
       "period": 2
+    },
+    {
+      "classId": "2-1",
+      "date": "2026-10-08",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "운동장",
+      "newSubject": null,
+      "newTeacher": "강민우",
+      "origSubject": "체육2",
+      "origTeacher": "이승현",
+      "period": 1
     },
     {
       "classId": "2-13",
