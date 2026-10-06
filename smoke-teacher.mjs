@@ -44,6 +44,8 @@ async function open(deskReply) {
     catch { return { ok: false }; }
   };
   w.matchMedia = () => ({ matches:false, addListener(){}, removeListener(){} });
+  // jsdom 창에는 structuredClone 이 없다 — 교사 읽기 캐시가 쓴다. 노드의 것을 빌려 준다.
+  w.structuredClone = structuredClone;
   Object.defineProperty(w, 'localStorage', { value: {
     getItem: (k) => store.get(k) ?? null,
     setItem: (k, v) => store.set(k, String(v)),

@@ -57,9 +57,15 @@ const cellAt = async (classId, take, date, period) => {
 console.log('[1] 합반 — 변경이 적히지 않은 반의 학생도 받는가');
 {
   const merged = changes.filter((c) => c.origSubject).map((c) => {
+    /*
+     * 그 변경이 걸린 바로 그 강좌 — 같은 시간 같은 이름 강좌가 둘이면(분담 운영) 담당 교사로
+     * 가른다. 아무 쪽이나 집으면 «남의 보강을 안 받는» 옳은 동작을 실패로 센다(2026-10-07).
+     */
+    const dow = (new Date(`${c.date}T00:00:00`).getDay() + 6) % 7;
     const s = sections.find((x) => x.subject === c.origSubject
       && x.classIds.includes(c.classId) && x.classIds.length > 1
-      && x.period === c.period);
+      && x.period === c.period && x.day === dow
+      && (!c.origTeacher || !x.teacher || x.teacher.includes(c.origTeacher) || c.origTeacher.includes(x.teacher)));
     return s ? { c, s } : null;
   }).filter(Boolean);
   console.log(`   합반 강좌에 걸린 변경 ${merged.length}건`);
@@ -105,7 +111,13 @@ console.log('\n[3] 겹친 변경 — 한 칸에 둘이 쌓였을 때');
     const k = `${c.date}|${c.classId}|${c.period}`;
     bySlot.set(k, [...(bySlot.get(k) ?? []), c]);
   }
-  const stacked = [...bySlot.entries()].filter(([, v]) => v.length > 1);
+  /*
+   * 한 학생의 한 칸에 쌓인 것만 본다. 같은 과목을 다른 교사가 맡는 분반 둘에 하나씩 걸린
+   * 보강(2026-09-30 2-9 6교시 과학창의연구 김태호·김서연)은 학생마다 하나만 받는 게 맞다 — [2]가 본다.
+   */
+  const sameLesson = (v) => new Set(v.map((c) => `${c.origSubject ?? ''}`)).size === 1
+    && new Set(v.map((c) => c.origTeacher).filter(Boolean)).size <= 1;
+  const stacked = [...bySlot.entries()].filter(([, v]) => v.length > 1 && sameLesson(v));
   console.log(`   한 칸에 둘 이상 쌓인 자리 ${stacked.length}곳`);
   for (const [k, list] of stacked.slice(0, 2)) {
     const [date, classId, period] = k.split('|');
