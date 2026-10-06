@@ -95,8 +95,14 @@ console.log('\n[2] 동명 강좌 — 옆 분반 학생이 남의 보강을 받�
     tried += 1;
     check(`${c.date} ${c.period}교시 «${c.origSubject}» ${mine.teacher} 반 학생은 받음`,
       (await cellAt(c.classId, mine, c.date, c.period)) !== 'null');
+    /*
+     * 옆 분반이 «아무 변경도 없다»가 아니라 «이 변경(남의 보강)을 받지 않는다»를 본다 — 같은 날
+     * 옆 분반에도 제 보강이 따로 걸리면(2026-09-30 과학창의연구 김태호·김서연) 그것은 받는 게 맞다.
+     */
+    const got = await cellAt(c.classId, other, c.date, c.period);
+    const theirs = got === 'null' ? [] : JSON.parse(got).stack;
     check(`${c.date} ${c.period}교시 «${c.origSubject}» ${other.teacher} 반 학생은 안 받음`,
-      (await cellAt(c.classId, other, c.date, c.period)) === 'null');
+      !theirs.some((x) => x.origTeacher === c.origTeacher && x.newTeacher === c.newTeacher));
     if (tried >= 2) break;
   }
   if (!tried) console.log('   (표본 없음)');
