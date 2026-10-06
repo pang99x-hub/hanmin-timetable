@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#4338ca">
+<meta name="theme-color" content="#faf9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#18181b" media="(prefers-color-scheme: dark)">
 <title>한민고 시간표</title>
 <link rel="manifest" href="manifest.webmanifest">
 <!-- 애플은 매니페스트의 아이콘을 쓰지 않는다. 홈 화면에 놓을 때 이것을 본다. -->
@@ -14,19 +15,18 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="시간표">
 <!--
-  주소 뒤의 v 는 **바뀔 때마다 손으로 올린다.**
+  주소 뒤의 v 는 **바뀔 때마다 손으로 올린다** — app.js·sw.js 의 VERSION 과 같은 값.
 
   깃허브 페이지스는 app.js 를 10분(max-age=600) 동안 브라우저가 붙잡게 한다. 고쳐서
-  올려도 그동안은 옛 파일이 돌고, 사람은 «안 고쳐졌다»고 본다 — 실제로 그렇게 한 번
-  헛돌았다(2026-09-07 «교시가 안 나온다»). 주소가 달라지면 캐시는 다른 파일로 보고
-  새로 받는다.
+  올려도 그동안은 옛 파일이 돌고, 사람은 «안 고쳐졌다»고 본다(2026-09-07 «교시가 안
+  나온다»). 주소가 달라지면 캐시는 다른 파일로 보고 새로 받는다. 서비스 워커도 이
+  주소로 껍데기를 기기에 둔다.
 -->
-<link rel="stylesheet" href="app.css?v=20260914-ax-sso">
+<link rel="stylesheet" href="app.css?v=20261007-v2">
 </head>
 <body>
-<div class="wrap"><div id="app">
-  <div class="notice">시간표를 불러오는 중입니다…</div>
-</div></div>
-<script src="app.js?v=20260918-meals"></script>
+<div id="app"><div class="boot">시간표를 불러오는 중입니다…</div></div>
+<div id="sheet-root"></div>
+<script src="app.js?v=20261007-v2"></script>
 </body>
 </html>

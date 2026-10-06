@@ -28,6 +28,12 @@ const CAL = { schema:1, days:[
   { date:'2026-09-15', kind:'event', labels:['1학년 현장체험'], grades:[1] },
 ]};
 
+/* 2026-10 개편 화면 — 시간표 탭 «목록»으로 그날, «표»로 그 주, 급식 탭, 일정 탭의 그 달. */
+const DAY = (d) => `state.tab='timetable'; state.prefs.ttview='list'; state.week=mondayOf(parse('${d}')); state.listDay=parse('${d}'); render();`;
+const WEEK = (d) => `state.tab='timetable'; state.prefs.ttview='grid'; state.week=mondayOf(parse('${d}')); render();`;
+const MEAL = (d) => `state.tab='meals'; state.mealDay=parse('${d}'); render();`;
+const MONTH = (y, m) => `state.tab='calendar'; state.month=new Date(${y}, ${m - 1}, 1); state.selDate=new Date(${y}, ${m - 1}, 1); render();`;
+
 async function open(me) {
   const dom = new JSDOM(fs.readFileSync(`${ROOT}/index.html`,'utf8'),
     { url:'https://x/', runScripts:'dangerously', pretendToBeVisual:true });
@@ -70,7 +76,7 @@ const pick = (subject) => {
 console.log('\n[1] 이동수업 칸 보호 — 9/10(목)');
 for (const [subject, expect] of [['고전과 윤리', true], ['세계 문제와 미래 사회', false]]) {
   const w = await open({ classId:'3-1', sections: pick(subject) });
-  w.eval("state.cursor = parse('2026-09-10'); state.view='day'; render();");
+  w.eval(DAY('2026-09-10'));
   const text = w.document.getElementById('app').textContent;
   check(`「${subject}」 듣는 학생에게 보강 표시 ${expect ? '나옴' : '안 나옴'}`,
     text.includes('나교사') === expect);
@@ -96,21 +102,15 @@ console.log('\n[2] 요일 교환 — 9/7(월) ↔ 9/11(금)');
 console.log('\n[3] 급식·학사일정');
 {
   const w = await open({ classId:'3-1', sections:{} });
-  w.eval("state.cursor = parse('2026-09-10'); state.view='day'; render();");
+  w.eval(DAY('2026-09-10'));
   const text = w.document.getElementById('app').textContent;
-  // 식사는 접혀 있다 — 시간표를 보러 온 화면이라 메뉴가 자리를 다 먹으면 안 된다.
-  check('접힌 상태: 메뉴가 다 펼쳐지지 않음', !text.includes('제육볶음'));
-  check('접힌 상태: 무엇이 나오는지 한 줄은 보임', text.includes('보리밥'));
-  const lunchHead = [...w.document.querySelectorAll('.slot.meal .mealhead')]
-    .find((b) => b.textContent.includes('중식'));
-  check('중식 줄을 누를 수 있음', Boolean(lunchHead));
-  if (lunchHead) {
-    lunchHead.dispatchEvent(new w.Event('click', { bubbles: true }));
-    const opened = w.document.getElementById('app').textContent;
-    check('펼치면 메뉴가 줄마다 나옴',
-      ['보리밥','미역국','제육볶음'].every((x) => opened.includes(x)));
-  }
-  w.eval("state.view='month'; render();");
+  // 급식은 시간표에서 뺐다(2026-10) — 교시 흐름에 조식·중식·석식이 끼지 않는다.
+  check('시간표(그날 목록)에 급식이 없다', !text.includes('보리밥') && !text.includes('중식'));
+  w.eval(MEAL('2026-09-10'));
+  const meals = w.document.getElementById('app').textContent;
+  check('급식 탭에 메뉴가 줄마다 나옴', ['보리밥','미역국','제육볶음'].every((x) => meals.includes(x)));
+  check('급식 탭에 끼니 이름이 있다', meals.includes('중식'));
+  w.eval(MONTH(2026, 9));
   const month = w.document.getElementById('app').textContent;
   check('3학년에게 3학년 시험이 보임', month.includes('1학기 2차 정기시험'));
   check('3학년에게 1학년 행사는 안 보임', !month.includes('1학년 현장체험'));
@@ -120,8 +120,9 @@ console.log('\n[3] 급식·학사일정');
 console.log('\n[4] 주간표에는 급식 줄이 없다');
 {
   const w = await open({ classId:'3-1', sections:{} });
-  w.eval("state.cursor = parse('2026-09-10'); state.view='week'; render();");
-  check('주간표에 급식 줄 없음', w.document.querySelectorAll('.wk tr.mealrow').length === 0);
+  w.eval(WEEK('2026-09-10'));
+  check('주간표가 있다', Boolean(w.document.querySelector('.wk')));
+  check('주간표에 급식 줄 없음', !/조식|중식|석식/.test(w.document.querySelector('.wk').textContent));
   check('주간표에 «급식은 «오늘»에서» 문구 없음',
     !w.document.querySelector('.wk').textContent.includes('급식'));
 }
@@ -135,12 +136,12 @@ console.log('\n[5] 바뀐 수업 목록에 교시가 적힌다');
 {
   // 9/10(목) 5교시 「고전과 윤리」 보강 — 그 강좌를 듣는 학생이라야 목록에 뜬다.
   const w = await open({ classId:'3-1', sections: pick('고전과 윤리') });
-  w.eval("state.cursor = parse('2026-09-10'); state.view='week'; render();");
+  w.eval(WEEK('2026-09-10'));
   const app = w.document.getElementById('app');
-  const side = [...app.querySelectorAll('.side')].find((n) => n.textContent.includes('바뀐 수업'));
+  const side = [...app.querySelectorAll('.card')].find((n) => n.querySelector('.card-title')?.textContent.includes('이번 주 바뀐 수업'));
   check('«이번 주 바뀐 수업» 칸이 있다', Boolean(side));
   check('교시 자리에 undefined 가 없다', Boolean(side) && !side.textContent.includes('undefined'));
-  const rows = side ? [...side.querySelectorAll('.r b')] : [];
+  const rows = side ? [...side.querySelectorAll('.row-lead')] : [];
   // 바뀐 수업이 실제로 있어야 이 검사가 뜻이 있다.
   check('그 주에 바뀐 수업이 있다', rows.length > 0);
   check(`교시 표기가 «요일 N교시» 모양 (${rows.length}건)`,
