@@ -28,7 +28,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261007-v2';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261007-v3';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -38,6 +38,8 @@ const EVENTS_KEY = 'hanmin.timetable.events.v1';
 /* 화면 설정(배치·시간표 보기)과 «앱으로 받기»를 미룬 때. 이 기기에만. */
 const PREFS_KEY = 'hanmin.timetable.prefs.v1';
 const INSTALL_KEY = 'hanmin.timetable.install.v1';
+/* 구글 캘린더를 이 기기에서 한 번이라도 연결했나 — 그랬을 때만 열 때마다 조용히 되받는다. */
+const CAL_KEY = 'hanmin.timetable.cal.v1';
 const DATA = 'data/';
 /* 오래 열어 둔 앱이 낡은 변경·급식을 보여 주지 않게 — 다시 보일 때 이만큼 지났으면 새로 받는다. */
 const REFRESH_AFTER = 10 * 60 * 1000;
@@ -138,8 +140,11 @@ async function boot() {
   if (TABS.some(([key]) => key === fromHash)) state.tab = fromHash;
 
   render();
-  // 권한을 이미 준 기기면 캘린더에 있는 것을 조용히 가져온다. 없으면 아무 일도 없다.
-  if (state.me && state.me.classId) pullEventsFromCalendar();
+  /*
+   * 권한을 이미 준 기기면 캘린더에 있는 것을 조용히 가져온다. 연결한 적이 없는 기기에서
+   * 이것을 부르면 열 때마다 권한 창을 띄우려다 막혀 «팝업 차단» 표시만 남는다.
+   */
+  if (state.me && state.me.classId && calConnected()) pullEventsFromCalendar();
   window.addEventListener('keydown', onKey);
   window.addEventListener('hashchange', () => {
     const key = location.hash.replace('#', '');
@@ -1395,6 +1400,7 @@ const CAL_API = 'https://www.googleapis.com/calendar/v3/calendars/primary/events
 const CAL_MARK = 'hanmin-timetable';
 
 const cal = { token: null, until: 0, client: null, denied: false };
+const calConnected = () => { try { return localStorage.getItem(CAL_KEY) === '1'; } catch { return false; } };
 
 /**
  * 권한 토큰 받기.
@@ -1415,6 +1421,7 @@ function calToken(quiet) {
               cal.token = res.access_token;
               cal.until = Date.now() + (Number(res.expires_in || 3600) - 120) * 1000;
               cal.denied = false;
+              try { localStorage.setItem(CAL_KEY, '1'); } catch { /* 다음에 다시 묻는다 */ }
             } else {
               cal.denied = true;
             }
