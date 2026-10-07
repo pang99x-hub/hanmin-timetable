@@ -28,7 +28,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261007-v5';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261007-v6';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -46,6 +46,7 @@ const CAL_KEY = 'hanmin.timetable.cal.v1';
  */
 const HUB = 'https://students.hiax.cloud';
 const HUB_KEY = 'hanmin.timetable.hub.v1';
+const HUB_TRY_KEY = 'hanmin.timetable.hub-try.v1';
 const DATA = 'data/';
 /* 오래 열어 둔 앱이 낡은 변경·급식을 보여 주지 않게 — 다시 보일 때 이만큼 지났으면 새로 받는다. */
 const REFRESH_AFTER = 10 * 60 * 1000;
@@ -155,6 +156,7 @@ async function boot() {
    */
   if (state.me && state.me.classId && calConnected()) pullEventsFromCalendar();
   if (state.me && state.hub) refreshHub();
+  else if (state.me && !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL) quietConnect();
   window.addEventListener('keydown', onKey);
   window.addEventListener('hashchange', () => {
     const key = location.hash.replace('#', '');
@@ -1383,6 +1385,35 @@ function seatsSheet() {
     content: seatMap(plan),
     after: () => { const mine = document.getElementById('my-seat'); if (mine) mine.scrollIntoView({ block: 'center', inline: 'center' }); },
   };
+}
+
+/*
+ * 학생용 층이 생기기 전에 로그인해 둔 학생 — 열 때 구글 자동 로그인으로 조용히 한 번 잇는다.
+ * 구글이 한 번 눌러 달라는 작은 창을 띄울 수 있다. 닫으면 하루 동안은 다시 묻지 않고, 내 정보의
+ * «학교 계정 연결»은 늘 남아 있다.
+ */
+function quietConnect() {
+  try {
+    const last = Number(localStorage.getItem(HUB_TRY_KEY) || 0);
+    if (Date.now() - last < 86_400_000) return;
+    localStorage.setItem(HUB_TRY_KEY, String(Date.now()));
+  } catch { return; }
+  loadGoogle().then((ready) => {
+    if (!ready || state.hub) return;
+    google.accounts.id.initialize({
+      client_id: CLIENT_ID, auto_select: true,
+      callback: async (response) => {
+        try {
+          const hub = await hubLogin(response.credential);
+          if (hub.notStudent) return;
+          saveHub({ token: hub.token, me: hub.me, savedAt: Date.now() });
+          adoptHub(hub.me);
+          render();
+        } catch { /* 다음에 연다 */ }
+      },
+    });
+    google.accounts.id.prompt();
+  });
 }
 
 /* 학생용 층이 생기기 전에 로그인한 학생 — 한 번 더 구글로 확인하면 선생님 일정·자리가 들어온다 */
