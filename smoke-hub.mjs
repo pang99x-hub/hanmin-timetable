@@ -35,6 +35,13 @@ const ME = {
     seats: { 'd1a:0': { no: 6, name: '나학생' }, 'd1a:1': { no: 7, name: '가학생' } },
     locked: [], mine: 'd1a:1',
   }],
+  // 이동수업 자리 — 교과 선생님이 짠 것. 여러 반이 모이므로 반을 함께 싣는다
+  lessonSeats: [{
+    lessonId: `sec:${sample.sectionId}`, effectiveFrom: plus(-1),
+    room: { width: 800, depth: 760, desks: [{ id: 'd1a', x: 300, y: 250, rot: 0, kind: 'pair' }], fixtures: [] },
+    seats: { 'd1a:0': { no: 3, name: '옆반학생', classId: '2-2' }, 'd1a:1': { no: 7, name: '가학생', classId: '2-1' } },
+    locked: [], mine: 'd1a:1',
+  }],
 };
 
 async function open({ hub, desk }) {
@@ -109,6 +116,20 @@ await settle()
 const mine = student.sheet().querySelector('.seatmap-seat.is-mine')
 check('내 자리가 칠해져 있다', !!mine && mine.textContent.includes('가학생'))
 check('반 친구는 번호·이름', student.sheet().textContent.includes('나학생'))
+student.w.eval('closeSheet()')
+
+console.log('\n[3-1] 이동수업 자리 — 그 수업 창에서');
+// 이번 주 안에서 표본 강좌 수업이 실제로 걸린 날·교시(같은 강좌도 요일마다 교사가 다를 수 있다)
+const [lessonDay, lessonPeriod] = JSON.parse(student.w.eval(`JSON.stringify([0, 1, 2, 3, 4, 5, 6].map((n) => iso(new Date(today().getTime() + n * 86400000)))
+  .flatMap((d) => [...lessonsOn(parse(d)).values()].filter((l) => l.kind === 'section' && l.sectionId === ${sample.sectionId}).map((l) => [d, l.period]))[0] || [])`))
+student.w.eval(`openSheet({ type: 'lesson', date: '${lessonDay}', period: ${lessonPeriod} })`)
+await settle()
+const seatButton = [...student.sheet().querySelectorAll('button')].find((b) => b.textContent.includes('이 수업 내 자리'))
+check('수업 창에 «이 수업 내 자리»', !!seatButton, lessonDay)
+seatButton?.click()
+await settle()
+check('이동수업 자리에 내 자리가 칠해져 있다', !!student.sheet().querySelector('.seatmap-seat.is-mine'))
+check('다른 반 학생은 반과 번호를 함께', student.sheet().textContent.includes('2-2 3') && student.sheet().textContent.includes('옆반학생'))
 student.w.eval('closeSheet()')
 
 console.log('\n[4] 로그아웃 — 학생용 층 세션도');

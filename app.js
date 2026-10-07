@@ -28,7 +28,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261007-v9';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261008-v10';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -362,6 +362,17 @@ function bandsOfMyClass() {
   return map;
 }
 const sectionKey = (sec) => `${sec.sectionId ?? ''}|${sec.subject}|${sec.teacher ?? ''}`;
+/*
+ * 고른 강좌인가 — 강좌 번호가 있으면 번호로만 본다(2026-10-08).
+ *
+ * 같은 강좌도 요일마다 맡는 선생님이 번갈아 바뀐다(문학과 영상 127·128, 고급 물리학 132).
+ * 열쇠에 교사까지 넣어 대 보니, 고른 강좌인데 선생님이 다른 요일 칸이 공강으로 비었다.
+ * 옛 열쇠(번호|과목|교사)를 그대로 기억해 둔 학생도 번호만 맞으면 된다.
+ */
+const keySection = (key) => String(key || '').split('|')[0];
+const isChosen = (sec, key) => !!key && (sec.sectionId != null && keySection(key) !== ''
+  ? String(sec.sectionId) === keySection(key)
+  : sectionKey(sec) === key);
 
 /*
  * 그날 실제로 도는 요일.
@@ -408,7 +419,7 @@ function lessonsOn(date) {
     const chosen = state.me.sections[band];
     for (const sec of list) {
       if (sec.day !== day) continue;
-      if (chosen && sectionKey(sec) !== chosen) continue;
+      if (chosen && !isChosen(sec, chosen)) continue;
       out.push(chosen
         ? {
             period: sec.period, subject: sec.subject,
@@ -422,6 +433,8 @@ function lessonsOn(date) {
              */
             twins: twinCount(bands, day, sec.period, sec.subject),
             band,
+            // 이동수업 자리 열쇠(sec:…) — 교과 선생님이 그 수업 자리를 짜 두면 수업 창에서 본다
+            sectionId: sec.sectionId ?? null,
           }
         : { period: sec.period, subject: '이동수업', teacher: null, kind: 'unpicked', band });
     }
@@ -1092,7 +1105,7 @@ function myCoursesCard() {
   const bands = [...bandsOfMyClass().entries()];
   if (!bands.length) return null;
   return card('내 강좌', null, h('div', { class: 'rows' }, bands.map(([band, list]) => {
-    const chosen = list.find((sec) => sectionKey(sec) === state.me.sections[band]);
+    const chosen = list.find((sec) => isChosen(sec, state.me.sections[band]));
     return row({
       title: chosen ? chosen.subject : '강좌 고르기',
       note: chosen ? [chosen.teacher, chosen.room].filter(Boolean).join(' · ') : null,
@@ -1353,6 +1366,7 @@ function sheetBody(spec) {
     case 'install': return installSheet();
     case 'teacherEvent': return teacherEventSheet(spec.id);
     case 'seats': return seatsSheet();
+    case 'lessonSeats': return lessonSeatsSheet(spec.lessonId, spec.date);
     case 'connect': return connectSheet();
     default: return null;
   }
@@ -1395,6 +1409,7 @@ function lessonSheet(date, period) {
   const p = (state.school.periods || []).find((x) => x.period === period);
   const c = cellOf(date, period, lessonsOn(date), changesOn(date));
   const records = eventsAt(date, period);
+  const lessonSeat = c.lesson && c.lesson.kind === 'section' && c.lesson.sectionId != null ? lessonSeatPlanOn(`sec:${c.lesson.sectionId}`, iso(date)) : null;
   return {
     title: c.empty ? `${period}교시 공강` : c.subject,
     sub: `${fmtShort(date)} · ${period}교시${p ? ` · ${p.startTime}–${p.endTime}` : ''}`,
@@ -1402,6 +1417,8 @@ function lessonSheet(date, period) {
       !c.empty && !c.cancelled && [c.teacher, c.room].some(Boolean) && h('p', { class: 'sheet-line' }, [c.teacher, c.room].filter(Boolean).join(' · ')),
       c.chg && h('p', { class: 'sheet-line' }, badge(c.chg.note, changeTone(c.chg)), h('span', null, changeLine(c.chg))),
       c.lesson && c.lesson.kind === 'section' && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => openSheet({ type: 'picker', band: c.lesson.band }) }, '강좌 바꾸기'),
+      lessonSeat && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => openSheet({ type: 'lessonSeats', lessonId: lessonSeat.lessonId, date: iso(date) }) },
+        lessonSeat.mine ? '이 수업 내 자리' : '이 수업 자리'),
       subTitle('수업 기록'),
       records.length
         ? h('div', { class: 'rows is-boxed' }, records.map((item) => row({ cls: 'is-mine', title: item.title, tail: icon('next'), onclick: () => openSheet({ type: 'event', draft: { ...item } }) })))
@@ -1531,10 +1548,30 @@ function seatMap(plan) {
       parts.push(h('div', {
         class: `seatmap-seat${who ? '' : ' is-empty'}${mineSeat ? ' is-mine' : ''}`, id: mineSeat ? 'my-seat' : null,
         style: `left:${px(d.x + dx * cos - dy * sin)};top:${px(d.y + dx * sin + dy * cos)};width:${px(60)};height:${px(42)}`,
-      }, who && h('span', { class: 'no' }, String(who.no ?? '')), who && h('b', null, who.name)));
+      // 이동수업 자리는 여러 반이 모인다 — 번호에 반을 함께
+      }, who && h('span', { class: 'no' }, who.classId ? `${who.classId} ${who.no ?? ''}` : String(who.no ?? '')), who && h('b', null, who.name)));
     });
   }
   return h('div', { class: 'seatmap-scroll' }, h('div', { class: 'seatmap', style: `width:${px(room.width)};height:${px(room.depth)}` }, parts));
+}
+
+/* 이동수업 자리 — 그날 쓰는 것, 없으면 앞으로 쓸 첫 것 */
+function lessonSeatPlanOn(lessonId, key) {
+  const plans = ((hubMe() && hubMe().lessonSeats) || []).filter((p) => p.lessonId === lessonId);
+  return plans.filter((p) => p.effectiveFrom <= key).sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0]
+    || plans.filter((p) => p.effectiveFrom > key).sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))[0]
+    || null;
+}
+
+function lessonSeatsSheet(lessonId, date) {
+  const plan = lessonSeatPlanOn(lessonId, date);
+  if (!plan) return null;
+  return {
+    title: '이 수업 자리',
+    sub: `${fmtShort(parse(plan.effectiveFrom))}부터 · 칠판이 위`,
+    content: seatMap(plan),
+    after: () => { const mine = document.getElementById('my-seat'); if (mine) mine.scrollIntoView({ block: 'center', inline: 'center' }); },
+  };
 }
 
 function seatsSheet() {
@@ -1894,16 +1931,22 @@ async function onConnect(response) {
 /* 강좌 고르기 — 이동수업은 학생마다 다르다. 한 번 고르면 계속 기억한다. */
 function pickerSheet(band) {
   const list = bandsOfMyClass().get(band) || [];
+  // 강좌 하나에 한 줄 — 요일마다 선생님이 바뀌는 강좌는 선생님을 함께 적는다
   const uniq = new Map();
-  for (const sec of list) if (!uniq.has(sectionKey(sec))) uniq.set(sectionKey(sec), sec);
+  for (const sec of list) {
+    const id = sec.sectionId ?? sectionKey(sec);
+    const found = uniq.get(id);
+    if (!found) uniq.set(id, { key: sectionKey(sec), sec, teachers: new Set(sec.teacher ? [sec.teacher] : []) });
+    else if (sec.teacher) found.teachers.add(sec.teacher);
+  }
   return {
     title: '강좌 고르기',
-    content: h('div', { class: 'rows is-boxed' }, [...uniq].map(([key, sec]) => {
-      const on = state.me.sections[band] === key;
+    content: h('div', { class: 'rows is-boxed' }, [...uniq.values()].map(({ key, sec, teachers }) => {
+      const on = isChosen(sec, state.me.sections[band]);
       return row({
         cls: on ? 'is-on' : null,
         title: sec.subject,
-        note: [sec.teacher || '담당 미정', sec.room].filter(Boolean).join(' · '),
+        note: [[...teachers].join('·') || '담당 미정', sec.room].filter(Boolean).join(' · '),
         tail: on && badge('듣는 강좌', 'accent'),
         onclick: () => { state.me.sections[band] = key; save(); closeSheet(); },
       });
