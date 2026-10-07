@@ -3,7 +3,7 @@
  *
  *   1. 학생은 학생용 층으로 로그인한다. 반·강좌가 채워지고 토큰이 기기에 남는다(원문 하나만)
  *   2. 선생님 일정이 오늘(사흘 안)·달력 점·고른 날 카드에 뜬다
- *   3. 우리 반 자리 — 내 정보에서 열면 내 자리가 칠해져 있다. 반 친구 학번은 오지 않는다
+ *   3. 우리 반 자리 — 시간표 탭 «자리»에서 열면 내 자리가 칠해져 있다. 반 친구 학번은 오지 않는다
  *   4. 명단에 없는 계정(교사)은 앱스 스크립트로 넘어간다. 학생용 층이 닿지 않아도 넘어간다
  *   5. 로그아웃하면 학생용 층 세션도 지운다
  */
@@ -109,8 +109,12 @@ student.w.eval('closeSheet()')
 
 console.log('\n[3] 우리 반 자리');
 student.w.eval(`state.tab='me'; render();`)
-const seatsRow = [...student.app.querySelectorAll('.row')].find((n) => n.textContent.includes('우리 반 자리'))
-check('내 정보에 «우리 반 자리»', !!seatsRow)
+check('내 정보에는 자리가 없다 — 시간표 탭으로 옮겼다', ![...student.app.querySelectorAll('.row')].some((n) => n.textContent.includes('우리 반 자리')))
+student.w.eval(`state.tab='timetable'; render();`)
+const seatsCard = [...student.app.querySelectorAll('.card')].find((n) => n.querySelector('.card-title')?.textContent.trim() === '자리')
+const seatsRow = seatsCard && [...seatsCard.querySelectorAll('.row')].find((n) => n.textContent.includes('우리 반 자리'))
+check('시간표 탭 «자리»에 «우리 반 자리»', !!seatsRow)
+check('«자리»에 이동수업 자리도', !!seatsCard && [...seatsCard.querySelectorAll('.row')].some((n) => /자리/.test(n.textContent) && !n.textContent.includes('우리 반')))
 seatsRow.click()
 await settle()
 const mine = student.sheet().querySelector('.seatmap-seat.is-mine')
