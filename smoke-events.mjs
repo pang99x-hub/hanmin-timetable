@@ -73,7 +73,7 @@ const sheetBtn = (text) => [...sheet().querySelectorAll('button')].find((n) => n
 /* 2026-10 개편 — 수업 기록은 시간표(그날 목록)에, 내 일정·구글 캘린더는 일정 탭에. */
 const DAY = () => w.eval(`state.tab='timetable'; state.prefs.ttview='list'; state.week=mondayOf(parse('${today}')); state.listDay=parse('${today}'); render();`);
 const CAL = () => w.eval(`state.tab='calendar'; state.month=new Date(parse('${today}').getFullYear(), parse('${today}').getMonth(), 1); state.selDate=parse('${today}'); render();`);
-const myCard = () => [...app.querySelectorAll('.card')].find((n) => n.querySelector('.card-title')?.textContent.includes('내 일정'));
+const myCard = () => [...app.querySelectorAll('.card')].find((n) => n.querySelector('.card-title')?.textContent.includes('내 기록'));
 
 const beforeDesk = deskCalls, beforeData = dataCalls;
 
@@ -178,7 +178,7 @@ console.log('\n[8] 적어 둔 일정이 달력 칸에 보인다');
 w.eval(`saveEvents([{ id:'m', date:'${today}', period:4, title:'모의고사', gcalId:'g0' }]);`);
 CAL();
 // 달력 칸에는 점, 이름은 고른 날 카드에(2026-10).
-const cellSaid = [...app.querySelectorAll('.mo .day')].some((n) => n.querySelector('.dot.is-mine') && (n.getAttribute('aria-label') || '').includes('내 일정 1'));
+const cellSaid = [...app.querySelectorAll('.mo .day')].some((n) => n.querySelector('.dot.is-mine') && (n.getAttribute('aria-label') || '').includes('내 기록 1'));
 const shown = cellSaid && [...app.querySelectorAll('.row.is-mine')].some((n) => n.textContent.includes('모의고사'));
 if (!shown) fail('달력 칸에 안 보인다');
 else ok('그 날짜 칸에 점이 찍히고, 고른 날 카드에 «모의고사»가 보인다');

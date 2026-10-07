@@ -273,6 +273,24 @@ button.row:hover + .row { border-top-color: transparent; }
 .seg button.is-on { background: var(--card); color: var(--text); font-weight: 700; }
 
 .week-nav { display: flex; align-items: center; gap: var(--g-1); }
+/* 시간표 머리 한 줄 — 주 이동 + 하루·주간(2026-10-08) */
+.tt-head { flex-wrap: nowrap; }
+.tt-head .seg { flex-shrink: 0; }
+.week-nav.is-compact > * { flex-shrink: 0; }
+.week-nav.is-compact b { white-space: nowrap; }
+.week-label { display: flex; flex-direction: column; align-items: center; min-width: 96px; line-height: 1.25; }
+.week-back { font-size: var(--t-xs); font-weight: 600; color: var(--primary-text); padding: 2px var(--g-1); }
+/* 좁은 폰: 날짜 글자와 하루·주간을 줄이고, 그래도 안 되면(350px 이하) 하루·주간만 아래로 */
+@media (max-width: 380px) {
+  .week-nav.is-compact b { min-width: 0; font-size: var(--t-sm); }
+  .week-nav.is-compact .week-label { min-width: 0; }
+  .tt-head .seg button { padding: 0 var(--g-3); }
+}
+@media (max-width: 350px) {
+  .tt-head { flex-wrap: wrap; row-gap: var(--g-2); }
+}
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.seat-view { display: flex; justify-content: flex-end; margin-bottom: var(--g-2); }
 .week-nav b { min-width: 96px; text-align: center; font-size: var(--t-md); font-weight: 650; }
 .week-nav .btn { margin-left: auto; }
 

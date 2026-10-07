@@ -28,7 +28,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261008-v11';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261008-v12';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -980,10 +980,9 @@ const menuLines = (items) => (Array.isArray(items) ? items : typeof items === 's
 function upcomingCard(withLink = true) {
   const from = iso(today());
   const school = upcomingSchool(from).map((day) => ({ date: day.date, text: day.labels.join(' · '), kind: day.kind }));
-  const mine = state.events.filter((item) => item.date >= from)
-    .map((item) => ({ date: item.date, text: item.period ? `${item.period}교시 ${item.title}` : item.title, kind: 'mine', item }));
+  // 내가 적은 것은 달력의 «내 기록»이 모아 보인다 — 여기서는 학교·선생님 일정만(2026-10-08 겹침 정리)
   const teacher = teacherEventsBetween(from, '9999-12-31').map((item) => ({ date: item.date, text: item.title, kind: 'teacher', teacherId: item.id }));
-  const soon = [...school, ...teacher, ...mine].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6);
+  const soon = [...school, ...teacher].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6);
   return card('다가오는 일정', { tail: withLink && linkTo('달력', () => go('calendar')) },
     soon.length === 0
       ? empty(state.calendar ? '다가오는 일정이 없습니다.' : '학사일정 자료가 아직 없습니다.')
@@ -1004,33 +1003,41 @@ function timetableScreen(layout) {
   }
   const view = ttView();
   const mon = state.week;
-  const head = h('div', { class: 'page-head is-row' },
-    h('h1', null, '시간표'),
+  /*
+   * 머리는 한 줄 — 주 이동과 하루·주간(2026-10-08 «하루 주간 날짜 선택하는거 한줄로 깔끔하게»).
+   * 제목 줄은 아래 탭이 이미 «시간표»라 말하므로 읽어 주는 말로만 둔다.
+   */
+  const head = h('div', { class: 'page-head is-row tt-head' },
+    h('h1', { class: 'sr-only' }, '시간표'),
+    weekNav(mon, 4, (n) => { state.week = addDays(mon, n * 7); state.listDay = null; render(); }, true),
     h('div', { class: 'seg', role: 'group', 'aria-label': '시간표 보기' },
       [['list', '하루'], ['grid', '주간']].map(([key, label]) => h('button', {
         type: 'button', class: view === key ? 'is-on' : null, 'aria-pressed': String(view === key),
         onclick: () => { savePrefs({ ttview: key }); render(); },
       }, label))));
-  const nav = weekNav(mon, 4, (n) => { state.week = addDays(mon, n * 7); state.listDay = null; render(); });
   const main = view === 'list'
     ? h('div', { class: 'stack' }, dayChips(mon, 5, state.listDay, (d) => { state.listDay = d; render(); }),
         lessonsCard(state.listDay, fmtDate(state.listDay)))
     : weekGridCard(mon, null, null);
-  const side = [weekChangesCard(mon), myCoursesCard()];
+  const side = [weekChangesCard(mon), seatsCard(), myCoursesCard()];
   if (layout === 'dashboard') {
-    return h('div', { class: 'page' }, head, nav, h('div', { class: 'cols is-dash' }, h('div', { class: 'col' }, main), h('div', { class: 'col is-side' }, side)));
+    return h('div', { class: 'page' }, head, h('div', { class: 'cols is-dash' }, h('div', { class: 'col' }, main), h('div', { class: 'col is-side' }, side)));
   }
-  return h('div', { class: 'page' }, head, nav, main, side);
+  return h('div', { class: 'page' }, head, main, side);
 }
 
-function weekNav(mon, span, move) {
+/* compact — 시간표 머리처럼 옆에 다른 것이 서는 곳. «이번 주»를 날짜 아래 작은 글씨로 내려 한 줄을 지킨다. */
+function weekNav(mon, span, move, compact = false) {
   const thisMon = mondayOf(schoolDay(today()));
   const thisWeek = sameDay(mon, thisMon);
-  return h('div', { class: 'week-nav' },
+  const back = () => move(Math.round((thisMon - mon) / (7 * 86400000)));
+  return h('div', { class: `week-nav${compact ? ' is-compact' : ''}` },
     h('button', { class: 'icon-btn', type: 'button', 'aria-label': '지난주', onclick: () => move(-1) }, icon('back')),
-    h('b', null, fmtRange(mon, span)),
+    compact && !thisWeek
+      ? h('span', { class: 'week-label' }, h('b', null, fmtRange(mon, span)), h('button', { class: 'week-back', type: 'button', onclick: back }, '이번 주로'))
+      : h('b', null, fmtRange(mon, span)),
     h('button', { class: 'icon-btn', type: 'button', 'aria-label': '다음 주', onclick: () => move(1) }, icon('next')),
-    !thisWeek && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => move(Math.round((thisMon - mon) / (7 * 86400000))) }, '이번 주'));
+    !compact && !thisWeek && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: back }, '이번 주'));
 }
 
 function dayChips(mon, count, selected, pick) {
@@ -1100,8 +1107,16 @@ function weekChangesCard(mon) {
           }))));
 }
 
-/* 내 강좌 — 이동수업마다 어느 강좌를 듣는지. 누르면 바꾼다. */
+/*
+ * 내 강좌 — 이동수업마다 어느 강좌를 듣는지. 누르면 바꾼다.
+ *
+ * 학교 계정으로 들어온 학생(과 선생님이 보는 학생 화면)은 학교 명단에서 강좌가 저절로 채워지고, 고쳐도
+ * 다음에 받을 때 학교 것으로 돌아간다 — 그때는 두지 않는다(2026-10-08 «자기꺼 자동으로 안들어가나?»).
+ * 학교 계정 없이 쓰던 옛 기기에만 남는다.
+ */
+const sectionsFromSchool = () => !!(state.hub || state.viewing);
 function myCoursesCard() {
+  if (sectionsFromSchool()) return null;
   const bands = [...bandsOfMyClass().entries()];
   if (!bands.length) return null;
   return card('내 강좌', null, h('div', { class: 'rows' }, bands.map(([band, list]) => {
@@ -1113,6 +1128,43 @@ function myCoursesCard() {
       onclick: () => openSheet({ type: 'picker', band }),
     });
   })));
+}
+
+/*
+ * 자리 — 우리 반 자리와 자리가 정해진 이동수업(2026-10-08 «우리반 자리는 다 볼 수 있게. 어디서 보는 거지?»).
+ * 내 정보 깊숙이 있던 것을 시간표 옆으로 옮겼다. 선생님이 학생 화면을 볼 때는 학생용 층 자료가 없으므로
+ * Hi-AX 학생관리 › 자리배치로 보낸다.
+ */
+function seatsCard() {
+  if (state.viewing || AX_EMBEDDED || AX_EXTERNAL) {
+    if (!state.me || !state.me.classId) return null;
+    const url = `https://ax.hanmin.hs.kr/#/students?tab=seats&class=${encodeURIComponent(state.me.classId)}`;
+    return card('자리', null, h('div', { class: 'rows' }, row({
+      title: '우리 반 자리', note: 'Hi-AX 학생관리 › 자리배치에서 봅니다', tail: icon('next'),
+      onclick: () => window.open(url, AX_EMBEDDED ? '_top' : '_blank', 'noopener'),
+    })));
+  }
+  if (!state.hub) return null;
+  const key = iso(today());
+  const rows = [];
+  const plan = seatPlanNow();
+  if (plan) {
+    rows.push(row({
+      title: '우리 반 자리', note: `${fmtShort(parse(plan.effectiveFrom))}부터`,
+      tail: icon('next'), onclick: () => openSheet({ type: 'seats' }),
+    }));
+  }
+  const lessonIds = [...new Set(((hubMe() && hubMe().lessonSeats) || []).map((p) => p.lessonId))];
+  for (const lessonId of lessonIds) {
+    const lessonPlan = lessonSeatPlanOn(lessonId, key);
+    if (!lessonPlan) continue;
+    const sec = (state.sections || []).find((item) => `sec:${item.sectionId}` === lessonId);
+    rows.push(row({
+      title: `${sec ? sec.subject : '이동수업'} 자리`, note: `${fmtShort(parse(lessonPlan.effectiveFrom))}부터${sec && sec.room ? ` · ${sec.room}` : ''}`,
+      tail: icon('next'), onclick: () => openSheet({ type: 'lessonSeats', lessonId, date: key }),
+    }));
+  }
+  return card('자리', null, rows.length ? h('div', { class: 'rows' }, rows) : empty('아직 정해진 자리가 없습니다.'));
 }
 
 /* ── 급식 ─────────────────────────────────────────────────────────── */
@@ -1168,7 +1220,7 @@ function monthCard(first) {
       const changed = isWeekday(date) && myChanges(date).length > 0;
       const off = !isWeekday(date) || (school && school.kind === 'holiday');
       const cls = ['day', off && 'is-off', sameDay(date, today()) && 'is-today', state.selDate && sameDay(date, state.selDate) && 'is-sel'].filter(Boolean).join(' ');
-      const said = [school && school.labels.join(' · '), teacher.length && `선생님 일정 ${teacher.length}`, mine.length && `내 일정 ${mine.length}`, changed && '바뀐 수업'].filter(Boolean).join(' · ');
+      const said = [school && school.labels.join(' · '), teacher.length && `선생님 일정 ${teacher.length}`, mine.length && `내 기록 ${mine.length}`, changed && '바뀐 수업'].filter(Boolean).join(' · ');
       cells.push(h('td', null, h('button', { type: 'button', class: cls,
         'aria-label': `${date.getMonth() + 1}월 ${date.getDate()}일${said ? ` · ${said}` : ''}`,
         onclick: () => { state.selDate = date; render(); } },
@@ -1192,7 +1244,7 @@ function monthCard(first) {
   h('div', { class: 'legend' },
     h('span', null, h('i', { class: 'dot is-school' }), '학사일정'),
     hubMe() && h('span', null, h('i', { class: 'dot is-teacher' }), '선생님 일정'),
-    h('span', null, h('i', { class: 'dot is-mine' }), '내 일정'),
+    h('span', null, h('i', { class: 'dot is-mine' }), '내 기록'),
     h('span', null, h('i', { class: 'dot is-warn' }), '바뀐 수업')));
 }
 
@@ -1222,12 +1274,31 @@ function dayDetailCard(date) {
 }
 
 /*
- * 내 일정과 구글 캘린더. 캘린더에 못 올린 것이 있으면 그렇게 말한다 — 「저장됐다」고
- * 믿게 두고 기기를 바꾸면 그때 사라진 것을 안다.
+ * 내 기록 — 수업 기록과 내 일정을 한곳에(2026-10-08 «기록을 하면 기록한것을 어디서 볼 수 있지?»). 그전에는
+ * 수업 창과 달력 날짜 칸에만 흩어져 있었다. 앞으로 있을 것부터, 지난 것은 아래로. 여섯 개 넘으면 접는다.
+ *
+ * 구글 캘린더 줄은 맨 아래 — 캘린더에 못 올린 것이 있으면 그렇게 말한다(«저장됐다»고 믿게 두고 기기를
+ * 바꾸면 그때 사라진 것을 안다).
  */
 function myEventsCard() {
   const local = state.events.filter((item) => !item.gcalId);
-  return card('내 일정', null,
+  const list = [...state.events].sort((a, b) => b.date.localeCompare(a.date) || (a.period || 0) - (b.period || 0));
+  const shown = state.allMine ? list : list.slice(0, 6);
+  const lessonOf = (item) => {
+    if (!item.period) return '종일';
+    const d = parse(item.date);
+    const c = cellOf(d, item.period, lessonsOn(d), changesOn(d));
+    return c.empty ? `${item.period}교시` : `${item.period}교시 ${c.subject}`;
+  };
+  return card('내 기록', { tail: list.length > 0 && h('span', { class: 'muted' }, `${list.length}건`) },
+    list.length
+      ? h('div', { class: 'rows' }, shown.map((item) => row({
+          cls: 'is-mine', lead: fmtShort(parse(item.date)), title: item.title, note: lessonOf(item),
+          tail: icon('next'), onclick: () => openSheet({ type: 'event', draft: { ...item } }),
+        })))
+      : empty('수업 창의 «기록 추가»나 날짜의 «이날 일정 추가»로 적은 것이 여기 모입니다.'),
+    list.length > 6 && h('div', { class: 'card-foot' },
+      h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => { state.allMine = !state.allMine; render(); } }, state.allMine ? '접기' : `모두 보기 (${list.length})`)),
     h('div', { class: 'rows' }, row({
       title: '구글 캘린더',
       note: local.length ? `이 기기에만 ${local.length}건` : cal.token ? '연결됨' : '연결 안 됨',
@@ -1257,21 +1328,15 @@ function meScreen() {
       note: state.viewing ? '선생님이 보는 학생 화면' : '학교 구글 계정',
       tail: !state.viewing && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: logout }, '로그아웃'),
     }))),
-    !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL && card('우리 반', null, h('div', { class: 'rows' }, state.hub
-      ? (() => {
-          const plan = seatPlanNow();
-          const job = hubMe() && hubMe().delegation;
-          return [
-            row({
-              title: '우리 반 자리', note: plan ? `${fmtShort(parse(plan.effectiveFrom))}부터` : '아직 정해진 자리가 없습니다',
-              tail: plan && icon('next'), onclick: plan ? () => openSheet({ type: 'seats' }) : null,
-            }),
-            job && row({ title: '자리배치 맡김', note: delegationNote(job), tail: icon('next'), onclick: openSeatEditor }),
-          ];
-        })()
-      : row({ title: '학교 계정 연결', note: '선생님 일정과 우리 반 자리를 받습니다', tail: icon('next'), onclick: () => openSheet({ type: 'connect' }) }))),
+    // 자리는 시간표 탭의 «자리»로 옮겼다(2026-10-08). 여기는 계정 연결과 맡은 자리배치만
+    !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL && (state.hub
+      ? hubMe() && hubMe().delegation && card('자리배치 맡김', null, h('div', { class: 'rows' },
+          row({ title: '자리배치 맡김', note: delegationNote(hubMe().delegation), tail: icon('next'), onclick: openSeatEditor })))
+      : card('학교 계정', null, h('div', { class: 'rows' },
+          row({ title: '학교 계정 연결', note: '선생님 일정과 자리를 받습니다', tail: icon('next'), onclick: () => openSheet({ type: 'connect' }) })))),
     state.hub && !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL && card('수업 변경 알림', null, h('div', { class: 'rows' }, pushRow())),
-    card('화면 배치', null, h('div', { class: 'options card-pad' },
+    // 폰은 고를 게 «자동»과 «한 줄형»뿐이라 두지 않는다 — 넓은 화면에서만
+    Object.values(LAYOUTS).filter((v) => width >= v.min).length > 1 && card('화면 배치', null, h('div', { class: 'options card-pad' },
       [['auto', '자동', 0], ...Object.entries(LAYOUTS).map(([key, v]) => [key, v.label, v.min])].map(([key, label, min]) => {
         const blocked = width < min;
         const on = state.prefs.layout === key;
@@ -1280,12 +1345,6 @@ function meScreen() {
           h('span', { class: `layout-mark is-${key}`, 'aria-hidden': 'true' }, h('i'), h('i'), h('i')),
           h('b', null, label),
           (blocked || key === 'auto') && h('span', { class: 'muted' }, blocked ? '좁은 화면' : `지금 ${LAYOUTS[current].label}`));
-      }))),
-    card('시간표 보기', null, h('div', { class: 'options is-two card-pad' },
-      [['list', '하루'], ['grid', '주간']].map(([key, label]) => {
-        const on = ttView() === key;
-        return h('button', { type: 'button', class: `option${on ? ' is-on' : ''}`, 'aria-pressed': String(on), onclick: () => { savePrefs({ ttview: key }); render(); } },
-          h('b', null, label));
       }))),
     !AX_EMBEDDED && !AX_EXTERNAL && card('앱', null, h('div', { class: 'rows' }, isStandalone()
       ? row({ title: '앱으로 쓰는 중' })
@@ -1416,7 +1475,7 @@ function lessonSheet(date, period) {
     content: [
       !c.empty && !c.cancelled && [c.teacher, c.room].some(Boolean) && h('p', { class: 'sheet-line' }, [c.teacher, c.room].filter(Boolean).join(' · ')),
       c.chg && h('p', { class: 'sheet-line' }, badge(c.chg.note, changeTone(c.chg)), h('span', null, changeLine(c.chg))),
-      c.lesson && c.lesson.kind === 'section' && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => openSheet({ type: 'picker', band: c.lesson.band }) }, '강좌 바꾸기'),
+      c.lesson && c.lesson.kind === 'section' && !sectionsFromSchool() && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => openSheet({ type: 'picker', band: c.lesson.band }) }, '강좌 바꾸기'),
       lessonSeat && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => openSheet({ type: 'lessonSeats', lessonId: lessonSeat.lessonId, date: iso(date) }) },
         lessonSeat.mine ? '이 수업 내 자리' : '이 수업 자리'),
       subTitle('수업 기록'),
@@ -1530,7 +1589,8 @@ const SEAT_FIXTURES = { board: '칠판', lectern: '교탁', door: '문', window:
 function seatMap(plan) {
   const room = plan.room;
   const avail = Math.min((window.innerWidth || 390) - 48, 640);
-  const scale = Math.max(avail / room.width, 0.62);
+  // «전체 보기»면 교실이 한눈에 들어오게 줄인다(2026-10-08) — 기본은 이름이 읽히는 크기로 내 자리 주변
+  const scale = state.seatFit ? avail / room.width : Math.max(avail / room.width, 0.62);
   const px = (v) => `${Math.round(v * scale * 10) / 10}px`;
   const parts = [];
   for (const f of room.fixtures || []) {
@@ -1566,22 +1626,29 @@ function lessonSeatPlanOn(lessonId, key) {
 function lessonSeatsSheet(lessonId, date) {
   const plan = lessonSeatPlanOn(lessonId, date);
   if (!plan) return null;
-  return {
-    title: '이 수업 자리',
-    sub: `${fmtShort(parse(plan.effectiveFrom))}부터 · 칠판이 위`,
-    content: seatMap(plan),
-    after: () => { const mine = document.getElementById('my-seat'); if (mine) mine.scrollIntoView({ block: 'center', inline: 'center' }); },
-  };
+  const sec = (state.sections || []).find((item) => `sec:${item.sectionId}` === lessonId);
+  return seatSheet(sec ? `${sec.subject} 자리` : '이 수업 자리', plan);
 }
 
 function seatsSheet() {
   const plan = seatPlanNow();
   if (!plan) return null;
+  return seatSheet('우리 반 자리', plan);
+}
+
+/* 자리 창 — 교실이 화면보다 넓으면 «전체 보기»(한눈에)와 «크게 보기»(이름이 읽히게, 내 자리로)를 오간다 */
+function seatSheet(title, plan) {
+  const avail = Math.min((window.innerWidth || 390) - 48, 640);
+  const wide = avail / plan.room.width < 0.62;
   return {
-    title: '우리 반 자리',
+    title,
     sub: `${fmtShort(parse(plan.effectiveFrom))}부터 · 칠판이 위`,
-    content: seatMap(plan),
-    after: () => { const mine = document.getElementById('my-seat'); if (mine) mine.scrollIntoView({ block: 'center', inline: 'center' }); },
+    content: [
+      wide && h('div', { class: 'seat-view' }, h('button', { class: 'btn is-plain is-small', type: 'button',
+        onclick: () => { state.seatFit = !state.seatFit; renderSheet(true); } }, state.seatFit ? '크게 보기' : '전체 보기')),
+      seatMap(plan),
+    ],
+    after: () => { const mine = document.getElementById('my-seat'); if (mine && !state.seatFit) mine.scrollIntoView({ block: 'center', inline: 'center' }); },
   };
 }
 
