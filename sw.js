@@ -8,7 +8,7 @@
  * VERSION 은 index.html 의 ?v= 와 app.js 의 VERSION 과 같은 값이다. 올리면 새 워커가
  * 설치되고, 앱은 «새 버전이 있어요»를 띄운 뒤 학생이 누를 때 갈아 끼운다.
  */
-const VERSION = '20261007-v7';
+const VERSION = '20261007-v8';
 const CACHE = `tt-${VERSION}`;
 const SHELL = [
   './',
@@ -82,3 +82,35 @@ async function shellFirst(req, key) {
     return (await cache.match('./')) || Response.error();
   }
 }
+
+/*
+ * 수업 변경 알림(2026-10-07) — 학생용 층이 보낸 알림을 띄우고, 열려 있는 앱에는 «새로 묻기»를 알린다.
+ * 알림을 누르면 앱의 오늘로 간다.
+ */
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch { data = { body: event.data ? event.data.text() : '' }; }
+  event.waitUntil((async () => {
+    await self.registration.showNotification(data.title || '수업 변경', {
+      body: data.body || '', tag: data.tag, renotify: true,
+      icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { url: data.url || './#today' },
+    });
+    for (const client of await self.clients.matchAll({ type: 'window', includeUncontrolled: true })) client.postMessage({ type: 'live-refresh' });
+  })());
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const url = new URL((event.notification.data && event.notification.data.url) || './#today', self.registration.scope).href;
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of windows) {
+      if ('focus' in client) {
+        client.postMessage({ type: 'live-refresh' });
+        if ('navigate' in client) await client.navigate(url).catch(() => {});
+        return client.focus();
+      }
+    }
+    return self.clients.openWindow(url);
+  })());
+});

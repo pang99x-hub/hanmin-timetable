@@ -140,3 +140,4 @@ if (dataCalls !== beforeData) fail(`정적 파일을 ${dataCalls - beforeData}�
 else ok('정적 파일 요청이 늘지 않았다');
 
 console.log(process.exitCode ? '\n실패' : '\n전부 통과');
+process.exit(process.exitCode ?? 0);
