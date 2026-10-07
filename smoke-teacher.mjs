@@ -137,7 +137,7 @@ console.log('\n[5] 학생 계정은 종전대로');
   await w2.onCredential({ credential: '학생토큰' });
   const t2 = w2.document.getElementById('app').textContent;
   check('자기 시간표가 바로 뜬다', t2.includes('교시'));
-  check('«보는 중» 띠가 없다', !t2.includes('화면'));
+  check('«보는 중» 띠가 없다', !w2.document.querySelector('.viewing'));
   check('기기에 저장된다', s2.has('hanmin.timetable.me.v1'));
 }
 
