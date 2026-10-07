@@ -28,7 +28,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261007-v8';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261007-v9';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -844,7 +844,7 @@ function teacherSoonCard() {
   if (!list.length) return null;
   return card('선생님 일정', { tail: linkTo('달력', () => go('calendar')) },
     h('div', { class: 'rows' }, list.map((item) => row({
-      cls: 'is-teacher', lead: item.date === from ? '오늘' : fmtShort(parse(item.date)), title: item.title, note: item.teacher || null,
+      cls: 'is-teacher', lead: item.date === from ? '오늘' : fmtShort(parse(item.date)), title: item.title, note: teacherNote(item),
       tail: icon('next'), onclick: () => openSheet({ type: 'teacherEvent', id: item.id }),
     }))));
 }
@@ -1194,7 +1194,7 @@ function dayDetailCard(date) {
   },
   (school || mine.length > 0 || changed.length > 0 || teacher.length > 0) ? h('div', { class: 'rows' },
     school && row({ cls: `is-${school.kind}`, lead: '학사', title: school.labels.join(' · '), tail: icon('next'), onclick: () => openSheet({ type: 'school', date: iso(date) }) }),
-    teacher.map((item) => row({ cls: 'is-teacher', lead: '선생님', title: item.title, note: item.teacher || null, tail: icon('next'), onclick: () => openSheet({ type: 'teacherEvent', id: item.id }) })),
+    teacher.map((item) => row({ cls: 'is-teacher', lead: '선생님', title: item.title, note: teacherNote(item), tail: icon('next'), onclick: () => openSheet({ type: 'teacherEvent', id: item.id }) })),
     changed.map((chg) => row({
       lead: `${chg.period}교시`,
       title: chg.kind === 'cancel' ? (chg.lesson && chg.lesson.subject) || '' : chg.subject || '',
@@ -1462,16 +1462,46 @@ function schoolSheet(dateKey) {
   };
 }
 
-/* 선생님 일정 한 건 — 내용 전체와 «디데이로 정하기» */
+/* 선생님 일정 한 건 — 내용 전체, 첨부, «디데이로 정하기» */
 function teacherEventSheet(id) {
   const item = ((hubMe() && hubMe().events) || []).find((e) => e.id === id);
   if (!item) return null;
   return {
     title: item.title,
     sub: [fmtShort(parse(item.date)), item.teacher && `${item.teacher} 선생님`].filter(Boolean).join(' · '),
-    content: item.content ? h('p', { class: 'sheet-text' }, item.content) : [],
+    content: [item.content ? h('p', { class: 'sheet-text' }, item.content) : null, attachmentRows(item)],
     footer: [h('button', { class: 'btn is-key', type: 'button', onclick: () => { saveDday({ label: item.title, date: item.date }); closeSheet(); } }, '디데이로 정하기')],
   };
+}
+
+/*
+ * 선생님 일정 첨부(10/7) — 누르면 학생용 층에서 5분짜리 주소를 받아 연다. 나에게 온 일정의 파일만 열린다.
+ * PDF·그림은 바로 보이고, 한글·오피스 파일은 내려받는다.
+ */
+/** 선생님 일정 줄 아래 한 줄 — 누가 냈는지, 첨부가 있으면 «첨부 N» (눌러 들어가야 파일이 있는 걸 알면 놓친다) */
+const teacherNote = (item) => [item.teacher, (item.attachments || []).length ? `첨부 ${item.attachments.length}` : null].filter(Boolean).join(' · ') || null;
+const fileSize = (n) => (n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))}KB` : `${(n / 1048576).toFixed(1)}MB`);
+const OPENS_INLINE = /\.(pdf|png|jpe?g|gif|webp|txt)$/i;
+function attachmentRows(item) {
+  const files = item.attachments || [];
+  if (!files.length) return null;
+  return h('div', { class: 'rows is-boxed files' }, files.map((file) => h('button', { class: 'row', type: 'button', onclick: (e) => openAttachment(file, e.currentTarget) },
+    h('span', { class: 'row-body' }, h('span', { class: 'row-title' }, file.name), h('span', { class: 'row-note' }, fileSize(file.size))),
+    h('span', { class: 'row-tail' }, icon(OPENS_INLINE.test(file.name) ? 'open' : 'download')))));
+}
+async function openAttachment(file, button) {
+  // 주소를 받는 사이 누른 손짓이 끊기면 폰이 새 창을 막는다 — 빈 창을 먼저 열고 주소를 넣는다
+  const win = window.open('', '_blank');
+  const note = button.querySelector('.row-note');
+  if (note) note.textContent = '여는 중…';
+  try {
+    const { url } = await hubCall(`/files/${file.id}/link`, { method: 'POST' });
+    if (win) win.location.href = url; else location.href = url;
+    if (note) note.textContent = fileSize(file.size);
+  } catch (error) {
+    if (win) win.close();
+    if (note) note.textContent = error.message || '열지 못했습니다.';
+  }
 }
 
 /*

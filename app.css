@@ -450,6 +450,7 @@ button.row:hover + .row { border-top-color: transparent; }
 
 /* ── 선생님 일정·우리 반 자리 ─────────────────────────────────────── */
 .sheet-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.sheet-text + .files { margin-top: var(--g-3); }
 .seatmap-scroll { overflow: auto; max-height: 64vh; margin: 0 calc(-1 * var(--g-4)); padding: var(--g-2) var(--g-4); }
 .seatmap { position: relative; margin: 0 auto; border: 2px solid var(--text-muted); border-radius: var(--r-sm); background: var(--bg); }
 .seatmap-desk { position: absolute; border: 1px solid var(--border); border-radius: 3px; background: var(--bg-alt); }
