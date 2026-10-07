@@ -75,3 +75,4 @@ if (unpicked) throw new Error('로그인했는데 «고르기» 가 ' + unpicked
 }
 
 console.log('\n통과');
+process.exit(0);

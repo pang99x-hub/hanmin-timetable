@@ -28,7 +28,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261007-v7';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261007-v8';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -47,6 +47,14 @@ const CAL_KEY = 'hanmin.timetable.cal.v1';
 const HUB = 'https://students.hiax.cloud';
 const HUB_KEY = 'hanmin.timetable.hub.v1';
 const HUB_TRY_KEY = 'hanmin.timetable.hub-try.v1';
+/*
+ * 살아 있는 자료(수업 변경·일과표·급식·학사일정)는 학생용 층 /live 에서 받아 기기에 둔다(2026-10-07).
+ * 열면 기기의 것으로 바로 그리고, 층에는 «내 지문과 같은가»만 묻는다 — 같으면 수십 바이트.
+ * 켜 둔 동안은 2분마다 묻고, 알림이 오면 바로 묻는다. Supabase 는 부르지 않는다.
+ */
+const LIVE_KEY = 'hanmin.timetable.live.v1';
+const PUSH_KEY = 'hanmin.timetable.push.v1';
+const LIVE_EVERY = 120_000;
 const DATA = 'data/';
 /* 오래 열어 둔 앱이 낡은 변경·급식을 보여 주지 않게 — 다시 보일 때 이만큼 지났으면 새로 받는다. */
 const REFRESH_AFTER = 10 * 60 * 1000;
@@ -118,18 +126,45 @@ async function load(name) {
   } catch { return null; }
 }
 
+function readLive() {
+  try { const raw = JSON.parse(localStorage.getItem(LIVE_KEY) || 'null'); return raw && raw.etag ? raw : null; } catch { return null; }
+}
+function adoptLive(live) {
+  if (live.school && live.school.periods) state.school = live.school;
+  if (live.changes) state.changes = live.changes;
+  if (live.meals) state.meals = live.meals;
+  if (live.calendar) state.calendar = live.calendar;
+  state.liveEtag = live.etag;
+}
+
+/** 층에 지문만 묻고, 다르면 네 묶음을 받아 기기에 둔다. 돌려주는 값: 바뀌었는지 */
+async function refreshLive(timeout = 8000) {
+  try {
+    const known = state.liveEtag ? `?known=${state.liveEtag}` : '';
+    const res = await fetch(`${HUB}/live${known}`, { cache: 'no-store', signal: AbortSignal.timeout(timeout) });
+    if (!res.ok) return false;
+    const live = await res.json();
+    if (live.unchanged || !live.etag) return false;
+    adoptLive(live);
+    try { localStorage.setItem(LIVE_KEY, JSON.stringify(live)); } catch { /* 이번 화면에서만 */ }
+    return true;
+  } catch { return false; }
+}
+
 async function loadData() {
-  const [school, classes, sections, changes, meals, calendar, abbrev] = await Promise.all(
-    ['school.json', 'classes.json', 'sections.json', 'changes.json', 'meals.json', 'calendar.json', 'abbrev.json']
-      .map(load),
-  );
-  if (!school || !classes) return false;
-  state.school = school;
+  const cached = readLive();
+  // 기기에 사본이 있으면 정적 사이트의 같은 자료는 받지 않는다 — 층이 안 닿을 때의 대비로만 쓴다
+  const names = cached ? ['school.json', 'classes.json', 'sections.json', 'abbrev.json'] : ['school.json', 'classes.json', 'sections.json', 'changes.json', 'meals.json', 'calendar.json', 'abbrev.json'];
+  const [files] = await Promise.all([Promise.all(names.map(load)), cached ? null : refreshLive(4000)]);
+  const got = Object.fromEntries(names.map((name, i) => [name, files[i]]));
+  const { 'classes.json': classes, 'sections.json': sections, 'abbrev.json': abbrev } = got;
+  if (!classes) return false;
+  state.school = state.school || got['school.json'];
+  if (!state.school) return false;
   state.classes = classes.classes || [];
   state.sections = (sections && sections.sections) || [];
-  state.changes = changes;
-  state.meals = meals;
-  state.calendar = calendar;
+  if (cached) adoptLive(cached);
+  else if (!state.liveEtag) { state.changes = got['changes.json']; state.meals = got['meals.json']; state.calendar = got['calendar.json']; }
   state.abbrev = (abbrev && abbrev.subjects) || {};
   state.loadedAt = classes.generatedAt || null;
   state.fetchedAt = Date.now();
@@ -157,6 +192,11 @@ async function boot() {
    */
   if (state.me && state.me.classId && calConnected()) pullEventsFromCalendar();
   if (state.me && state.hub) refreshHub();
+  const liveTick = () => { if (document.visibilityState === 'visible') refreshLive().then((changed) => { if (changed) render(); }); };
+  if (readLive()) liveTick();
+  setInterval(liveTick, LIVE_EVERY);
+  document.addEventListener('visibilitychange', liveTick);
+  if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', (event) => { if (event.data && event.data.type === 'live-refresh') liveTick(); });
   else if (state.me && !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL) quietConnect();
   window.addEventListener('keydown', onKey);
   window.addEventListener('hashchange', () => {
@@ -726,7 +766,7 @@ function todayScreen(layout) {
         h('div', { class: 'col' }, installCard(layout), weekGridCard(mondayOf(date), date, '이번 주 시간표')),
         h('div', { class: 'col is-side' }, ddayCard(), seatJobCard(), teacherSoonCard(), newSeatsCard(), mealCard(date), upcomingCard())));
   }
-  return h('div', { class: 'page' }, head, ddayCard(), installCard(layout), seatJobCard(), teacherSoonCard(), newSeatsCard(), lessonsCard(date, '수업'), mealCard(date));
+  return h('div', { class: 'page' }, head, ddayCard(), installCard(layout), pushOfferCard(), seatJobCard(), teacherSoonCard(), newSeatsCard(), lessonsCard(date, '수업'), mealCard(date));
 }
 
 function rotationNote(date) {
@@ -807,6 +847,71 @@ function teacherSoonCard() {
       cls: 'is-teacher', lead: item.date === from ? '오늘' : fmtShort(parse(item.date)), title: item.title, note: item.teacher || null,
       tail: icon('next'), onclick: () => openSheet({ type: 'teacherEvent', id: item.id }),
     }))));
+}
+
+/* ── 수업 변경 알림 ─────────────────────────────────────────────────
+ * 내 수업이 바뀌면 학생용 층이 이 기기로 알림을 보낸다(웹 푸시). 알림을 허용해야 하고, 아이폰은 홈 화면에
+ * 설치한 앱에서만 된다. 끄면 열 때·켜 둔 동안 받는다.
+ */
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const pushOn = () => { try { return !!localStorage.getItem(PUSH_KEY); } catch { return false; } };
+
+function pushRow() {
+  if (!pushSupported()) {
+    return row({ title: '이 기기에서는 받을 수 없습니다', note: isIOS() && !isStandalone() ? '홈 화면에 앱을 설치하면 받을 수 있습니다' : '열 때마다 바뀐 수업을 받습니다' });
+  }
+  if (Notification.permission === 'denied') return row({ title: '알림이 막혀 있습니다', note: '기기 설정에서 이 앱의 알림을 허용합니다' });
+  const on = pushOn();
+  return row({
+    title: on ? '켜짐' : '꺼짐', note: state.pushNote || (on ? '내 수업이 바뀌면 바로 알립니다' : '내 수업이 바뀌면 바로 알려 받습니다'),
+    tail: h('button', { class: `btn ${on ? 'is-plain' : 'is-key'} is-small`, type: 'button', disabled: state.pushBusy ? true : null, onclick: on ? pushOff : pushOnNow }, on ? '끄기' : '켜기'),
+  });
+}
+
+function pushOfferCard() {
+  if (!state.hub || state.viewing || !pushSupported() || pushOn() || Notification.permission === 'denied') return null;
+  try { if (localStorage.getItem(`${PUSH_KEY}.later`)) return null; } catch { return null; }
+  return card(null, null, h('div', { class: 'rows' }, row({
+    title: '수업이 바뀌면 바로 알림', note: '보강·교체가 생기면 이 기기로 알립니다',
+    tail: [h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => { try { localStorage.setItem(`${PUSH_KEY}.later`, '1'); } catch { /* 다음에 또 */ } render(); } }, '나중에'),
+      h('button', { class: 'btn is-key is-small', type: 'button', onclick: pushOnNow }, '켜기')],
+  })));
+}
+
+function keyBytes(text) {
+  const base = text.replace(/-/g, '+').replace(/_/g, '/');
+  return Uint8Array.from(atob(base.padEnd(Math.ceil(base.length / 4) * 4, '=')), (c) => c.charCodeAt(0));
+}
+
+async function pushOnNow() {
+  state.pushBusy = true; render();
+  try {
+    if (await Notification.requestPermission() !== 'granted') return;
+    const [reg, keyRes] = await Promise.all([navigator.serviceWorker.ready, fetch(`${HUB}/push/key`)]);
+    const { key } = await keyRes.json();
+    if (!key) throw new Error('알림 준비가 안 됐습니다.');
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
+    await hubCall('/push/subscribe', { method: 'POST', body: JSON.stringify(sub.toJSON()) });
+    localStorage.setItem(PUSH_KEY, sub.endpoint);
+  } catch (error) {
+    state.pushNote = String((error && error.message) || '알림을 켜지 못했습니다.');
+  } finally {
+    state.pushBusy = false; render();
+  }
+}
+
+async function pushOff() {
+  state.pushBusy = true; render();
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await hubCall('/push/subscribe', { method: 'DELETE', body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+      await sub.unsubscribe();
+    }
+  } catch { /* 이 기기에서는 끈 것으로 */ }
+  try { localStorage.removeItem(PUSH_KEY); } catch { /* 없음 */ }
+  state.pushBusy = false; render();
 }
 
 /* 자리배치를 맡았을 때 — 아직 안 냈거나 돌려받았으면 오늘에 */
@@ -1152,6 +1257,7 @@ function meScreen() {
           ];
         })()
       : row({ title: '학교 계정 연결', note: '선생님 일정과 우리 반 자리를 받습니다', tail: icon('next'), onclick: () => openSheet({ type: 'connect' }) }))),
+    state.hub && !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL && card('수업 변경 알림', null, h('div', { class: 'rows' }, pushRow())),
     card('화면 배치', null, h('div', { class: 'options card-pad' },
       [['auto', '자동', 0], ...Object.entries(LAYOUTS).map(([key, v]) => [key, v.label, v.min])].map(([key, label, min]) => {
         const blocked = width < min;
@@ -1183,6 +1289,7 @@ function dataNote() {
 
 function logout() {
   localStorage.removeItem(KEY);
+  if (state.hub && pushOn()) pushOff();
   if (state.hub) {
     fetch(`${HUB}/logout`, { method: 'POST', headers: { Authorization: `Bearer ${state.hub.token}` } }).catch(() => {});
     saveHub(null);

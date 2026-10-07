@@ -191,3 +191,4 @@ else ok('정적 파일 요청이 늘지 않았다');
 console.log(`     (구글 캘린더 호출 ${calCalls}건 — 학생 계정과 구글 사이의 일이다)`);
 
 console.log(process.exitCode ? '\n실패' : '\n전부 통과');
+process.exit(process.exitCode ?? 0);

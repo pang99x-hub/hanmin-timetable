@@ -172,5 +172,22 @@ check('무작위도 고정석은 그대로', last.seats['d1a:0'] === 6 && Object
 await settle()
 check('담임에게 낸다', submittedCount === 1 && delegate.app.textContent.includes('담임 선생님께 냈습니다'))
 
+console.log('\n[8] 살아 있는 자료 — 층에서 받아 기기에 두고, 다음엔 지문만 묻는다');
+const LIVE = {
+  etag: 'aaaaaaaaaaaaaaaaaaaaaaaa', today: plus(0),
+  school: { schema: 1, name: '한민고등학교', periods: [{ period: 1, startTime: '08:10', endTime: '09:00' }, { period: 2, startTime: '09:10', endTime: '10:00' }], mealTimes: {} },
+  changes: { schema: 1, from: plus(-7), to: plus(35), changes: [{ date: plus(1), classId: '2-1', period: 2, kind: 'substitute', origSubject: '실시간 확인 과목', origTeacher: '갑', newTeacher: '을' }] },
+  meals: { schema: 1, days: {} }, calendar: { schema: 1, days: [] },
+};
+const asked = [];
+const fresh = await open({ hub: (u) => { if (u.includes('/live')) { asked.push(new URL(u).search); return json(200, u.includes('known=') ? { etag: LIVE.etag, unchanged: true } : LIVE); } return json(200, { ok: true }); }, desk: () => ({ ok: false }) });
+check('처음엔 층에서 받는다', asked.length >= 1 && asked[0] === '')
+check('수업 변경이 층의 것', fresh.w.eval('state.changes.changes[0].origSubject') === '실시간 확인 과목')
+check('일과표도 층의 것', fresh.w.eval('state.school.periods.length') === 2)
+check('기기에 둔다', JSON.parse(fresh.store.get('hanmin.timetable.live.v1')).etag === LIVE.etag)
+fresh.w.eval('refreshLive()')
+await settle()
+check('다음엔 지문만 묻는다(같으면 받지 않는다)', asked[asked.length - 1] === `?known=${LIVE.etag}`)
+
 console.log(failed ? `\n실패 ${failed}건` : '\n전부 통과')
 process.exit(failed ? 1 : 0)
