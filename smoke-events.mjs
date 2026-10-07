@@ -157,8 +157,9 @@ DAY();
 if (!sheet().querySelector('.sheet')) fail('수업을 눌러도 판이 안 열린다');
 else ok('수업을 누르면 그 수업 판이 열린다');
 sheetBtn('기록추가').click();
-const sel = sheet().querySelector('select');
-if (!sel || sel.value !== '3') fail(`교시가 안 들어갔다 — ${sel && sel.value}`);
+// 교시는 폰 기본 선택창 대신 단추로 고른다(2026-10, 화면 원칙 11).
+const periodOn = () => sheet().querySelector('.choice button.is-on');
+if (!periodOn() || periodOn().textContent !== '3교시') fail(`교시가 안 들어갔다 — ${periodOn() && periodOn().textContent}`);
 else ok('3교시가 미리 들어간다');
 w.eval('closeSheet()');
 
@@ -169,16 +170,18 @@ wkCell.click();
 if (!sheet().querySelector('.sheet')) fail('주간 표에서 수업을 눌러도 안 열린다');
 else ok('주간 표에서도 열린다');
 sheetBtn('기록추가').click();
-if (!sheet().querySelector('select') || !sheet().querySelector('select').value) fail('교시가 비어 있다');
+if (!periodOn() || periodOn().textContent === '종일') fail('교시가 비어 있다');
 else ok('교시가 미리 들어간다');
 w.eval('closeSheet()');
 
 console.log('\n[8] 적어 둔 일정이 달력 칸에 보인다');
 w.eval(`saveEvents([{ id:'m', date:'${today}', period:4, title:'모의고사', gcalId:'g0' }]);`);
 CAL();
-const shown = [...app.querySelectorAll('.mo .tag.is-mine')].some((n) => n.textContent.includes('모의고사'));
+// 달력 칸에는 점, 이름은 고른 날 카드에(2026-10).
+const cellSaid = [...app.querySelectorAll('.mo .day')].some((n) => n.querySelector('.dot.is-mine') && (n.getAttribute('aria-label') || '').includes('내 일정 1'));
+const shown = cellSaid && [...app.querySelectorAll('.row.is-mine')].some((n) => n.textContent.includes('모의고사'));
 if (!shown) fail('달력 칸에 안 보인다');
-else ok('«모의고사» 가 그 날짜 칸에 보인다');
+else ok('그 날짜 칸에 점이 찍히고, 고른 날 카드에 «모의고사»가 보인다');
 
 console.log('\n[9] 우리 서버에는 아무것도 가지 않는다');
 if (deskCalls !== beforeDesk) fail(`창구를 ${deskCalls - beforeDesk}번 불렀다`);

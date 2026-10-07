@@ -111,7 +111,8 @@ console.log('\n[3] 급식·학사일정');
   check('급식 탭에 메뉴가 줄마다 나옴', ['보리밥','미역국','제육볶음'].every((x) => meals.includes(x)));
   check('급식 탭에 끼니 이름이 있다', meals.includes('중식'));
   w.eval(MONTH(2026, 9));
-  const month = w.document.getElementById('app').textContent;
+  // 달력 칸에는 날짜와 점만 둔다(2026-10). 무엇인지는 칸의 이름표와 고른 날 카드가 말한다.
+  const month = [...w.document.querySelectorAll('.mo .day')].map((n) => n.getAttribute('aria-label') || '').join(' ');
   check('3학년에게 3학년 시험이 보임', month.includes('1학기 2차 정기시험'));
   check('3학년에게 1학년 행사는 안 보임', !month.includes('1학년 현장체험'));
   check('전교 휴업일은 보임', month.includes('재량휴업일'));
