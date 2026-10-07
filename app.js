@@ -1141,40 +1141,43 @@ function myCoursesCard() {
 }
 
 /*
- * 자리 — 우리 반 자리와 자리가 정해진 이동수업(2026-10-08 «우리반 자리는 다 볼 수 있게. 어디서 보는 거지?»).
- * 내 정보 깊숙이 있던 것을 시간표 옆으로 옮겼다. 선생님이 학생 화면을 볼 때는 학생용 층 자료가 없으므로
- * Hi-AX 학생관리 › 자리배치로 보낸다.
+ * 자리배치 — 우리 반과 자리가 정해진 이동수업. 줄을 누르면 배치도가 뜬다(2026-10-08 «자리도 그냥 자리배치,
+ * 주저리 설명 빼고. 권한 없는 학생은 누르면 배치가 이쁘게, 있는 학생은 배치할 수 있게»).
+ * 자리배치를 맡은 학생은 우리 반 줄이 곧 배치하기다 — 내 정보의 «자리배치 담당»으로 따로 가던 길을 합쳤다.
+ * 선생님이 학생 화면을 볼 때도 그 학생이 보는 배치도 그대로(/ax/student 가 자리를 함께 준다).
  */
 function seatsCard() {
-  if (state.viewing || AX_EMBEDDED || AX_EXTERNAL) {
-    if (!state.me || !state.me.classId) return null;
-    const url = `https://ax.hanmin.hs.kr/#/students?tab=seats&class=${encodeURIComponent(state.me.classId)}`;
-    return card('자리', null, h('div', { class: 'rows' }, row({
-      title: '우리 반 자리', note: 'Hi-AX 학생관리 › 자리배치에서 봅니다', tail: icon('next'),
-      onclick: () => window.open(url, AX_EMBEDDED ? '_top' : '_blank', 'noopener'),
-    })));
-  }
-  if (!state.hub) return null;
+  const src = seatSource();
+  if (!src) return null;
   const key = iso(today());
   const rows = [];
   const plan = seatPlanNow();
-  if (plan) {
-    rows.push(row({
-      title: '우리 반 자리', note: `${fmtShort(parse(plan.effectiveFrom))}부터`,
-      tail: icon('next'), onclick: () => openSheet({ type: 'seats' }),
-    }));
+  const job = !state.viewing && hubMe() && hubMe().delegation;
+  if (job) {
+    rows.push(row({ title: '우리 반', note: seatJobShort(job), tail: icon('next'), onclick: openSeatEditor }));
+  } else if (plan) {
+    rows.push(row({ title: '우리 반', note: `${fmtShort(parse(plan.effectiveFrom))}부터`, tail: icon('next'), onclick: () => openSheet({ type: 'seats' }) }));
   }
-  const lessonIds = [...new Set(((hubMe() && hubMe().lessonSeats) || []).map((p) => p.lessonId))];
+  const lessonIds = [...new Set((src.lessonSeats || []).map((p) => p.lessonId))];
   for (const lessonId of lessonIds) {
     const lessonPlan = lessonSeatPlanOn(lessonId, key);
     if (!lessonPlan) continue;
     const sec = (state.sections || []).find((item) => `sec:${item.sectionId}` === lessonId);
     rows.push(row({
-      title: `${sec ? sec.subject : '이동수업'} 자리`, note: `${fmtShort(parse(lessonPlan.effectiveFrom))}부터${sec && sec.room ? ` · ${sec.room}` : ''}`,
+      title: sec ? sec.subject : '이동수업', note: `${fmtShort(parse(lessonPlan.effectiveFrom))}부터`,
       tail: icon('next'), onclick: () => openSheet({ type: 'lessonSeats', lessonId, date: key }),
     }));
   }
-  return card('자리', null, rows.length ? h('div', { class: 'rows' }, rows) : empty('아직 정해진 자리가 없습니다.'));
+  return card('자리배치', null, rows.length ? h('div', { class: 'rows' }, rows) : empty('아직 정해진 자리가 없습니다.'));
+}
+
+/** 맡은 자리배치 — 한 낱말로(긴 안내는 처음 맡았을 때 오늘 카드에서 한 번) */
+function seatJobShort(job) {
+  const sub = job.submission;
+  if (!sub) return '내가 배치합니다';
+  if (sub.status === 'submitted') return '냈습니다';
+  if (sub.status === 'applied') return '적용됐습니다';
+  return '돌려받았습니다';
 }
 
 /* ── 급식 ─────────────────────────────────────────────────────────── */
@@ -1338,12 +1341,9 @@ function meScreen() {
       note: state.viewing ? '선생님이 보는 학생 화면' : '학교 구글 계정',
       tail: !state.viewing && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: logout }, '로그아웃'),
     }))),
-    // 자리는 시간표 탭의 «자리»로 옮겼다(2026-10-08). 여기는 계정 연결과 맡은 자리배치만
-    !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL && (state.hub
-      ? hubMe() && hubMe().delegation && card('자리배치 담당', null, h('div', { class: 'rows' },
-          row({ title: '자리배치 담당', note: delegationNote(hubMe().delegation), tail: icon('next'), onclick: openSeatEditor })))
-      : card('학교 계정', null, h('div', { class: 'rows' },
-          row({ title: '학교 계정 연결', note: '선생님 일정과 자리를 받습니다', tail: icon('next'), onclick: () => openSheet({ type: 'connect' }) })))),
+    // 자리·맡은 자리배치는 시간표 탭의 «자리배치»로 옮겼다(2026-10-08). 여기는 계정 연결만
+    !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL && !state.hub && card('학교 계정', null, h('div', { class: 'rows' },
+      row({ title: '학교 계정 연결', note: '선생님 일정과 자리를 받습니다', tail: icon('next'), onclick: () => openSheet({ type: 'connect' }) }))),
     state.hub && !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL && card('수업 변경 알림', null, h('div', { class: 'rows' }, pushRow())),
     // 폰은 고를 게 «자동»과 «한 줄형»뿐이라 두지 않는다 — 넓은 화면에서만
     Object.values(LAYOUTS).filter((v) => width >= v.min).length > 1 && card('화면 배치', null, h('div', { class: 'options card-pad' },
@@ -1596,12 +1596,76 @@ async function openAttachment(file, button) {
  */
 const SEAT_DESKS = { single: { w: 64, h: 46, seats: [[0, 0]] }, pair: { w: 128, h: 46, seats: [[-32, 0], [32, 0]] }, group: { w: 128, h: 92, seats: [[-32, -23], [32, -23], [-32, 23], [32, 23]] } };
 const SEAT_FIXTURES = { board: '칠판', lectern: '교탁', door: '문', window: '창', pillar: '기둥' };
-function seatMap(plan) {
-  const room = plan.room;
+/*
+ * 폰에서 한눈에 — 책상 있는 곳만 남기고(벽까지 빈 바닥은 뺀다) 분단 사이 통로를 좁힌다(2026-10-08 «누르면
+ * 배치가 이쁘게»). 보여 줄 때만 옮긴다 — 저장된 배치는 그대로다. 교실 통째로 그리면 2인 4분단이 폰 폭에서
+ * 이름 한 칸이 23px 이라 «박상…»처럼 잘리고 오른쪽 분단은 화면 밖이었다. 좁히면 이름 세 글자가 들어간다.
+ */
+const SEAT_AISLE = 16;   // 좁힌 통로(cm)
+const SEAT_EDGE = 16;    // 가장자리 여백(cm)
+const SEAT_READABLE = 0.52; // 이 배율 아래면 이름이 안 읽힌다 — «크게 보기»로 내 자리 둘레
+function compactRoom(room) {
+  const desks = room.desks || [];
+  if (!desks.length) return room;
+  const boxes = desks.map((d) => {
+    const shape = SEAT_DESKS[d.kind] || SEAT_DESKS.pair;
+    const turned = Math.abs((((d.rot || 0) % 180) + 180) % 180 - 90) < 45;
+    const w = turned ? shape.h : shape.w, hh = turned ? shape.w : shape.h;
+    return { l: d.x - w / 2, r: d.x + w / 2, t: d.y - hh / 2, b: d.y + hh / 2 };
+  });
+  // 가로 — 책상이 걸친 구간끼리 묶고, 구간 사이(통로)를 SEAT_AISLE 로
+  const bands = [];
+  for (const [l, r] of boxes.map((b) => [b.l, b.r]).sort((a, b) => a[0] - b[0])) {
+    const last = bands[bands.length - 1];
+    if (last && l <= last[1] + 1) last[1] = Math.max(last[1], r);
+    else bands.push([l, r]);
+  }
+  const starts = [];
+  let at = SEAT_EDGE;
+  bands.forEach(([l, r], i) => { if (i) at += Math.min(l - bands[i - 1][1], SEAT_AISLE); starts.push(at); at += r - l; });
+  const width = at + SEAT_EDGE;
+  const mapX = (x) => {
+    if (x <= bands[0][0]) return Math.max(0, starts[0] - (bands[0][0] - x));
+    for (let i = 0; i < bands.length; i++) {
+      const [l, r] = bands[i];
+      if (x <= r) return starts[i] + (x - l);
+      const next = bands[i + 1];
+      if (next && x < next[0]) { const gap = next[0] - r; return starts[i] + (r - l) + (x - r) * (Math.min(gap, SEAT_AISLE) / gap); }
+    }
+    const last = bands.length - 1;
+    return Math.min(width, starts[last] + (bands[last][1] - bands[last][0]) + (x - bands[last][1]));
+  };
+  // 세로 — 칠판·교탁부터 마지막 줄까지만
+  const fixtures = room.fixtures || [];
+  const top = Math.max(0, Math.min(...boxes.map((b) => b.t), ...fixtures.map((f) => f.y - f.h / 2)) - SEAT_EDGE);
+  const bottom = Math.min(room.depth, Math.max(...boxes.map((b) => b.b)) + SEAT_EDGE);
+  return {
+    ...room, width, depth: bottom - top,
+    desks: desks.map((d) => ({ ...d, x: mapX(d.x), y: d.y - top })),
+    fixtures: fixtures.filter((f) => f.y - f.h / 2 < bottom).map((f) => {
+      const l = mapX(f.x - f.w / 2), r = mapX(f.x + f.w / 2);
+      const w = Math.max(r - l, Math.min(f.w, 24));
+      // 옆벽의 문·창은 잘라 낸 벽 안쪽에 붙인다 — 이름표가 테두리 밖으로 나가지 않게
+      return { ...f, x: Math.min(width - w / 2, Math.max(w / 2, (l + r) / 2)), w, y: f.y - top };
+    }),
+  };
+}
+
+/** 이 교실을 폰 폭에 맞춘 배율과, 맞추면 이름이 읽히는지 */
+function seatFit(room) {
   const avail = Math.min((window.innerWidth || 390) - 48, 640);
-  // «전체 보기»면 교실이 한눈에 들어오게 줄인다(2026-10-08) — 기본은 이름이 읽히는 크기로 내 자리 주변
-  const scale = state.seatFit ? avail / room.width : Math.max(avail / room.width, 0.62);
+  const fit = avail / room.width;
+  return { fit, readable: fit >= SEAT_READABLE };
+}
+
+function seatMap(plan) {
+  const room = compactRoom(plan.room);
+  const { fit, readable } = seatFit(room);
+  // 맞춰서 읽히면 늘 한눈에. 안 읽히면 기본은 이름이 읽히는 크기로 내 자리 둘레, «전체 보기»면 한눈에
+  const scale = readable || state.seatFit ? fit : Math.max(fit, 0.62);
   const px = (v) => `${Math.round(v * scale * 10) / 10}px`;
+  // 이름 글자는 칸 폭에 맞춰 10~13px — 세 글자가 들어가게
+  const font = Math.max(10, Math.min(13, Math.floor((60 * scale) / 3.1)));
   const parts = [];
   for (const f of room.fixtures || []) {
     parts.push(h('div', { class: `seatmap-fx is-${f.kind}`, style: `left:${px(f.x - f.w / 2)};top:${px(f.y - f.h / 2)};width:${px(f.w)};height:${px(f.h)}` },
@@ -1622,12 +1686,12 @@ function seatMap(plan) {
       }, who && h('span', { class: 'no' }, who.classId ? `${who.classId} ${who.no ?? ''}` : String(who.no ?? '')), who && h('b', null, who.name)));
     });
   }
-  return h('div', { class: 'seatmap-scroll' }, h('div', { class: 'seatmap', style: `width:${px(room.width)};height:${px(room.depth)}` }, parts));
+  return h('div', { class: 'seatmap-scroll' }, h('div', { class: 'seatmap', style: `width:${px(room.width)};height:${px(room.depth)};--seat-font:${font}px` }, parts));
 }
 
 /* 이동수업 자리 — 그날 쓰는 것, 없으면 앞으로 쓸 첫 것 */
 function lessonSeatPlanOn(lessonId, key) {
-  const plans = ((hubMe() && hubMe().lessonSeats) || []).filter((p) => p.lessonId === lessonId);
+  const plans = ((seatSource() && seatSource().lessonSeats) || []).filter((p) => p.lessonId === lessonId);
   return plans.filter((p) => p.effectiveFrom <= key).sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0]
     || plans.filter((p) => p.effectiveFrom > key).sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))[0]
     || null;
@@ -1648,8 +1712,8 @@ function seatsSheet() {
 
 /* 자리 창 — 교실이 화면보다 넓으면 «전체 보기»(한눈에)와 «크게 보기»(이름이 읽히게, 내 자리로)를 오간다 */
 function seatSheet(title, plan) {
-  const avail = Math.min((window.innerWidth || 390) - 48, 640);
-  const wide = avail / plan.room.width < 0.62;
+  // 좁혀서 한눈에 읽히면 고를 것이 없다 — 안 읽힐 때만 «전체 보기»·«크게 보기»
+  const wide = !seatFit(compactRoom(plan.room)).readable;
   return {
     title,
     sub: `${fmtShort(parse(plan.effectiveFrom))}부터 · 칠판이 위`,
@@ -1658,7 +1722,7 @@ function seatSheet(title, plan) {
         onclick: () => { state.seatFit = !state.seatFit; renderSheet(true); } }, state.seatFit ? '크게 보기' : '전체 보기')),
       seatMap(plan),
     ],
-    after: () => { const mine = document.getElementById('my-seat'); if (mine && !state.seatFit) mine.scrollIntoView({ block: 'center', inline: 'center' }); },
+    after: () => { const mine = document.getElementById('my-seat'); if (mine && wide && !state.seatFit) mine.scrollIntoView({ block: 'center', inline: 'center' }); },
   };
 }
 
@@ -2357,6 +2421,8 @@ function adoptHub(me) {
 }
 
 const hubMe = () => (state.hub && state.hub.me) || null;
+/** 자리 자료 — 학생은 학생용 층(/me), 선생님이 학생 화면을 볼 때는 /ax/student 가 함께 준 것(2026-10-08) */
+const seatSource = () => (state.viewing ? state.viewing : hubMe());
 
 /** 선생님이 나에게 낸 일정 — 학생관리 › 학생 일정 */
 function teacherEventsOn(date) {
@@ -2369,7 +2435,7 @@ function teacherEventsBetween(fromKey, toKey) {
 
 /** 우리 반 자리 — 오늘 쓰는 것, 없으면 가장 가까운 다음 것 */
 function seatPlanNow() {
-  const plans = (hubMe() && hubMe().seats) || [];
+  const plans = (seatSource() && seatSource().seats) || [];
   const key = iso(today());
   return plans.filter((p) => p.effectiveFrom <= key).sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0]
     || plans.filter((p) => p.effectiveFrom > key).sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))[0]
@@ -2432,7 +2498,7 @@ async function openStudent(target, force = false) {
       if (!body.found) throw new Error('그 학생을 찾지 못했습니다.');
       return body;
     }, { force });
-    state.viewing = { classId: data.classId, no: data.no, name: data.name };
+    state.viewing = { classId: data.classId, no: data.no, name: data.name, seats: data.seats || [], lessonSeats: data.lessonSeats || [] };
     state.me = { classId: data.classId, sections: adoptSections(data.sections) };
     // 교사가 보는 것은 저장하지 않는다 — 이 기기의 «내 시간표»가 아니다.
   } catch (error) {

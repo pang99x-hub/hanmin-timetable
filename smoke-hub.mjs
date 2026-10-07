@@ -3,7 +3,7 @@
  *
  *   1. 학생은 학생용 층으로 로그인한다. 반·강좌가 채워지고 토큰이 기기에 남는다(원문 하나만)
  *   2. 선생님 일정이 오늘(사흘 안)·달력 점·고른 날 카드에 뜬다
- *   3. 우리 반 자리 — 시간표 탭 «자리»에서 열면 내 자리가 칠해져 있다. 반 친구 학번은 오지 않는다
+ *   3. 우리 반 자리 — 시간표 탭 «자리배치»의 «우리 반»을 누르면 내 자리가 칠해져 있다. 반 친구 학번은 오지 않는다
  *   4. 명단에 없는 계정(교사)은 Hi-AX 에서 연다고 알린다. 층이 닿지 않으면 다시 하라고 한다(앱스 스크립트 없음)
  *   5. 로그아웃하면 학생용 층 세션도 지운다
  */
@@ -112,12 +112,15 @@ student.w.eval('closeSheet()')
 
 console.log('\n[3] 우리 반 자리');
 student.w.eval(`state.tab='me'; render();`)
-check('내 정보에는 자리가 없다 — 시간표 탭으로 옮겼다', ![...student.app.querySelectorAll('.row')].some((n) => n.textContent.includes('우리 반 자리')))
+check('내 정보에는 자리가 없다 — 시간표 탭으로 옮겼다', ![...student.app.querySelectorAll('.card-title')].some((n) => n.textContent.includes('자리')))
 student.w.eval(`state.tab='timetable'; render();`)
-const seatsCard = [...student.app.querySelectorAll('.card')].find((n) => n.querySelector('.card-title')?.textContent.trim() === '자리')
-const seatsRow = seatsCard && [...seatsCard.querySelectorAll('.row')].find((n) => n.textContent.includes('우리 반 자리'))
-check('시간표 탭 «자리»에 «우리 반 자리»', !!seatsRow)
-check('«자리»에 이동수업 자리도', !!seatsCard && [...seatsCard.querySelectorAll('.row')].some((n) => /자리/.test(n.textContent) && !n.textContent.includes('우리 반')))
+// «자리배치» 카드 — 줄은 «우리 반»과 이동수업 과목, 긴 안내 없이(2026-10-08 «주저리 설명 빼고»)
+const seatsCard = [...student.app.querySelectorAll('.card')].find((n) => n.querySelector('.card-title')?.textContent.trim() === '자리배치')
+const seatRows = seatsCard ? [...seatsCard.querySelectorAll('.row')] : []
+const seatsRow = seatRows.find((n) => n.querySelector('.row-title, b, strong')?.textContent.trim() === '우리 반' || n.textContent.startsWith('우리 반'))
+check('시간표 탭 «자리배치»에 «우리 반»', !!seatsRow)
+check('«자리배치»에 이동수업 과목 줄도', seatRows.some((n) => n !== seatsRow && n.textContent.includes(sample.subject)))
+check('«Hi-AX … 봅니다» 같은 안내는 없다', !!seatsCard && !seatsCard.textContent.includes('봅니다'))
 seatsRow.click()
 await settle()
 const mine = student.sheet().querySelector('.seatmap-seat.is-mine')
@@ -191,8 +194,14 @@ await delegate.w.onCredential({ credential: '학생토큰' });
 await settle();
 delegate.w.eval(`state.tab='today'; render();`)
 check('오늘에 «자리배치 담당이 되었습니다»', delegate.app.textContent.includes('자리배치 담당이 되었습니다'))
+// 맡은 학생은 «자리배치»의 «우리 반»이 곧 배치하기 — 내 정보로 따로 가던 길은 합쳤다
 delegate.w.eval(`state.tab='me'; render();`)
-;[...delegate.app.querySelectorAll('.row')].find((n) => n.textContent.includes('자리배치 담당')).click()
+check('내 정보에 «자리배치 담당» 카드가 따로 없다', ![...delegate.app.querySelectorAll('.card-title')].some((n) => n.textContent.includes('자리배치')))
+delegate.w.eval(`state.tab='timetable'; render();`)
+const jobCard = [...delegate.app.querySelectorAll('.card')].find((n) => n.querySelector('.card-title')?.textContent.trim() === '자리배치')
+const jobRow = jobCard && [...jobCard.querySelectorAll('.row')].find((n) => n.textContent.startsWith('우리 반'))
+check('«우리 반» 줄에 «내가 배치합니다»', !!jobRow && jobRow.textContent.includes('내가 배치합니다'))
+jobRow.click()
 await settle()
 check('편집기가 열린다', delegate.app.textContent.includes('자리배치 담당') && !!delegate.app.querySelector('.seatmap.is-edit'))
 const lockedBtn = delegate.app.querySelector('button.seatmap-seat.is-locked')
