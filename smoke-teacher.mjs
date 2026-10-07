@@ -74,7 +74,7 @@ console.log('[1] 교사로 로그인');
 const { w, store } = await open(desk);
 await w.onCredential({ credential: '교사토큰' });
 let text = w.document.getElementById('app').textContent;
-check('학생 고르는 화면이 뜬다', text.includes('학생 시간표 보기'));
+check('학생 고르는 화면이 뜬다', text.includes('학생 화면 보기'));
 check('내 시간표가 바로 뜨지 않는다', !text.includes('교시'));
 
 console.log('\n[2] 학급 고르기');
