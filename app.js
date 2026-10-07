@@ -28,7 +28,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261007-v4';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261007-v5';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -40,6 +40,12 @@ const PREFS_KEY = 'hanmin.timetable.prefs.v1';
 const INSTALL_KEY = 'hanmin.timetable.install.v1';
 /* 구글 캘린더를 이 기기에서 한 번이라도 연결했나 — 그랬을 때만 열 때마다 조용히 되받는다. */
 const CAL_KEY = 'hanmin.timetable.cal.v1';
+/*
+ * 학생용 층(2026-10-07) — 학생 로그인과 «내 것»(강좌·선생님 일정·우리 반 자리). 원본은 Hi-AX, 이 주소는
+ * 그 사본을 둔 클라우드플레어 워커다. 앱스 스크립트(DESK)는 교사 로그인과, 이 층이 닿지 않을 때 대비로 남는다.
+ */
+const HUB = 'https://students.hiax.cloud';
+const HUB_KEY = 'hanmin.timetable.hub.v1';
 const DATA = 'data/';
 /* 오래 열어 둔 앱이 낡은 변경·급식을 보여 주지 않게 — 다시 보일 때 이만큼 지났으면 새로 받는다. */
 const REFRESH_AFTER = 10 * 60 * 1000;
@@ -56,6 +62,7 @@ const MEALS = [['breakfast', '조식'], ['lunch', '중식'], ['dinner', '석식'
 const state = {
   school: null, classes: [], sections: [],
   changes: null, meals: null, calendar: null, abbrev: {},
+  hub: null,              // { token, me: { student, sections, events, seats }, savedAt } — 학생용 층
   loadedAt: null,         // 반 시간표를 낸 때
   fetchedAt: 0,           // 이 기기가 자료를 받은 때
   me: null,               // { classId, sections: {bandKey: sectionKey} }
@@ -135,6 +142,7 @@ async function boot() {
   }
   try { state.me = !AX_EMBEDDED && !AX_EXTERNAL && JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { state.me = null; }
   state.dday = loadDday();
+  state.hub = !AX_EMBEDDED && !AX_EXTERNAL ? loadHub() : null;
   state.events = loadEvents();
   state.prefs = loadPrefs();
   const fromHash = location.hash.replace('#', '');
@@ -146,6 +154,7 @@ async function boot() {
    * 이것을 부르면 열 때마다 권한 창을 띄우려다 막혀 «팝업 차단» 표시만 남는다.
    */
   if (state.me && state.me.classId && calConnected()) pullEventsFromCalendar();
+  if (state.me && state.hub) refreshHub();
   window.addEventListener('keydown', onKey);
   window.addEventListener('hashchange', () => {
     const key = location.hash.replace('#', '');
@@ -711,9 +720,9 @@ function todayScreen(layout) {
     return h('div', { class: 'page' }, head,
       h('div', { class: 'cols is-dash' },
         h('div', { class: 'col' }, installCard(layout), weekGridCard(mondayOf(date), date, '이번 주 시간표')),
-        h('div', { class: 'col is-side' }, ddayCard(), mealCard(date), upcomingCard())));
+        h('div', { class: 'col is-side' }, ddayCard(), teacherSoonCard(), newSeatsCard(), mealCard(date), upcomingCard())));
   }
-  return h('div', { class: 'page' }, head, ddayCard(), installCard(layout), lessonsCard(date, '수업'), mealCard(date));
+  return h('div', { class: 'page' }, head, ddayCard(), installCard(layout), teacherSoonCard(), newSeatsCard(), lessonsCard(date, '수업'), mealCard(date));
 }
 
 function rotationNote(date) {
@@ -784,6 +793,31 @@ function allDayChips(date) {
     h('button', { class: 'chip', type: 'button', onclick: () => openSheet({ type: 'event', draft: { ...item } }) }, item.title)));
 }
 
+/* 선생님 일정 — 오늘부터 사흘 안. 없으면 카드를 두지 않는다 */
+function teacherSoonCard() {
+  const from = iso(today());
+  const list = teacherEventsBetween(from, iso(addDays(today(), 3)));
+  if (!list.length) return null;
+  return card('선생님 일정', { tail: linkTo('달력', () => go('calendar')) },
+    h('div', { class: 'rows' }, list.map((item) => row({
+      cls: 'is-teacher', lead: item.date === from ? '오늘' : fmtShort(parse(item.date)), title: item.title, note: item.teacher || null,
+      tail: icon('next'), onclick: () => openSheet({ type: 'teacherEvent', id: item.id }),
+    }))));
+}
+
+/* 새 자리 — 시작일 앞뒤 사흘만 오늘에 띄운다. 그 밖에는 내 정보에서 */
+function newSeatsCard() {
+  const plan = seatPlanNow();
+  if (!plan) return null;
+  const gap = daysUntil(plan.effectiveFrom);
+  if (gap < -3 || gap > 3) return null;
+  return card(null, null, h('div', { class: 'rows' }, row({
+    title: gap > 0 ? '새 자리가 정해졌습니다' : '자리가 바뀌었습니다',
+    note: `${fmtShort(parse(plan.effectiveFrom))}부터`,
+    tail: icon('next'), onclick: () => openSheet({ type: 'seats' }),
+  })));
+}
+
 /* 오늘 급식 — 시간표와 떨어진 카드. 끼니마다 한 줄로 줄인다. */
 function mealCard(date) {
   const day = state.meals && state.meals.days && state.meals.days[iso(date)];
@@ -808,7 +842,8 @@ function upcomingCard(withLink = true) {
   const school = upcomingSchool(from).map((day) => ({ date: day.date, text: day.labels.join(' · '), kind: day.kind }));
   const mine = state.events.filter((item) => item.date >= from)
     .map((item) => ({ date: item.date, text: item.period ? `${item.period}교시 ${item.title}` : item.title, kind: 'mine', item }));
-  const soon = [...school, ...mine].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6);
+  const teacher = teacherEventsBetween(from, '9999-12-31').map((item) => ({ date: item.date, text: item.title, kind: 'teacher', teacherId: item.id }));
+  const soon = [...school, ...teacher, ...mine].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6);
   return card('다가오는 일정', { tail: withLink && linkTo('달력', () => go('calendar')) },
     soon.length === 0
       ? empty(state.calendar ? '다가오는 일정이 없습니다.' : '학사일정 자료가 아직 없습니다.')
@@ -816,7 +851,7 @@ function upcomingCard(withLink = true) {
           cls: `is-${item.kind}`,
           lead: fmtShort(parse(item.date)),
           title: item.text,
-          onclick: () => openSheet(item.item ? { type: 'event', draft: { ...item.item } } : { type: 'school', date: item.date }),
+          onclick: () => openSheet(item.teacherId ? { type: 'teacherEvent', id: item.teacherId } : item.item ? { type: 'event', draft: { ...item.item } } : { type: 'school', date: item.date }),
         }))));
 }
 
@@ -989,16 +1024,18 @@ function monthCard(first) {
       if (outside) { cells.push(h('td', null, h('span', { class: 'day is-out' }, String(date.getDate())))); continue; }
       const school = calendarOn(date);
       const mine = eventsOn(date);
+      const teacher = teacherEventsOn(date);
       const changed = isWeekday(date) && myChanges(date).length > 0;
       const off = !isWeekday(date) || (school && school.kind === 'holiday');
       const cls = ['day', off && 'is-off', sameDay(date, today()) && 'is-today', state.selDate && sameDay(date, state.selDate) && 'is-sel'].filter(Boolean).join(' ');
-      const said = [school && school.labels.join(' · '), mine.length && `내 일정 ${mine.length}`, changed && '바뀐 수업'].filter(Boolean).join(' · ');
+      const said = [school && school.labels.join(' · '), teacher.length && `선생님 일정 ${teacher.length}`, mine.length && `내 일정 ${mine.length}`, changed && '바뀐 수업'].filter(Boolean).join(' · ');
       cells.push(h('td', null, h('button', { type: 'button', class: cls,
         'aria-label': `${date.getMonth() + 1}월 ${date.getDate()}일${said ? ` · ${said}` : ''}`,
         onclick: () => { state.selDate = date; render(); } },
         h('span', { class: 'num' }, String(date.getDate())),
         h('span', { class: 'dots' },
           school && school.kind !== 'holiday' && h('i', { class: 'dot is-school' }),
+          teacher.length > 0 && h('i', { class: 'dot is-teacher' }),
           mine.length > 0 && h('i', { class: 'dot is-mine' }),
           changed && h('i', { class: 'dot is-warn' })))));
     }
@@ -1014,6 +1051,7 @@ function monthCard(first) {
   h('table', { class: 'mo' }, h('thead', null, h('tr', null, WEEK.map((w, i) => h('th', { class: i === 0 ? 'is-sun' : null }, w)))), h('tbody', null, rows)),
   h('div', { class: 'legend' },
     h('span', null, h('i', { class: 'dot is-school' }), '학사일정'),
+    hubMe() && h('span', null, h('i', { class: 'dot is-teacher' }), '선생님 일정'),
     h('span', null, h('i', { class: 'dot is-mine' }), '내 일정'),
     h('span', null, h('i', { class: 'dot is-warn' }), '바뀐 수업')));
 }
@@ -1022,12 +1060,14 @@ function monthCard(first) {
 function dayDetailCard(date) {
   const school = calendarOn(date);
   const mine = eventsOn(date);
+  const teacher = teacherEventsOn(date);
   const changed = isWeekday(date) ? myChanges(date) : [];
   return card(fmtShort(date), {
     tail: isWeekday(date) && linkTo('이날 시간표', () => { state.week = mondayOf(date); state.listDay = date; go('timetable'); }),
   },
-  (school || mine.length > 0 || changed.length > 0) ? h('div', { class: 'rows' },
+  (school || mine.length > 0 || changed.length > 0 || teacher.length > 0) ? h('div', { class: 'rows' },
     school && row({ cls: `is-${school.kind}`, lead: '학사', title: school.labels.join(' · '), tail: icon('next'), onclick: () => openSheet({ type: 'school', date: iso(date) }) }),
+    teacher.map((item) => row({ cls: 'is-teacher', lead: '선생님', title: item.title, note: item.teacher || null, tail: icon('next'), onclick: () => openSheet({ type: 'teacherEvent', id: item.id }) })),
     changed.map((chg) => row({
       lead: `${chg.period}교시`,
       title: chg.kind === 'cancel' ? (chg.lesson && chg.lesson.subject) || '' : chg.subject || '',
@@ -1077,6 +1117,15 @@ function meScreen() {
       note: state.viewing ? '선생님이 보는 학생 화면' : '학교 구글 계정',
       tail: !state.viewing && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: logout }, '로그아웃'),
     }))),
+    !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL && card('우리 반', null, h('div', { class: 'rows' }, state.hub
+      ? (() => {
+          const plan = seatPlanNow();
+          return row({
+            title: '우리 반 자리', note: plan ? `${fmtShort(parse(plan.effectiveFrom))}부터` : '아직 정해진 자리가 없습니다',
+            tail: plan && icon('next'), onclick: plan ? () => openSheet({ type: 'seats' }) : null,
+          });
+        })()
+      : row({ title: '학교 계정 연결', note: '선생님 일정과 우리 반 자리를 받습니다', tail: icon('next'), onclick: () => openSheet({ type: 'connect' }) }))),
     card('화면 배치', null, h('div', { class: 'options card-pad' },
       [['auto', '자동', 0], ...Object.entries(LAYOUTS).map(([key, v]) => [key, v.label, v.min])].map(([key, label, min]) => {
         const blocked = width < min;
@@ -1108,6 +1157,10 @@ function dataNote() {
 
 function logout() {
   localStorage.removeItem(KEY);
+  if (state.hub) {
+    fetch(`${HUB}/logout`, { method: 'POST', headers: { Authorization: `Bearer ${state.hub.token}` } }).catch(() => {});
+    saveHub(null);
+  }
   state.me = null; state.gateError = null;
   if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
   go('today');
@@ -1154,6 +1207,7 @@ function renderSheet(force = false) {
     const target = panel.querySelector('[autofocus]') || panel;
     requestAnimationFrame(() => target.focus({ preventScroll: true }));
   }
+  if (body.after) requestAnimationFrame(body.after);
 }
 
 function sheetBody(spec) {
@@ -1164,6 +1218,9 @@ function sheetBody(spec) {
     case 'school': return schoolSheet(spec.date);
     case 'picker': return pickerSheet(spec.band);
     case 'install': return installSheet();
+    case 'teacherEvent': return teacherEventSheet(spec.id);
+    case 'seats': return seatsSheet();
+    case 'connect': return connectSheet();
     default: return null;
   }
 }
@@ -1270,6 +1327,91 @@ function schoolSheet(dateKey) {
     content: [],
     footer: [h('button', { class: 'btn is-key', type: 'button', onclick: () => { saveDday({ label: day.labels[0], date: dateKey }); closeSheet(); } }, '디데이로 정하기')],
   };
+}
+
+/* 선생님 일정 한 건 — 내용 전체와 «디데이로 정하기» */
+function teacherEventSheet(id) {
+  const item = ((hubMe() && hubMe().events) || []).find((e) => e.id === id);
+  if (!item) return null;
+  return {
+    title: item.title,
+    sub: [fmtShort(parse(item.date)), item.teacher && `${item.teacher} 선생님`].filter(Boolean).join(' · '),
+    content: item.content ? h('p', { class: 'sheet-text' }, item.content) : [],
+    footer: [h('button', { class: 'btn is-key', type: 'button', onclick: () => { saveDday({ label: item.title, date: item.date }); closeSheet(); } }, '디데이로 정하기')],
+  };
+}
+
+/*
+ * 우리 반 자리 — 칠판이 위(학생이 앉아서 보는 쪽). 폰에서는 이름이 읽히게 넓혀 옆으로 밀고, 내 자리로
+ * 굴려 둔다(계획: «휴대폰은 내 자리 주변을 크게»). 학번·사진은 오지 않는다 — 번호·이름만.
+ */
+const SEAT_DESKS = { single: { w: 64, h: 46, seats: [[0, 0]] }, pair: { w: 128, h: 46, seats: [[-32, 0], [32, 0]] }, group: { w: 128, h: 92, seats: [[-32, -23], [32, -23], [-32, 23], [32, 23]] } };
+const SEAT_FIXTURES = { board: '칠판', lectern: '교탁', door: '문', window: '창', pillar: '기둥' };
+function seatMap(plan) {
+  const room = plan.room;
+  const avail = Math.min((window.innerWidth || 390) - 48, 640);
+  const scale = Math.max(avail / room.width, 0.62);
+  const px = (v) => `${Math.round(v * scale * 10) / 10}px`;
+  const parts = [];
+  for (const f of room.fixtures || []) {
+    parts.push(h('div', { class: `seatmap-fx is-${f.kind}`, style: `left:${px(f.x - f.w / 2)};top:${px(f.y - f.h / 2)};width:${px(f.w)};height:${px(f.h)}` },
+      h('span', null, SEAT_FIXTURES[f.kind] || '')));
+  }
+  for (const d of room.desks || []) {
+    const shape = SEAT_DESKS[d.kind] || SEAT_DESKS.pair;
+    parts.push(h('div', { class: 'seatmap-desk', style: `left:${px(d.x)};top:${px(d.y)};width:${px(shape.w)};height:${px(shape.h)};transform:translate(-50%,-50%) rotate(${d.rot}deg)` }));
+    const rad = (d.rot * Math.PI) / 180, cos = Math.cos(rad), sin = Math.sin(rad);
+    shape.seats.forEach(([dx, dy], i) => {
+      const id = `${d.id}:${i}`;
+      const who = plan.seats[id];
+      const mineSeat = plan.mine === id;
+      parts.push(h('div', {
+        class: `seatmap-seat${who ? '' : ' is-empty'}${mineSeat ? ' is-mine' : ''}`, id: mineSeat ? 'my-seat' : null,
+        style: `left:${px(d.x + dx * cos - dy * sin)};top:${px(d.y + dx * sin + dy * cos)};width:${px(60)};height:${px(42)}`,
+      }, who && h('span', { class: 'no' }, String(who.no ?? '')), who && h('b', null, who.name)));
+    });
+  }
+  return h('div', { class: 'seatmap-scroll' }, h('div', { class: 'seatmap', style: `width:${px(room.width)};height:${px(room.depth)}` }, parts));
+}
+
+function seatsSheet() {
+  const plan = seatPlanNow();
+  if (!plan) return null;
+  return {
+    title: '우리 반 자리',
+    sub: `${fmtShort(parse(plan.effectiveFrom))}부터 · 칠판이 위`,
+    content: seatMap(plan),
+    after: () => { const mine = document.getElementById('my-seat'); if (mine) mine.scrollIntoView({ block: 'center', inline: 'center' }); },
+  };
+}
+
+/* 학생용 층이 생기기 전에 로그인한 학생 — 한 번 더 구글로 확인하면 선생님 일정·자리가 들어온다 */
+function connectSheet() {
+  const slot = h('div', { class: 'gsi' });
+  return {
+    title: '학교 계정 연결',
+    sub: '선생님 일정과 우리 반 자리를 받습니다',
+    content: [slot, state.gateError && h('p', { class: 'err' }, state.gateError)],
+    after: () => loadGoogle().then((ready) => {
+      if (!ready) { slot.textContent = '로그인 창을 열지 못했습니다. 잠시 뒤 다시 엽니다.'; return; }
+      google.accounts.id.initialize({ client_id: CLIENT_ID, callback: onConnect });
+      google.accounts.id.renderButton(slot, { theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'filled_black' : 'outline', size: 'large', shape: 'pill', text: 'signin_with', locale: 'ko', width: 260 });
+    }),
+  };
+}
+
+async function onConnect(response) {
+  state.gateError = null;
+  try {
+    const hub = await hubLogin(response.credential);
+    if (hub.notStudent) { state.gateError = '학생 명단에 없는 계정입니다. 학교 계정으로 다시 고릅니다.'; renderSheet(true); return; }
+    saveHub({ token: hub.token, me: hub.me, savedAt: Date.now() });
+    adoptHub(hub.me);
+    closeSheet();
+  } catch (error) {
+    state.gateError = String(error.message || error);
+    renderSheet(true);
+  }
 }
 
 /* 강좌 고르기 — 이동수업은 학생마다 다르다. 한 번 고르면 계속 기억한다. */
@@ -1582,6 +1724,77 @@ function adoptSections(ids) {
   return out;
 }
 
+/* ── 학생용 층 ──────────────────────────────────────────────────────── */
+function loadHub() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(HUB_KEY) || 'null');
+    return raw && typeof raw.token === 'string' ? raw : null;
+  } catch { return null; }
+}
+
+/* 교사가 남의 화면을 보는 중에는 기기에 남기지 않는다 — save() 와 같은 이유 */
+function saveHub(value) {
+  state.hub = value;
+  if (state.viewing) return;
+  try {
+    if (value) localStorage.setItem(HUB_KEY, JSON.stringify(value));
+    else localStorage.removeItem(HUB_KEY);
+  } catch { /* 이번 화면에서만 쓴다 */ }
+}
+
+/** 학생이면 { token, me }, 명단에 없으면(교사 등) { notStudent }. 닿지 않으면 던진다 — 부르는 쪽이 DESK 로 넘어간다 */
+async function hubLogin(credential) {
+  const res = await fetch(`${HUB}/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential }),
+  });
+  let data = {};
+  try { data = await res.json(); } catch { /* 본문 없음 */ }
+  if (res.status === 404 && data.notStudent) return { notStudent: true };
+  if (!res.ok || !data.token || !data.me) throw new Error(data.error || '학생 서버에 닿지 못했습니다.');
+  return data;
+}
+
+/** 열 때마다 조용히 새로 받는다 — 반·강좌가 바뀌었으면(진급·강좌 변경) 따라가고, 일정·자리를 채운다 */
+async function refreshHub() {
+  if (!state.hub || state.viewing || AX_EMBEDDED || AX_EXTERNAL) return;
+  try {
+    const res = await fetch(`${HUB}/me`, { headers: { Authorization: `Bearer ${state.hub.token}` } });
+    if (res.status === 401) { saveHub(null); render(); return; }
+    if (!res.ok) return;
+    const me = await res.json();
+    adoptHub(me);
+    saveHub({ ...state.hub, me, savedAt: Date.now() });
+    render();
+  } catch { /* 망이 없으면 기기에 둔 것으로 */ }
+}
+
+function adoptHub(me) {
+  if (!me || !me.student || !me.student.classId) return;
+  const sameClass = state.me && state.me.classId === me.student.classId;
+  state.me = { classId: me.student.classId, sections: { ...(sameClass ? state.me.sections : {}), ...adoptSections(me.sections) } };
+  save();
+}
+
+const hubMe = () => (state.hub && state.hub.me) || null;
+
+/** 선생님이 나에게 낸 일정 — 학생관리 › 학생 일정 */
+function teacherEventsOn(date) {
+  const key = iso(date);
+  return ((hubMe() && hubMe().events) || []).filter((e) => e.date === key);
+}
+function teacherEventsBetween(fromKey, toKey) {
+  return ((hubMe() && hubMe().events) || []).filter((e) => e.date >= fromKey && e.date <= toKey);
+}
+
+/** 우리 반 자리 — 오늘 쓰는 것, 없으면 가장 가까운 다음 것 */
+function seatPlanNow() {
+  const plans = (hubMe() && hubMe().seats) || [];
+  const key = iso(today());
+  return plans.filter((p) => p.effectiveFrom <= key).sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0]
+    || plans.filter((p) => p.effectiveFrom > key).sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))[0]
+    || null;
+}
+
 function loginGate() {
   const slot = h('div', { class: 'gsi' });
   if (AX_EMBEDDED || AX_EXTERNAL || state.busy) {
@@ -1689,6 +1902,15 @@ function teacherPicker() {
 async function onCredential(response) {
   state.busy = true; state.gateError = null; render();
   try {
+    // 학생은 학생용 층으로. 명단에 없거나(교사) 층이 닿지 않으면 종전 창구로 간다
+    let hub = null;
+    try { hub = await hubLogin(response.credential); } catch { hub = null; }
+    if (hub && !hub.notStudent) {
+      state.me = { classId: hub.me.student.classId, sections: adoptSections(hub.me.sections) };
+      save();
+      saveHub({ token: hub.token, me: hub.me, savedAt: Date.now() });
+      return;
+    }
     const found = await askDesk(response.credential);
     if (found.role === 'teacher') {
       // 교사는 자기 시간표가 없다. 누구를 볼지 고르는 화면으로 간다.
