@@ -240,11 +240,11 @@
       "fromDate": null,
       "fromPeriod": null,
       "kind": "substitute",
-      "newRoom": "화학실험실",
+      "newRoom": "생명실험실",
       "newSubject": null,
-      "newTeacher": "김예리",
+      "newTeacher": "김형태",
       "origSubject": "과학창의연구",
-      "origTeacher": "김서연",
+      "origTeacher": "김태호",
       "period": 7
     },
     {
@@ -253,11 +253,11 @@
       "fromDate": null,
       "fromPeriod": null,
       "kind": "substitute",
-      "newRoom": "생명실험실",
+      "newRoom": "화학실험실",
       "newSubject": null,
-      "newTeacher": "김형태",
+      "newTeacher": "김예리",
       "origSubject": "과학창의연구",
-      "origTeacher": "김태호",
+      "origTeacher": "김서연",
       "period": 7
     },
     {
@@ -539,11 +539,11 @@
       "fromDate": null,
       "fromPeriod": null,
       "kind": "substitute",
-      "newRoom": "화학실험실",
+      "newRoom": "생명실험실",
       "newSubject": null,
-      "newTeacher": "박경민",
+      "newTeacher": "이창목",
       "origSubject": "과학창의연구",
-      "origTeacher": "김서연",
+      "origTeacher": "김태호",
       "period": 7
     },
     {
@@ -552,11 +552,11 @@
       "fromDate": null,
       "fromPeriod": null,
       "kind": "substitute",
-      "newRoom": "생명실험실",
+      "newRoom": "화학실험실",
       "newSubject": null,
-      "newTeacher": "이창목",
+      "newTeacher": "박경민",
       "origSubject": "과학창의연구",
-      "origTeacher": "김태호",
+      "origTeacher": "김서연",
       "period": 7
     },
     {
@@ -1275,6 +1275,19 @@
       "period": 4
     },
     {
+      "classId": "1-9",
+      "date": "2026-10-07",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "이동혁",
+      "origSubject": "한국사2",
+      "origTeacher": "임우정",
+      "period": 4
+    },
+    {
       "classId": "2-1",
       "date": "2026-10-07",
       "fromDate": null,
@@ -1285,6 +1298,19 @@
       "newTeacher": "정헌정",
       "origSubject": "영어Ⅱ",
       "origTeacher": "박성미",
+      "period": 1
+    },
+    {
+      "classId": "2-11",
+      "date": "2026-10-07",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "수학과교실(3층)",
+      "newSubject": null,
+      "newTeacher": "고예진",
+      "origSubject": "미적분Ⅱ",
+      "origTeacher": "최인애",
       "period": 1
     },
     {
@@ -1299,6 +1325,19 @@
       "origSubject": "영어Ⅱ",
       "origTeacher": "박성미",
       "period": 5
+    },
+    {
+      "classId": "2-13",
+      "date": "2026-10-07",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "강민우",
+      "origSubject": "미적분Ⅱ",
+      "origTeacher": "최인애",
+      "period": 6
     },
     {
       "classId": "2-2",
@@ -1379,6 +1418,19 @@
       "period": 6
     },
     {
+      "classId": "2-5",
+      "date": "2026-10-07",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "신창수",
+      "origSubject": "미적분Ⅱ",
+      "origTeacher": "최인애",
+      "period": 7
+    },
+    {
       "classId": "2-6",
       "date": "2026-10-07",
       "fromDate": null,
@@ -1389,6 +1441,19 @@
       "newTeacher": "안기종",
       "origSubject": "영어Ⅱ",
       "origTeacher": "박성미",
+      "period": 2
+    },
+    {
+      "classId": "2-7",
+      "date": "2026-10-07",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "고예진",
+      "origSubject": "미적분Ⅱ",
+      "origTeacher": "최인애",
       "period": 2
     },
     {
@@ -1600,6 +1665,19 @@
       "period": 5
     },
     {
+      "classId": "2-2",
+      "date": "2026-10-08",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "김동은",
+      "origSubject": "화법과 언어",
+      "origTeacher": "이유림",
+      "period": 7
+    },
+    {
       "classId": "2-4",
       "date": "2026-10-08",
       "fromDate": null,
@@ -1611,6 +1689,19 @@
       "origSubject": "영어Ⅱ",
       "origTeacher": "박성미",
       "period": 3
+    },
+    {
+      "classId": "2-5",
+      "date": "2026-10-08",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": null,
+      "newSubject": null,
+      "newTeacher": "이태훈",
+      "origSubject": "화법과 언어",
+      "origTeacher": "이유림",
+      "period": 4
     },
     {
       "classId": "2-5",
@@ -1689,6 +1780,32 @@
       "origSubject": "과학창의연구",
       "origTeacher": "김현주",
       "period": 4
+    },
+    {
+      "classId": "3-12",
+      "date": "2026-10-08",
+      "fromDate": "2026-10-08",
+      "fromPeriod": 6,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "사회문제 탐구",
+      "newTeacher": "문우인",
+      "origSubject": "심화 수학Ⅰ",
+      "origTeacher": "김선중",
+      "period": 5
+    },
+    {
+      "classId": "3-12",
+      "date": "2026-10-08",
+      "fromDate": "2026-10-08",
+      "fromPeriod": 5,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "심화 수학Ⅰ",
+      "newTeacher": "김선중",
+      "origSubject": "사회문제 탐구",
+      "origTeacher": "문우인",
+      "period": 6
     },
     {
       "classId": "3-4",
@@ -1953,6 +2070,19 @@
     {
       "classId": "2-5",
       "date": "2026-10-23",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "물리실험실",
+      "newSubject": null,
+      "newTeacher": "김선중",
+      "origSubject": "과학창의연구",
+      "origTeacher": "윤희진",
+      "period": 5
+    },
+    {
+      "classId": "2-5",
+      "date": "2026-10-23",
       "fromDate": "2026-10-22",
       "fromPeriod": 5,
       "kind": "swap",
@@ -1977,6 +2107,149 @@
       "period": 7
     },
     {
+      "classId": "1-4",
+      "date": "2026-10-26",
+      "fromDate": "2026-11-03",
+      "fromPeriod": 6,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "과학탐구실험2",
+      "newTeacher": "최다은",
+      "origSubject": "통합과학2",
+      "origTeacher": "임소현",
+      "period": 1
+    },
+    {
+      "classId": "1-6",
+      "date": "2026-10-26",
+      "fromDate": "2026-11-02",
+      "fromPeriod": 3,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "과학탐구실험2",
+      "newTeacher": "최다은",
+      "origSubject": "통합사회2",
+      "origTeacher": "서보람",
+      "period": 2
+    },
+    {
+      "classId": "1-6",
+      "date": "2026-10-26",
+      "fromDate": "2026-10-28",
+      "fromPeriod": 5,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "창의적 문제 해결 연습",
+      "newTeacher": "임소현",
+      "origSubject": "과학탐구실험2",
+      "origTeacher": "최다은",
+      "period": 3
+    },
+    {
+      "classId": "1-8",
+      "date": "2026-10-26",
+      "fromDate": "2026-11-04",
+      "fromPeriod": 2,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "창의적 문제 해결 연습",
+      "newTeacher": "최다은",
+      "origSubject": "스페인어권 언어와 역사의 이해2",
+      "origTeacher": "신승",
+      "period": 3
+    },
+    {
+      "classId": "1-7",
+      "date": "2026-10-27",
+      "fromDate": "2026-11-04",
+      "fromPeriod": 3,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "과학탐구실험2",
+      "newTeacher": "최다은",
+      "origSubject": "한국사2",
+      "origTeacher": "임우정",
+      "period": 1
+    },
+    {
+      "classId": "1-6",
+      "date": "2026-10-28",
+      "fromDate": "2026-10-26",
+      "fromPeriod": 3,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "과학탐구실험2",
+      "newTeacher": "최다은",
+      "origSubject": "창의적 문제 해결 연습",
+      "origTeacher": "임소현",
+      "period": 5
+    },
+    {
+      "classId": "1-5",
+      "date": "2026-10-30",
+      "fromDate": "2026-11-02",
+      "fromPeriod": 4,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "과학탐구실험2",
+      "newTeacher": "최다은",
+      "origSubject": "통합과학2",
+      "origTeacher": "임소현",
+      "period": 6
+    },
+    {
+      "classId": "1-5",
+      "date": "2026-11-02",
+      "fromDate": "2026-10-30",
+      "fromPeriod": 6,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "통합과학2",
+      "newTeacher": "임소현",
+      "origSubject": "과학탐구실험2",
+      "origTeacher": "최다은",
+      "period": 4
+    },
+    {
+      "classId": "1-6",
+      "date": "2026-11-02",
+      "fromDate": "2026-10-26",
+      "fromPeriod": 2,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "통합사회2",
+      "newTeacher": "서보람",
+      "origSubject": "과학탐구실험2",
+      "origTeacher": "최다은",
+      "period": 3
+    },
+    {
+      "classId": "1-10",
+      "date": "2026-11-03",
+      "fromDate": "2026-11-12",
+      "fromPeriod": 6,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "공통국어2",
+      "newTeacher": "박광순",
+      "origSubject": "통합과학2",
+      "origTeacher": "최다은",
+      "period": 5
+    },
+    {
+      "classId": "1-4",
+      "date": "2026-11-03",
+      "fromDate": "2026-10-26",
+      "fromPeriod": 1,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "통합과학2",
+      "newTeacher": "임소현",
+      "origSubject": "과학탐구실험2",
+      "origTeacher": "최다은",
+      "period": 6
+    },
+    {
       "classId": "3-10",
       "date": "2026-11-03",
       "fromDate": "2026-11-06",
@@ -1988,6 +2261,58 @@
       "origSubject": "화법과 작문",
       "origTeacher": "이재훈",
       "period": 6
+    },
+    {
+      "classId": "1-7",
+      "date": "2026-11-04",
+      "fromDate": "2026-10-27",
+      "fromPeriod": 1,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "한국사2",
+      "newTeacher": "임우정",
+      "origSubject": "과학탐구실험2",
+      "origTeacher": "최다은",
+      "period": 3
+    },
+    {
+      "classId": "1-8",
+      "date": "2026-11-04",
+      "fromDate": "2026-10-26",
+      "fromPeriod": 3,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "스페인어권 언어와 역사의 이해2",
+      "newTeacher": "신승",
+      "origSubject": "창의적 문제 해결 연습",
+      "origTeacher": "최다은",
+      "period": 2
+    },
+    {
+      "classId": "1-9",
+      "date": "2026-11-04",
+      "fromDate": "2026-11-13",
+      "fromPeriod": 7,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "스페인어권 언어와 역사의 이해2",
+      "newTeacher": "신승",
+      "origSubject": "창의적 문제 해결 연습",
+      "origTeacher": "최다은",
+      "period": 6
+    },
+    {
+      "classId": "1-10",
+      "date": "2026-11-05",
+      "fromDate": "2026-11-13",
+      "fromPeriod": 6,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "한국사2",
+      "newTeacher": "임우정",
+      "origSubject": "통합과학2",
+      "origTeacher": "최다은",
+      "period": 5
     },
     {
       "classId": "2-5",
@@ -2014,6 +2339,19 @@
       "origSubject": "고급 대수",
       "origTeacher": "정석진",
       "period": 1
+    },
+    {
+      "classId": "2-5",
+      "date": "2026-11-06",
+      "fromDate": null,
+      "fromPeriod": null,
+      "kind": "substitute",
+      "newRoom": "물리실험실",
+      "newSubject": null,
+      "newTeacher": "나종민",
+      "origSubject": "과학창의연구",
+      "origTeacher": "윤희진",
+      "period": 5
     },
     {
       "classId": "2-5",
@@ -2053,6 +2391,45 @@
       "origSubject": "화법과 작문",
       "origTeacher": "김관우",
       "period": 3
+    },
+    {
+      "classId": "1-10",
+      "date": "2026-11-12",
+      "fromDate": "2026-11-03",
+      "fromPeriod": 5,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "통합과학2",
+      "newTeacher": "최다은",
+      "origSubject": "공통국어2",
+      "origTeacher": "박광순",
+      "period": 6
+    },
+    {
+      "classId": "1-10",
+      "date": "2026-11-13",
+      "fromDate": "2026-11-05",
+      "fromPeriod": 5,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "통합과학2",
+      "newTeacher": "최다은",
+      "origSubject": "한국사2",
+      "origTeacher": "임우정",
+      "period": 6
+    },
+    {
+      "classId": "1-9",
+      "date": "2026-11-13",
+      "fromDate": "2026-11-04",
+      "fromPeriod": 6,
+      "kind": "swap",
+      "newRoom": null,
+      "newSubject": "창의적 문제 해결 연습",
+      "newTeacher": "최다은",
+      "origSubject": "스페인어권 언어와 역사의 이해2",
+      "origTeacher": "신승",
+      "period": 7
     }
   ],
   "from": "2026-09-30",
