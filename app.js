@@ -28,7 +28,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261008-v12';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261008-v13';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -155,7 +155,15 @@ async function loadData() {
   const cached = readLive();
   // 기기에 사본이 있으면 정적 사이트의 같은 자료는 받지 않는다 — 층이 안 닿을 때의 대비로만 쓴다
   const names = cached ? ['school.json', 'classes.json', 'sections.json', 'abbrev.json'] : ['school.json', 'classes.json', 'sections.json', 'changes.json', 'meals.json', 'calendar.json', 'abbrev.json'];
-  const [files] = await Promise.all([Promise.all(names.map(load)), cached ? null : refreshLive(4000)]);
+  /*
+   * 수업 변경·급식(/live)은 로그인한 학생의 첫 화면에만 필요하다. 로그인 문·선생님 화면까지 그것을
+   * 기다리면 층 왕복(약 0.9초) 뒤에야 문이 떴다(2026-10-08 실측) — 그때는 뒤에서 받고 오면 다시 그린다.
+   */
+  let signedIn = false;
+  try { signedIn = !AX_EMBEDDED && !AX_EXTERNAL && !!localStorage.getItem(KEY); } catch { /* 문부터 */ }
+  const waitLive = !cached && signedIn;
+  if (!cached && !signedIn) refreshLive(8000).then((changed) => { if (changed && state.school) render(); });
+  const [files] = await Promise.all([Promise.all(names.map(load)), waitLive ? refreshLive(4000) : null]);
   const got = Object.fromEntries(names.map((name, i) => [name, files[i]]));
   const { 'classes.json': classes, 'sections.json': sections, 'abbrev.json': abbrev } = got;
   if (!classes) return false;
@@ -192,12 +200,14 @@ async function boot() {
    */
   if (state.me && state.me.classId && calConnected()) pullEventsFromCalendar();
   if (state.me && state.hub) refreshHub();
+  // 먼저 로그인한 학생은 하루 한 번 구글 자동 로그인으로 층에 잇는다(2026-10-08 고침 — 10/7 실시간화 때
+  // 이 else 가 아래 서비스 워커 줄에 붙어 버려 서비스 워커가 있는 기기에서는 한 번도 돌지 않았다)
+  else if (state.me && !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL) quietConnect();
   const liveTick = () => { if (document.visibilityState === 'visible') refreshLive().then((changed) => { if (changed) render(); }); };
   if (readLive()) liveTick();
   setInterval(liveTick, LIVE_EVERY);
   document.addEventListener('visibilitychange', liveTick);
   if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', (event) => { if (event.data && event.data.type === 'live-refresh') liveTick(); });
-  else if (state.me && !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL) quietConnect();
   window.addEventListener('keydown', onKey);
   window.addEventListener('hashchange', () => {
     const key = location.hash.replace('#', '');
@@ -932,7 +942,7 @@ function seatJobCard() {
   const job = hubMe() && hubMe().delegation;
   if (!job || (job.submission && job.submission.status !== 'returned')) return null;
   return card(null, null, h('div', { class: 'rows' }, row({
-    title: job.submission ? '자리배치를 돌려받았습니다' : '자리배치를 맡았습니다', note: delegationNote(job),
+    title: job.submission ? '자리배치를 돌려받았습니다' : '자리배치 담당이 되었습니다', note: delegationNote(job),
     tail: icon('next'), onclick: openSeatEditor,
   })));
 }
@@ -1330,8 +1340,8 @@ function meScreen() {
     }))),
     // 자리는 시간표 탭의 «자리»로 옮겼다(2026-10-08). 여기는 계정 연결과 맡은 자리배치만
     !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL && (state.hub
-      ? hubMe() && hubMe().delegation && card('자리배치 맡김', null, h('div', { class: 'rows' },
-          row({ title: '자리배치 맡김', note: delegationNote(hubMe().delegation), tail: icon('next'), onclick: openSeatEditor })))
+      ? hubMe() && hubMe().delegation && card('자리배치 담당', null, h('div', { class: 'rows' },
+          row({ title: '자리배치 담당', note: delegationNote(hubMe().delegation), tail: icon('next'), onclick: openSeatEditor })))
       : card('학교 계정', null, h('div', { class: 'rows' },
           row({ title: '학교 계정 연결', note: '선생님 일정과 자리를 받습니다', tail: icon('next'), onclick: () => openSheet({ type: 'connect' }) })))),
     state.hub && !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL && card('수업 변경 알림', null, h('div', { class: 'rows' }, pushRow())),
@@ -1852,7 +1862,7 @@ function seatEditor() {
   const edit = state.seatEdit;
   const top = h('header', { class: 'editor-top' },
     h('button', { class: 'icon-btn', type: 'button', 'aria-label': '닫기', onclick: closeSeatEditor }, icon('back')),
-    h('h1', null, '자리배치 맡김'),
+    h('h1', null, '자리배치 담당'),
     h('span', { class: 'muted editor-status' }, edit.saving ? '저장 중…' : edit.dirty ? '' : edit.revision ? '저장됨' : ''),
     h('button', { class: 'btn is-plain is-small', type: 'button', onclick: toggleBig }, document.fullscreenElement ? '작게' : '크게'));
   if (edit.loading) return h('div', { class: 'editor', id: 'seat-editor' }, top, h('p', { class: 'empty' }, '불러오는 중…'));

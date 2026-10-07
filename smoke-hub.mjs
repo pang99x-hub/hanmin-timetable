@@ -44,7 +44,7 @@ const ME = {
   }],
 };
 
-async function open({ hub, desk }) {
+async function open({ hub, desk, seed = [], sw = false }) {
   const dom = new JSDOM(fs.readFileSync(`${ROOT}/index.html`, 'utf8'), { url: 'https://timetable.hanmin.hs.kr/', runScripts: 'dangerously', pretendToBeVisual: true });
   const w = dom.window;
   const store = new Map();
@@ -58,7 +58,10 @@ async function open({ hub, desk }) {
   w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {} });
   w.structuredClone = structuredClone;
   w.HTMLElement.prototype.scrollIntoView = () => {};
+  for (const [k, v] of seed) store.set(k, v);
   Object.defineProperty(w, 'localStorage', { value: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) } });
+  // 실제 폰처럼 서비스 워커가 있는 브라우저
+  if (sw) Object.defineProperty(w.navigator, 'serviceWorker', { value: { addEventListener() {}, register: async () => ({}), ready: new Promise(() => {}), controller: null } });
   const tag = w.document.createElement('script');
   tag.textContent = fs.readFileSync(`${ROOT}/app.js`, 'utf8');
   w.document.body.appendChild(tag);
@@ -164,7 +167,7 @@ check('앱스 스크립트로 넘어갔다', offline.calls.desk === 1)
 offline.w.eval(`state.tab='me'; render();`)
 check('내 정보에 «학교 계정 연결»이 남는다', offline.app.textContent.includes('학교 계정 연결'))
 
-console.log('\n[7] 자리배치 맡김 — 함께 고치고 담임에게 낸다');
+console.log('\n[7] 자리배치 담당 — 함께 고치고 담임에게 낸다');
 const DRAFT = {
   me: { no: 7, name: '가학생' }, roomLocked: false,
   base: { room: ME.seats[0].room, seats: { 'd1a:0': 6 }, locked: ['d1a:0'] },
@@ -187,11 +190,11 @@ const delegate = await open({
 await delegate.w.onCredential({ credential: '학생토큰' });
 await settle();
 delegate.w.eval(`state.tab='today'; render();`)
-check('오늘에 «자리배치를 맡았습니다»', delegate.app.textContent.includes('자리배치를 맡았습니다'))
+check('오늘에 «자리배치 담당이 되었습니다»', delegate.app.textContent.includes('자리배치 담당이 되었습니다'))
 delegate.w.eval(`state.tab='me'; render();`)
-;[...delegate.app.querySelectorAll('.row')].find((n) => n.textContent.includes('자리배치 맡김')).click()
+;[...delegate.app.querySelectorAll('.row')].find((n) => n.textContent.includes('자리배치 담당')).click()
 await settle()
-check('편집기가 열린다', delegate.app.textContent.includes('자리배치 맡김') && !!delegate.app.querySelector('.seatmap.is-edit'))
+check('편집기가 열린다', delegate.app.textContent.includes('자리배치 담당') && !!delegate.app.querySelector('.seatmap.is-edit'))
 const lockedBtn = delegate.app.querySelector('button.seatmap-seat.is-locked')
 check('고정석은 누를 수 없다', !!lockedBtn && lockedBtn.disabled)
 // 자리 없는 친구 «7 가학생» → 빈자리
@@ -223,6 +226,15 @@ check('기기에 둔다', JSON.parse(fresh.store.get('hanmin.timetable.live.v1')
 fresh.w.eval('refreshLive()')
 await settle()
 check('다음엔 지문만 묻는다(같으면 받지 않는다)', asked[asked.length - 1] === `?known=${LIVE.etag}`)
+
+console.log('\n[9] 첫 화면이 층을 기다리지 않는다·자동 로그인(2026-10-08)');
+// 로그인 문은 수업 변경이 필요 없다 — 층(/live)이 늦어도 바로 선다
+const slow = await open({ hub: (u) => u.includes('/live') ? new Promise(() => {}) : json(200, { ok: true }), desk: () => ({ ok: false }) })
+check('로그인 문은 층을 기다리지 않는다', !!slow.app.querySelector('.gate'))
+// 먼저 로그인한 학생(층 토큰 없음) — 서비스 워커가 있는 기기에서도 하루 한 번 구글 자동 로그인을 시도한다
+const returning = await open({ hub: (u) => u.includes('/live') ? json(200, LIVE) : json(200, { ok: true }), desk: () => ({ ok: false }),
+  seed: [['hanmin.timetable.me.v1', JSON.stringify(saved)]], sw: true })
+check('자동 로그인 시도를 적어 둔다', !!returning.store.get('hanmin.timetable.hub-try.v1'))
 
 console.log(failed ? `\n실패 ${failed}건` : '\n전부 통과')
 process.exit(failed ? 1 : 0)

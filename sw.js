@@ -4,11 +4,13 @@
  * 앱 껍데기(index·app.js·app.css·아이콘)는 기기에 두고 누르자마자 띄운다.
  * 자료(data/*.json)는 늘 새로 받고, 망이 안 되면 기기에 둔 마지막 것을 쓴다 —
  * 수업 변경은 몇 분 단위로 바뀌므로 오래된 것을 먼저 보여 주면 안 된다.
+ * 다만 학교·반·강좌·줄임말(SLOW)은 발행할 때나 바뀐다 — 기기에 둔 것을 먼저 내고 뒤에서 새로 받는다.
+ * 망이 나쁠 때 이것까지 4초씩 기다리면 첫 화면이 그만큼 늦었다(2026-10-08).
  *
  * VERSION 은 index.html 의 ?v= 와 app.js 의 VERSION 과 같은 값이다. 올리면 새 워커가
  * 설치되고, 앱은 «새 버전이 있어요»를 띄운 뒤 학생이 누를 때 갈아 끼운다.
  */
-const VERSION = '20261008-v12';
+const VERSION = '20261008-v13';
 const CACHE = `tt-${VERSION}`;
 const SHELL = [
   './',
@@ -21,6 +23,8 @@ const SHELL = [
 ];
 /* 자료를 기다리는 한도 — 넘으면 기기에 둔 것을 먼저 쓴다. */
 const DATA_TIMEOUT = 4000;
+/* 발행할 때만 바뀌는 자료 — 기기 사본 먼저, 뒤에서 새로 */
+const SLOW = ['school.json', 'classes.json', 'sections.json', 'abbrev.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
@@ -45,7 +49,10 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;     // 구글 로그인·창구는 건드리지 않는다
-  if (url.pathname.includes('/data/')) { event.respondWith(fresh(req)); return; }
+  if (url.pathname.includes('/data/')) {
+    if (SLOW.some((name) => url.pathname.endsWith(`/${name}`))) { event.respondWith(cachedThenFresh(req, event)); return; }
+    event.respondWith(fresh(req)); return;
+  }
   if (req.mode === 'navigate') { event.respondWith(shellFirst(req, './')); return; }
   event.respondWith(shellFirst(req));
 });
@@ -67,6 +74,15 @@ async function fresh(req) {
     const hit = await cache.match(req, { ignoreSearch: true });
     return hit || Response.error();
   }
+}
+
+/* 발행 자료 — 기기에 둔 것이 있으면 바로, 새것은 뒤에서 받아 다음 열 때 쓴다. 없으면 받아서. */
+async function cachedThenFresh(req, event) {
+  const cache = await caches.open(CACHE);
+  const hit = await cache.match(req, { ignoreSearch: true });
+  if (!hit) return fresh(req);
+  event.waitUntil(fetch(req).then((res) => { if (res.ok) return cache.put(req, res); }).catch(() => {}));
+  return hit;
 }
 
 /* 껍데기 — 기기에 둔 것을 먼저, 없으면 받아서 둔다. */
