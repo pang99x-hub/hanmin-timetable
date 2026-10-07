@@ -1,7 +1,7 @@
 const AX_EXTERNAL = new URLSearchParams(location.search).get('axExternal')==='1' && !!window.opener;
 const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' && window.parent!==window;
 /*
- * 한민고 학생 시간표.
+ * 한민고 학생 AX — 시간표·일정·급식·자리(2026-10-08 «학생 시간표»에서 이름을 바꿨다. 시간표만이 아니다).
  *
  * 자료는 전부 이 사이트의 정적 파일에서 온다 — 서버에 묻지 않는다.
  *   school.json    교시 시각·식사 시각 (교사웹 일과표에서 옴)
@@ -28,7 +28,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261008-v10';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261008-v11';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -1996,7 +1996,7 @@ function maybeOfferInstall() {
 function installCard(layout) {
   if (layout === 'single' || AX_EMBEDDED || AX_EXTERNAL || state.viewing || isStandalone() || installDismissed()) return null;
   return card(null, { cls: 'install-card' }, h('div', { class: 'rows' }, row({
-    title: '시간표를 앱으로 받기',
+    title: '학생 AX를 앱으로 받기',
     note: '홈 화면에서 바로 열립니다',
     tail: [h('button', { class: 'btn is-plain is-small', type: 'button', onclick: dismissInstall }, '나중에'),
       h('button', { class: 'btn is-key is-small', type: 'button', onclick: () => openSheet({ type: 'install' }) }, '받기')],
@@ -2344,7 +2344,7 @@ function loginGate() {
   return h('div', { class: 'gate' },
     h('div', { class: 'gate-card' },
       h('span', { class: 'gate-icon' }, icon('book')),
-      h('h1', null, '내 시간표'),
+      h('h1', null, '학생 AX'),
       h('p', { class: 'muted' }, '학교 구글 계정으로 로그인하세요. 내 반과 이동수업이 한 번에 채워집니다.'),
       slot,
       state.gateError && h('p', { class: 'err' }, state.gateError)));
@@ -2402,7 +2402,7 @@ function teacherPicker() {
   const classes = [...new Set(roster.map((r) => r.classId))];
   return h('div', { class: 'gate is-wide' },
     h('div', { class: 'gate-card is-wide' },
-      h('h1', null, '학생 시간표 보기'),
+      h('h1', null, '학생 화면 보기'),
       h('p', { class: 'muted' }, '학급을 고르고 학생을 고르면 그 학생이 보는 화면이 그대로 나옵니다.'),
       state.busy ? h('p', { class: 'muted' }, '가져오는 중입니다…') : [
         state.gateError && h('p', { class: 'err' }, state.gateError),

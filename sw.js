@@ -1,5 +1,5 @@
 /*
- * 한민고 학생 시간표 — 서비스 워커.
+ * 한민고 학생 AX — 서비스 워커.
  *
  * 앱 껍데기(index·app.js·app.css·아이콘)는 기기에 두고 누르자마자 띄운다.
  * 자료(data/*.json)는 늘 새로 받고, 망이 안 되면 기기에 둔 마지막 것을 쓴다 —
@@ -8,7 +8,7 @@
  * VERSION 은 index.html 의 ?v= 와 app.js 의 VERSION 과 같은 값이다. 올리면 새 워커가
  * 설치되고, 앱은 «새 버전이 있어요»를 띄운 뒤 학생이 누를 때 갈아 끼운다.
  */
-const VERSION = '20261008-v10';
+const VERSION = '20261008-v11';
 const CACHE = `tt-${VERSION}`;
 const SHELL = [
   './',

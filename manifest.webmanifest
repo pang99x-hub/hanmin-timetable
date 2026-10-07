@@ -1,7 +1,7 @@
 {
-  "name": "한민고 시간표",
-  "short_name": "시간표",
-  "description": "내 시간표와 바뀐 수업, 급식, 학사일정",
+  "name": "한민고 학생 AX",
+  "short_name": "학생 AX",
+  "description": "내 시간표와 바뀐 수업, 일정, 급식, 우리 반 자리",
   "lang": "ko-KR",
   "start_url": "./",
   "scope": "./",
