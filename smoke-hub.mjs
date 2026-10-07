@@ -25,7 +25,8 @@ const ME = {
   student: { classId: '2-1', no: 7, name: '가학생' },
   sections: [sample.sectionId],
   events: [
-    { id: 'ev1', date: plus(1), title: '수행평가 준비물', content: '각도기와 계산기\n둘 다', teacher: '김교사' },
+    { id: 'ev1', date: plus(1), title: '수행평가 준비물', content: '각도기와 계산기\n둘 다', teacher: '김교사',
+      attachments: [{ id: '11111111-2222-4333-8444-555555555555', name: '준비물 안내.pdf', size: 204800 }] },
     { id: 'ev2', date: plus(9), title: '먼 일정', content: '', teacher: '이교사' },
   ],
   seats: [{
@@ -62,7 +63,8 @@ const settle = () => new Promise((r) => setTimeout(r, 120));
 
 console.log('\n[1] 학생은 학생용 층으로 로그인');
 const student = await open({
-  hub: (u, init) => u.endsWith('/login') ? json(200, { token: 't'.repeat(43), expiresAt: Date.now() + 1e9, me: ME }) : u.endsWith('/me') ? json(200, ME) : json(200, { ok: true }),
+  hub: (u, init) => u.endsWith('/login') ? json(200, { token: 't'.repeat(43), expiresAt: Date.now() + 1e9, me: ME }) : u.endsWith('/me') ? json(200, ME)
+    : /\/files\/[0-9a-f-]{36}\/link$/.test(u) ? json(200, { url: 'https://students.hiax.cloud/files/x?s=hanmin&t=1.sig' }) : json(200, { ok: true }),
   desk: () => ({ ok: false }),
 });
 await student.w.onCredential({ credential: '학생토큰' });
@@ -77,6 +79,7 @@ console.log('\n[2] 선생님 일정');
 student.w.eval(`state.tab='today'; render();`)
 const todayText = student.app.textContent
 check('오늘 — 사흘 안 선생님 일정이 뜬다', todayText.includes('선생님 일정') && todayText.includes('수행평가 준비물'))
+check('오늘 — 첨부가 있으면 줄에 «첨부 1»', todayText.includes('김교사 · 첨부 1'))
 check('오늘 — 열흘 뒤 일정은 오늘에 띄우지 않는다', !todayText.includes('먼 일정'))
 check('오늘 — 어제 바뀐 자리를 알린다', todayText.includes('자리가 바뀌었습니다'))
 student.w.eval(`state.tab='calendar'; state.month=new Date(parse('${plus(1)}').getFullYear(), parse('${plus(1)}').getMonth(), 1); state.selDate=parse('${plus(1)}'); render();`)
@@ -88,6 +91,13 @@ row.click()
 await settle()
 check('누르면 내용 전체와 선생님 이름', student.sheet().textContent.includes('각도기와 계산기') && student.sheet().textContent.includes('김교사 선생님'))
 check('«디데이로 정하기»', [...student.sheet().querySelectorAll('button')].some((b) => b.textContent.includes('디데이로 정하기')))
+const fileRow = [...student.sheet().querySelectorAll('.files .row')].find((b) => b.textContent.includes('준비물 안내.pdf'))
+check('첨부 — 이름과 크기', !!fileRow && fileRow.textContent.includes('200KB'))
+const opened = { href: null, closed: false }
+student.w.open = () => ({ location: { set href(v) { opened.href = v } }, close() { opened.closed = true } })
+fileRow.click()
+await settle()
+check('첨부 — 누르면 층에서 받은 5분 주소를 새 창에', opened.href === 'https://students.hiax.cloud/files/x?s=hanmin&t=1.sig' && student.calls.hub.some((c) => c === 'POST /files/11111111-2222-4333-8444-555555555555/link'))
 student.w.eval('closeSheet()')
 
 console.log('\n[3] 우리 반 자리');
