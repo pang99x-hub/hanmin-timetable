@@ -28,7 +28,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261008-v13';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261008-v14';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -42,7 +42,8 @@ const INSTALL_KEY = 'hanmin.timetable.install.v1';
 const CAL_KEY = 'hanmin.timetable.cal.v1';
 /*
  * 학생용 층(2026-10-07) — 학생 로그인과 «내 것»(강좌·선생님 일정·우리 반 자리). 원본은 Hi-AX, 이 주소는
- * 그 사본을 둔 클라우드플레어 워커다. 앱스 스크립트(DESK)는 교사 로그인과, 이 층이 닿지 않을 때 대비로 남는다.
+ * 그 사본을 둔 클라우드플레어 워커다. 선생님의 «학생 화면 보기»도 여기서 한다(2026-10-08 — 앱스 스크립트를
+ * 거쳐 명단 3~5초·학생 하나 2초 걸리던 것을 옮기고 앱스 스크립트는 뺐다).
  */
 const HUB = 'https://students.hiax.cloud';
 const HUB_KEY = 'hanmin.timetable.hub.v1';
@@ -59,8 +60,7 @@ const DATA = 'data/';
 /* 오래 열어 둔 앱이 낡은 변경·급식을 보여 주지 않게 — 다시 보일 때 이만큼 지났으면 새로 받는다. */
 const REFRESH_AFTER = 10 * 60 * 1000;
 
-/* 창구와 구글 로그인. 학교가 바뀌면 이 두 줄만 고친다. */
-const DESK = 'https://script.google.com/macros/s/AKfycbxrSNLXhSMh7MvzV860ebOhVCJY1Pe0mSUSfnvFpXFZL4CE9SFCqFu9myJS19u9FWHr/exec';
+/* 구글 로그인. 학교가 바뀌면 이 줄과 HUB 만 고친다. */
 const CLIENT_ID = '817402337132-buq4v80hslbv80d2ajteaj8h5664hod2.apps.googleusercontent.com';
 
 const TABS = [
@@ -81,7 +81,7 @@ const state = {
    * 일이 있는데(문의 대응·점검), 학생 계정을 빌릴 수는 없다.
    * 이 세 가지는 기기에 저장하지 않는다. 창을 닫으면 사라진다.
    */
-  teacher: null,          // { credential, roster: [{classId, no, name}] }
+  teacher: null,          // { axSession, profileId, roster: [{classId, no, name}] } — Hi-AX 에서 연 선생님
   viewing: null,          // 지금 보고 있는 학생 { classId, no, name }
   pickClass: null,        // 교사 화면에서 고른 학급
   busy: false,            // 창구에 묻는 중
@@ -2292,22 +2292,6 @@ function loadGoogle() {
 }
 
 /*
- * 창구에 묻기. Content-Type 을 text/plain 으로 보내는 것은 실수가 아니다 —
- * application/json 이면 브라우저가 먼저 OPTIONS 를 보내는데 앱스스크립트는 그것을 못 받는다.
- */
-async function askDesk(credential) {
-  const res = await fetch(DESK, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: 'mySections', credential }),
-  });
-  if (!res.ok) throw new Error('창구에 닿지 못했습니다.');
-  const data = await res.json();
-  if (!data.ok) throw new Error(data.error || '확인하지 못했습니다.');
-  return data;
-}
-
-/*
  * 받은 강좌 번호를 화면이 쓰는 모양(밴드 → 강좌)으로 옮긴다.
  * 자료에 없는 번호는 조용히 버린다 — 시간표에 안 잡힌 강좌(방과후 등)일 수 있다.
  */
@@ -2339,7 +2323,7 @@ function saveHub(value) {
   } catch { /* 이번 화면에서만 쓴다 */ }
 }
 
-/** 학생이면 { token, me }, 명단에 없으면(교사 등) { notStudent }. 닿지 않으면 던진다 — 부르는 쪽이 DESK 로 넘어간다 */
+/** 학생이면 { token, me }, 명단에 없으면(교사 등) { notStudent }. 닿지 않으면 던진다 */
 async function hubLogin(credential) {
   const res = await fetch(`${HUB}/login`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential }),
@@ -2437,32 +2421,17 @@ async function openStudent(target, force = false) {
   state.busy = true; state.gateError = null; render();
   try {
     if (axConnection) await axConnection.ensureFresh();
-    const data = await studentReadCache.read(state.teacher.profileId || state.teacher.credential, JSON.stringify([target.classId, target.no]), async (previous) => {
-      const request = async () => {
-        const res = await fetch(DESK, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'studentView',
-            ...(state.teacher.axSession ? { axSession: state.teacher.axSession } : { credential: state.teacher.credential }),
-            classId: target.classId,
-            no: target.no,
-            ...(previous?.version ? { knownVersion: previous.version } : {}),
-          }),
-        });
-        return res.json();
-      };
-      let data = await request();
-      if (!data.ok && axConnection && /AX.*(만료|다시 연결)/.test(data.error || '')) {
-        await axConnection.ensureFresh(true);
-        data = await request();
-      }
-      if (data.ok && data.notModified && previous?.version === data.version) return previous;
-      if (!data.ok || !data.found) throw new Error(data.error || '학생 자료를 찾지 못했습니다.');
-      return data;
+    const data = await studentReadCache.read(state.teacher.profileId, JSON.stringify([target.classId, target.no]), async () => {
+      const request = () => fetch(`${HUB}/ax/student?classId=${encodeURIComponent(target.classId)}&no=${encodeURIComponent(target.no)}`,
+        { headers: { Authorization: `Bearer ${state.teacher.axSession}` } });
+      let res = await request();
+      // 15분 세션이 끝났으면 Hi-AX 창에서 새 표를 받아 한 번만 다시
+      if (res.status === 401 && axConnection) { await axConnection.ensureFresh(true); res = await request(); }
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || '학생 서버에 닿지 못했습니다.');
+      if (!body.found) throw new Error('그 학생을 찾지 못했습니다.');
+      return body;
     }, { force });
-    if (!data.ok) throw new Error(data.error || '가져오지 못했습니다.');
-    if (!data.found) throw new Error('그 학생을 찾지 못했습니다.');
     state.viewing = { classId: data.classId, no: data.no, name: data.name };
     state.me = { classId: data.classId, sections: adoptSections(data.sections) };
     // 교사가 보는 것은 저장하지 않는다 — 이 기기의 «내 시간표»가 아니다.
@@ -2488,42 +2457,27 @@ function teacherPicker() {
         state.pickClass && h('div', { class: 'pick-grid names' }, roster.filter((x) => x.classId === state.pickClass)
           .map((r) => h('button', { type: 'button', onclick: () => openStudent(r) }, `${r.no}. ${r.name || '(이름 없음)'}`))),
         h('button', { class: 'btn is-quiet', type: 'button', onclick: () => {
+          if (state.teacher.axSession) fetch(`${HUB}/logout`, { method: 'POST', headers: { Authorization: `Bearer ${state.teacher.axSession}` } }).catch(() => {});
           studentReadCache.clear();
           state.teacher = null; state.viewing = null; state.pickClass = null;
-          if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
           render();
         } }, '로그아웃'),
       ]));
 }
 
+/* 선생님이 학생 앱에 구글로 들어오면 — 학생 화면은 Hi-AX 에서 연다(표로 선생님임을 확인한다) */
+const TEACHER_HINT = '학생 명단에 없는 계정입니다. 학생이면 담임 선생님께 알려 주세요. 선생님은 Hi-AX › 학생관리 › 학생 AX에서 학생 화면을 봅니다.';
+
 async function onCredential(response) {
   state.busy = true; state.gateError = null; render();
   try {
-    // 학생은 학생용 층으로. 명단에 없거나(교사) 층이 닿지 않으면 종전 창구로 간다
-    let hub = null;
-    try { hub = await hubLogin(response.credential); } catch { hub = null; }
-    if (hub && !hub.notStudent) {
-      state.me = { classId: hub.me.student.classId, sections: adoptSections(hub.me.sections) };
-      save();
-      saveHub({ token: hub.token, me: hub.me, savedAt: Date.now() });
-      return;
-    }
-    const found = await askDesk(response.credential);
-    if (found.role === 'teacher') {
-      // 교사는 자기 시간표가 없다. 누구를 볼지 고르는 화면으로 간다.
-      state.teacher = { credential: response.credential, roster: found.roster || [] };
-      state.me = null;
-      return;
-    }
-    if (!found.found || !found.classId) {
-      // 로그인은 됐는데 명단에 없다. 스스로 고르게 하지 않는다 — 누구에게 말해야 하는지 알려 준다.
-      state.gateError = '명단에서 찾지 못했습니다. 담임 선생님께 알려 주시면 등록해 드립니다.';
-    } else {
-      state.me = { classId: found.classId, sections: adoptSections(found.sections) };
-      save();
-    }
+    const hub = await hubLogin(response.credential);
+    if (hub.notStudent) { state.gateError = TEACHER_HINT; return; }
+    state.me = { classId: hub.me.student.classId, sections: adoptSections(hub.me.sections) };
+    save();
+    saveHub({ token: hub.token, me: hub.me, savedAt: Date.now() });
   } catch (error) {
-    state.gateError = String(error.message || error);
+    state.gateError = `${String(error.message || error)} 잠시 뒤 다시 로그인해 주세요.`;
   } finally {
     state.busy = false;
     render();
@@ -2534,9 +2488,10 @@ boot().then(async () => {
   if (!AX_EMBEDDED && !AX_EXTERNAL) return;
   if (AX_EMBEDDED) document.documentElement.classList.add('ax-embedded');
   axConnection = await connectAxStudentApp(async (ticket, { renewing }) => {
-    const response = await fetch(DESK, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'axLogin', ticket, renewOnly: renewing }) });
-    const data = await response.json();
-    if (!data.ok || data.role !== 'teacher' || !data.sessionToken || !data.profileId) throw Error('교사 연결 실패');
+    // 표는 학생용 층이 Hi-AX 에 직접 바꾼다 — 15분 세션과(처음이면) 반·번호·이름 명단
+    const response = await fetch(`${HUB}/ax/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticket, renewOnly: renewing }) });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok || data.role !== 'teacher' || !data.sessionToken || !data.profileId) throw Error(data.error || '교사 연결 실패');
     if (renewing) {
       if (state.teacher?.profileId !== data.profileId) throw Error('로그인 계정이 변경되었습니다. AX에서 다시 열어 주세요.');
       state.teacher.axSession = data.sessionToken;

@@ -4,7 +4,7 @@
  *   1. 학생은 학생용 층으로 로그인한다. 반·강좌가 채워지고 토큰이 기기에 남는다(원문 하나만)
  *   2. 선생님 일정이 오늘(사흘 안)·달력 점·고른 날 카드에 뜬다
  *   3. 우리 반 자리 — 시간표 탭 «자리»에서 열면 내 자리가 칠해져 있다. 반 친구 학번은 오지 않는다
- *   4. 명단에 없는 계정(교사)은 앱스 스크립트로 넘어간다. 학생용 층이 닿지 않아도 넘어간다
+ *   4. 명단에 없는 계정(교사)은 Hi-AX 에서 연다고 알린다. 층이 닿지 않으면 다시 하라고 한다(앱스 스크립트 없음)
  *   5. 로그아웃하면 학생용 층 세션도 지운다
  */
 const jsdomPath = process.env.JSDOM_PATH
@@ -145,27 +145,27 @@ await settle()
 check('학생용 층에 로그아웃을 알린다', student.calls.hub.includes('POST /logout'))
 check('기기의 토큰을 지운다', !student.store.has('hanmin.timetable.hub.v1'))
 
-console.log('\n[5] 교사 계정 — 앱스 스크립트로 넘어간다');
+console.log('\n[5] 교사 구글 계정 — 학생 화면은 Hi-AX 에서 연다고 알린다(앱스 스크립트 없음)');
 const teacher = await open({
   hub: () => json(404, { error: '학생 명단에 없는 계정입니다.', notStudent: true }),
-  desk: (body) => body.action === 'mySections' ? { ok: true, role: 'teacher', roster: [] } : { ok: false },
+  desk: () => ({ ok: false }),
 });
 await teacher.w.onCredential({ credential: '교사토큰' });
 await settle();
-check('교사 화면(학생 고르기)으로 간다', teacher.calls.desk === 1 && teacher.w.eval('!!state.teacher'))
+check('Hi-AX 에서 연다고 알린다', teacher.app.textContent.includes('Hi-AX › 학생관리 › 학생 AX'))
+check('앱스 스크립트를 부르지 않는다', teacher.calls.desk === 0)
 check('학생용 층 토큰이 없다', !teacher.store.has('hanmin.timetable.hub.v1'))
 
-console.log('\n[6] 학생용 층이 닿지 않으면 종전 창구로');
+console.log('\n[6] 학생용 층이 닿지 않으면 — 다시 하라고 알린다(종전 창구로 넘어가지 않는다)');
 const offline = await open({
   hub: () => { throw new TypeError('Failed to fetch') },
   desk: () => ({ ok: true, found: true, classId: '2-1', sections: [String(sample.sectionId)] }),
 });
 await offline.w.onCredential({ credential: '학생토큰' });
 await settle();
-check('그래도 반이 채워진다', JSON.parse(offline.store.get('hanmin.timetable.me.v1')).classId === '2-1')
-check('앱스 스크립트로 넘어갔다', offline.calls.desk === 1)
-offline.w.eval(`state.tab='me'; render();`)
-check('내 정보에 «학교 계정 연결»이 남는다', offline.app.textContent.includes('학교 계정 연결'))
+check('잠시 뒤 다시 하라고 한다', offline.app.textContent.includes('잠시 뒤 다시 로그인해 주세요'))
+check('앱스 스크립트를 부르지 않는다', offline.calls.desk === 0)
+check('반을 지어내 저장하지 않는다', !offline.store.has('hanmin.timetable.me.v1'))
 
 console.log('\n[7] 자리배치 담당 — 함께 고치고 담임에게 낸다');
 const DRAFT = {
