@@ -95,8 +95,14 @@ const hub = (u, init) => {
     if (init.headers?.Authorization !== `Bearer ${'t'.repeat(43)}`) return { status: 401, body: { error: '다시 로그인해 주세요.' } };
     const hit = ROSTER.find((r) => r.classId === url.searchParams.get('classId') && r.no === url.searchParams.get('no'));
     // 2번 학생은 이동수업이 아직 안 정해진 상태 — 그래야 «반 고르기» 화면이 뜬다.
+    // 1번 학생은 우리 반 자리가 정해져 있다 — 선생님도 그 학생이 보는 배치도를 그대로 본다(2026-10-08)
+    const seats = hit && hit.no === '1' ? [{
+      effectiveFrom: '2026-10-01',
+      room: { width: 800, depth: 760, desks: [{ id: 'd1', x: 300, y: 250, rot: 0, kind: 'pair' }], fixtures: [{ id: 'board', kind: 'board', x: 400, y: 6, w: 400, h: 12 }] },
+      seats: { 'd1:0': { no: 2, name: '나학생' }, 'd1:1': { no: 1, name: '가학생' } }, locked: [], mine: 'd1:1',
+    }] : [];
     return { status: 200, body: hit
-      ? { ok: true, found: true, classId: hit.classId, no: hit.no, name: hit.name, sections: hit.no === '2' ? [] : forClass(hit.classId) }
+      ? { ok: true, found: true, classId: hit.classId, no: hit.no, name: hit.name, sections: hit.no === '2' ? [] : forClass(hit.classId), seats, lessonSeats: [] }
       : { ok: true, found: false } };
   }
   return { status: 404, body: { error: '없는 주소' } };
@@ -127,6 +133,18 @@ check('«보는 중» 이 늘 보인다', text.includes('2-1 1번 가학생 화�
 check('학생 하나는 학생용 층에서 받는다', calls.some((c) => c.startsWith('GET /ax/student?classId=2-1&no=1')));
 check('«다른 학생» 으로 돌아갈 수 있다',
   Boolean([...w.document.querySelectorAll('button')].find((b) => b.textContent === '다른 학생')));
+
+console.log('\n[3-1] 그 학생의 자리배치 — Hi-AX 로 보내지 않고 배치도를 그대로');
+w.eval("state.tab='timetable'; render();");
+const seatCard = [...w.document.querySelectorAll('.card')].find((n) => n.querySelector('.card-title')?.textContent.trim() === '자리배치');
+const ourRow = seatCard && [...seatCard.querySelectorAll('.row')].find((n) => n.textContent.startsWith('우리 반'));
+check('«자리배치»에 «우리 반»', Boolean(ourRow));
+check('«Hi-AX … 봅니다» 안내가 없다', Boolean(seatCard) && !seatCard.textContent.includes('봅니다'));
+ourRow?.dispatchEvent(new w.Event('click', { bubbles: true }));
+await new Promise((r) => setTimeout(r, 100));
+const mineSeat = w.document.querySelector('.seatmap-seat.is-mine');
+check('누르면 배치도가 뜨고 그 학생 자리가 칠해져 있다', Boolean(mineSeat) && mineSeat.textContent.includes('가학생'));
+w.eval('closeSheet(); state.tab = "today"; render();');
 
 console.log('\n[4] 교사가 본 것은 기기에 남지 않는다');
 check('localStorage 에 저장 안 됨', !store.has('hanmin.timetable.me.v1'),

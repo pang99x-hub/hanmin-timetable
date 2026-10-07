@@ -476,8 +476,9 @@ button.row:hover + .row { border-top-color: transparent; }
 .seatmap-fx span { padding: 0 var(--g-1); border-radius: 3px; background: var(--bg); font-size: var(--t-2xs); color: var(--text-muted); white-space: nowrap; }
 .seatmap-fx.is-board { background: var(--text-sub); }
 .seatmap-seat { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--card); line-height: 1.15; overflow: hidden; }
-.seatmap-seat .no { font-size: var(--t-2xs); color: var(--text-muted); font-variant-numeric: tabular-nums; }
-.seatmap-seat b { max-width: 100%; font-size: var(--t-xs); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seatmap-seat .no { font-size: calc(var(--seat-font, 12px) - 2px); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+/* 이름 글자는 칸 폭에 맞춰(seatMap 이 --seat-font 를 준다) — 좁힌 4분단에서도 세 글자 */
+.seatmap-seat b { max-width: 100%; font-size: var(--seat-font, var(--t-xs)); font-weight: 700; letter-spacing: -.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .seatmap-seat.is-empty { border-style: dashed; background: transparent; }
 .seatmap-seat.is-mine { border: 2px solid var(--primary); background: var(--primary-faint); }
 .seatmap-seat.is-mine b, .seatmap-seat.is-mine .no { color: var(--primary-text); }
