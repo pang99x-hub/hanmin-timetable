@@ -462,3 +462,26 @@ button.row:hover + .row { border-top-color: transparent; }
 .seatmap-seat.is-empty { border-style: dashed; background: transparent; }
 .seatmap-seat.is-mine { border: 2px solid var(--primary); background: var(--primary-faint); }
 .seatmap-seat.is-mine b, .seatmap-seat.is-mine .no { color: var(--primary-text); }
+
+/* ── 자리배치 맡김 편집 ─────────────────────────────────────────── */
+.editor { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg); }
+.editor-top { display: flex; align-items: center; gap: var(--g-2); min-height: 52px; padding: 0 var(--g-2) 0 var(--g-1); border-bottom: 1px solid var(--border); background: var(--card); }
+.editor-top h1 { flex: 1; font-size: var(--t-lg); font-weight: 700; letter-spacing: -.02em; }
+.editor-status { font-size: var(--t-xs); }
+.editor-body { flex: 1; display: flex; flex-direction: column; gap: var(--g-3); padding: var(--g-3) var(--g-4) var(--g-4); max-width: 960px; width: 100%; margin: 0 auto; }
+.editor-tools { display: flex; flex-wrap: wrap; gap: var(--g-2); }
+.editor-hint { font-size: var(--t-xs); }
+.editor-waiting .chips { padding-top: var(--g-2); }
+.editor-waiting .chip { min-height: var(--tap); background: var(--card); border-color: var(--border); color: var(--text); }
+.editor-waiting .chip.is-on { border-color: var(--primary); background: var(--primary-faint); color: var(--primary-text); }
+.editor-foot { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: var(--g-3); padding: var(--g-3) var(--g-4) calc(var(--g-3) + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: var(--card); font-size: var(--t-sm); }
+.editor.is-big .editor-body { max-width: none; }
+.editor.is-big .seatmap-scroll { max-height: none; }
+.seatmap.is-edit .seatmap-group { position: absolute; width: 0; height: 0; }
+.seatmap.is-edit .seatmap-desk { position: absolute; }
+.seatmap.is-room .seatmap-group { cursor: move; touch-action: none; }
+.seatmap.is-room .seatmap-seat { pointer-events: none; opacity: .8; }
+.seatmap-group.is-chosen .seatmap-desk { border-color: var(--primary); background: var(--primary-faint); }
+button.seatmap-seat { cursor: pointer; font: inherit; line-height: 1.15; color: inherit; padding: 0; }
+.seatmap-seat.is-picked { border: 2px solid var(--primary); background: var(--primary-faint); }
+.seatmap-seat.is-locked { background: var(--bg-alt); opacity: .7; }

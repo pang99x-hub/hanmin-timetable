@@ -129,5 +129,48 @@ check('앱스 스크립트로 넘어갔다', offline.calls.desk === 1)
 offline.w.eval(`state.tab='me'; render();`)
 check('내 정보에 «학교 계정 연결»이 남는다', offline.app.textContent.includes('학교 계정 연결'))
 
+console.log('\n[7] 자리배치 맡김 — 함께 고치고 담임에게 낸다');
+const DRAFT = {
+  me: { no: 7, name: '가학생' }, roomLocked: false,
+  base: { room: ME.seats[0].room, seats: { 'd1a:0': 6 }, locked: ['d1a:0'] },
+  draft: null, roster: [{ no: 6, name: '나학생' }, { no: 7, name: '가학생' }, { no: 8, name: '다학생' }], submission: null,
+};
+const puts = [];
+let submittedCount = 0;
+const delegate = await open({
+  hub: (u, init) => {
+    const path = new URL(u).pathname;
+    if (path === '/login') return json(200, { token: 't'.repeat(43), me: { ...ME, delegation: { roomLocked: false, submission: null } } });
+    if (path === '/me') return json(200, { ...ME, delegation: { roomLocked: false, submission: null } });
+    if (path === '/seat-draft' && (init.method || 'GET') === 'GET') return json(200, DRAFT);
+    if (path === '/seat-draft' && init.method === 'PUT') { const b = JSON.parse(init.body); puts.push(b); return json(200, { revision: puts.length, room: b.room, seats: b.seats }); }
+    if (path === '/seat-draft/submit') { submittedCount += 1; return json(200, { ok: true, submission: { status: 'submitted', note: null, createdAt: 'x', decidedAt: null } }); }
+    return json(200, { ok: true });
+  },
+  desk: () => ({ ok: false }),
+});
+await delegate.w.onCredential({ credential: '학생토큰' });
+await settle();
+delegate.w.eval(`state.tab='today'; render();`)
+check('오늘에 «자리배치를 맡았습니다»', delegate.app.textContent.includes('자리배치를 맡았습니다'))
+delegate.w.eval(`state.tab='me'; render();`)
+;[...delegate.app.querySelectorAll('.row')].find((n) => n.textContent.includes('자리배치 맡김')).click()
+await settle()
+check('편집기가 열린다', delegate.app.textContent.includes('자리배치 맡김') && !!delegate.app.querySelector('.seatmap.is-edit'))
+const lockedBtn = delegate.app.querySelector('button.seatmap-seat.is-locked')
+check('고정석은 누를 수 없다', !!lockedBtn && lockedBtn.disabled)
+// 자리 없는 친구 «7 가학생» → 빈자리
+;[...delegate.app.querySelectorAll('.editor-waiting .chip')].find((n) => n.textContent.includes('가학생')).click()
+;[...delegate.app.querySelectorAll('button.seatmap-seat.is-empty')][0].click()
+await new Promise((r) => setTimeout(r, 900))
+check('놓으면 초안을 저장한다(번호로)', puts.length === 1 && puts[0].seats['d1a:1'] === 7, JSON.stringify(puts[0] && puts[0].seats))
+;[...delegate.app.querySelectorAll('button')].find((b) => b.textContent === '무작위').click()
+await new Promise((r) => setTimeout(r, 900))
+const last = puts[puts.length - 1]
+check('무작위도 고정석은 그대로', last.seats['d1a:0'] === 6 && Object.keys(last.seats).length === 2, JSON.stringify(last.seats))
+;[...delegate.app.querySelectorAll('button')].find((b) => b.textContent === '담임 선생님께 내기').click()
+await settle()
+check('담임에게 낸다', submittedCount === 1 && delegate.app.textContent.includes('담임 선생님께 냈습니다'))
+
 console.log(failed ? `\n실패 ${failed}건` : '\n전부 통과')
 process.exit(failed ? 1 : 0)

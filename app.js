@@ -28,7 +28,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261007-v6';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261007-v7';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -64,6 +64,7 @@ const state = {
   school: null, classes: [], sections: [],
   changes: null, meals: null, calendar: null, abbrev: {},
   hub: null,              // { token, me: { student, sections, events, seats }, savedAt } — 학생용 층
+  seatEdit: null,         // 자리배치 맡김 편집 중
   loadedAt: null,         // 반 시간표를 낸 때
   fetchedAt: 0,           // 이 기기가 자료를 받은 때
   me: null,               // { classId, sections: {bandKey: sectionKey} }
@@ -600,6 +601,7 @@ function render() {
   app.innerHTML = '';
   if (state.teacher && !state.me) app.appendChild(teacherPicker());
   else if (!state.me || !state.me.classId) app.appendChild(loginGate());
+  else if (state.seatEdit) app.appendChild(seatEditor());
   else app.appendChild(shell());
   renderSheet();
   maybeOfferInstall();
@@ -722,9 +724,9 @@ function todayScreen(layout) {
     return h('div', { class: 'page' }, head,
       h('div', { class: 'cols is-dash' },
         h('div', { class: 'col' }, installCard(layout), weekGridCard(mondayOf(date), date, '이번 주 시간표')),
-        h('div', { class: 'col is-side' }, ddayCard(), teacherSoonCard(), newSeatsCard(), mealCard(date), upcomingCard())));
+        h('div', { class: 'col is-side' }, ddayCard(), seatJobCard(), teacherSoonCard(), newSeatsCard(), mealCard(date), upcomingCard())));
   }
-  return h('div', { class: 'page' }, head, ddayCard(), installCard(layout), teacherSoonCard(), newSeatsCard(), lessonsCard(date, '수업'), mealCard(date));
+  return h('div', { class: 'page' }, head, ddayCard(), installCard(layout), seatJobCard(), teacherSoonCard(), newSeatsCard(), lessonsCard(date, '수업'), mealCard(date));
 }
 
 function rotationNote(date) {
@@ -805,6 +807,24 @@ function teacherSoonCard() {
       cls: 'is-teacher', lead: item.date === from ? '오늘' : fmtShort(parse(item.date)), title: item.title, note: item.teacher || null,
       tail: icon('next'), onclick: () => openSheet({ type: 'teacherEvent', id: item.id }),
     }))));
+}
+
+/* 자리배치를 맡았을 때 — 아직 안 냈거나 돌려받았으면 오늘에 */
+function seatJobCard() {
+  const job = hubMe() && hubMe().delegation;
+  if (!job || (job.submission && job.submission.status !== 'returned')) return null;
+  return card(null, null, h('div', { class: 'rows' }, row({
+    title: job.submission ? '자리배치를 돌려받았습니다' : '자리배치를 맡았습니다', note: delegationNote(job),
+    tail: icon('next'), onclick: openSeatEditor,
+  })));
+}
+
+function delegationNote(job) {
+  const sub = job.submission;
+  if (!sub) return job.roomLocked ? '친구들 자리를 정해 담임 선생님께 냅니다' : '책상과 자리를 정해 담임 선생님께 냅니다';
+  if (sub.status === 'submitted') return '냈습니다 · 담임 선생님이 확인합니다';
+  if (sub.status === 'applied') return '담임 선생님이 적용했습니다';
+  return sub.note ? `돌려받음 · ${sub.note}` : '돌려받음 · 고쳐서 다시 냅니다';
 }
 
 /* 새 자리 — 시작일 앞뒤 사흘만 오늘에 띄운다. 그 밖에는 내 정보에서 */
@@ -1122,10 +1142,14 @@ function meScreen() {
     !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL && card('우리 반', null, h('div', { class: 'rows' }, state.hub
       ? (() => {
           const plan = seatPlanNow();
-          return row({
-            title: '우리 반 자리', note: plan ? `${fmtShort(parse(plan.effectiveFrom))}부터` : '아직 정해진 자리가 없습니다',
-            tail: plan && icon('next'), onclick: plan ? () => openSheet({ type: 'seats' }) : null,
-          });
+          const job = hubMe() && hubMe().delegation;
+          return [
+            row({
+              title: '우리 반 자리', note: plan ? `${fmtShort(parse(plan.effectiveFrom))}부터` : '아직 정해진 자리가 없습니다',
+              tail: plan && icon('next'), onclick: plan ? () => openSheet({ type: 'seats' }) : null,
+            }),
+            job && row({ title: '자리배치 맡김', note: delegationNote(job), tail: icon('next'), onclick: openSeatEditor }),
+          ];
         })()
       : row({ title: '학교 계정 연결', note: '선생님 일정과 우리 반 자리를 받습니다', tail: icon('next'), onclick: () => openSheet({ type: 'connect' }) }))),
     card('화면 배치', null, h('div', { class: 'options card-pad' },
@@ -1414,6 +1438,291 @@ function quietConnect() {
     });
     google.accounts.id.prompt();
   });
+}
+
+/* ── 자리배치 맡김 — 담임이 지정한 학생들이 함께 고쳐 낸다 ───────────────────
+ * 초안은 학생용 층에 반마다 하나다(함께 고친다). 자리는 학번이 아니라 번호로만 오간다.
+ * 고정석은 옮기지 못하고(사유는 보이지 않는다), 책상 틀 고정이면 책상은 그대로다.
+ * «크게»는 전자칠판에 띄워 학급 회의로 정할 때 — 화면 전체로 키운다.
+ */
+async function hubCall(path, init = {}) {
+  const res = await fetch(`${HUB}${path}`, { ...init, headers: { Authorization: `Bearer ${state.hub.token}`, ...(init.body ? { 'Content-Type': 'application/json' } : {}) } });
+  let data = {};
+  try { data = await res.json(); } catch { /* 본문 없음 */ }
+  if (!res.ok) { const error = new Error(data.error || '처리하지 못했습니다.'); error.status = res.status; error.data = data; throw error; }
+  return data;
+}
+
+async function openSeatEditor() {
+  if (!state.hub) return;
+  state.seatEdit = { loading: true, mode: 'seats', picked: null, desk: null, note: null };
+  render();
+  try {
+    const data = await hubCall('/seat-draft');
+    const start = data.draft || data.base;
+    state.seatEdit = {
+      ...state.seatEdit, loading: false, data,
+      room: start ? start.room : null, seats: start ? { ...start.seats } : {}, revision: data.draft ? data.draft.revision : undefined,
+      dirty: false, saving: false,
+    };
+  } catch (error) {
+    state.seatEdit = { ...state.seatEdit, loading: false, error: String(error.message || error) };
+  }
+  render();
+}
+
+function closeSeatEditor() {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  state.seatEdit = null;
+  render();
+  refreshHub();
+}
+
+const lockedSeats = () => new Set((state.seatEdit.data.base && state.seatEdit.data.base.locked) || []);
+
+/** 앞줄부터, 한 줄 안에서는 왼쪽부터(칠판을 볼 때) — Hi-AX lib/class-seats seatOrder 와 같은 규칙 */
+function seatPoints(room) {
+  return (room.desks || []).flatMap((d) => {
+    const shape = SEAT_DESKS[d.kind] || SEAT_DESKS.pair;
+    const rad = (d.rot * Math.PI) / 180, cos = Math.cos(rad), sin = Math.sin(rad);
+    return shape.seats.map(([dx, dy], i) => ({ id: `${d.id}:${i}`, x: d.x + dx * cos - dy * sin, y: d.y + dx * sin + dy * cos }));
+  });
+}
+function seatOrderOf(room) {
+  const points = seatPoints(room).sort((a, b) => a.y - b.y || a.x - b.x);
+  const rows = [];
+  for (const p of points) {
+    const last = rows[rows.length - 1];
+    if (last && Math.abs(p.y - last[0].y) < 30) last.push(p); else rows.push([p]);
+  }
+  return rows.flatMap((r) => r.sort((a, b) => a.x - b.x).map((p) => p.id));
+}
+
+function editSeats(next) {
+  state.seatEdit.seats = next;
+  state.seatEdit.dirty = true;
+  queueDraftSave();
+  render();
+}
+
+let draftTimer = 0;
+function queueDraftSave() {
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(saveDraftNow, 700);
+}
+async function saveDraftNow() {
+  const edit = state.seatEdit;
+  if (!edit || !edit.dirty || edit.saving) return;
+  edit.saving = true; edit.dirty = false; render();
+  try {
+    const saved = await hubCall('/seat-draft', { method: 'PUT', body: JSON.stringify({ room: edit.room, seats: edit.seats, revision: edit.revision }) });
+    if (state.seatEdit !== edit) return;
+    edit.revision = saved.revision; edit.room = saved.room; edit.seats = saved.seats; edit.note = null;
+  } catch (error) {
+    if (state.seatEdit !== edit) return;
+    if (error.status === 409 && error.data && error.data.draft) {
+      const latest = error.data.draft;
+      Object.assign(edit, { room: latest.room, seats: latest.seats, revision: latest.revision, note: '다른 친구가 먼저 고쳤습니다. 새 초안을 불러왔습니다.' });
+    } else {
+      edit.dirty = true;
+      edit.note = String(error.message || error);
+    }
+  } finally {
+    edit.saving = false;
+    if (state.seatEdit === edit) render();
+  }
+}
+
+function placeNo(no, seat) {
+  const edit = state.seatEdit;
+  const locked = lockedSeats();
+  if (locked.has(seat)) return;
+  const seats = { ...edit.seats };
+  const from = Object.keys(seats).find((id) => seats[id] === no) || null;
+  if (from && locked.has(from)) return;
+  const other = seats[seat];
+  if (from) delete seats[from];
+  seats[seat] = no;
+  if (other != null && from) seats[from] = other;
+  editSeats(seats);
+}
+
+function fillDraft(shuffle) {
+  const edit = state.seatEdit;
+  const locked = lockedSeats();
+  const seats = {};
+  for (const id of locked) if (edit.seats[id] != null) seats[id] = edit.seats[id];
+  const placed = new Set(Object.values(seats));
+  let rest = edit.data.roster.map((s) => s.no).filter((no) => !placed.has(no)).sort((a, b) => a - b);
+  if (shuffle) for (let i = rest.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+  for (const id of seatOrderOf(edit.room)) {
+    if (seats[id] != null) continue;
+    const no = rest.shift();
+    if (no == null) break;
+    seats[id] = no;
+  }
+  edit.picked = null;
+  editSeats(seats);
+}
+
+function editRoom(change) {
+  const edit = state.seatEdit;
+  edit.room = change(edit.room);
+  // 없어진 자리의 학생은 자리 없음으로
+  const valid = new Set(seatPoints(edit.room).map((p) => p.id));
+  edit.seats = Object.fromEntries(Object.entries(edit.seats).filter(([id]) => valid.has(id)));
+  edit.dirty = true;
+  queueDraftSave();
+  render();
+}
+
+function addDraftDesk(kind) {
+  editRoom((room) => {
+    const used = new Set(room.desks.map((d) => d.id));
+    let id; do { id = `s${Math.random().toString(36).slice(2, 7)}`; } while (used.has(id));
+    return { ...room, desks: [...room.desks, { id, kind, rot: 0, x: Math.round(room.width / 2), y: Math.round(room.depth - 100) }] };
+  });
+}
+
+async function submitDraft() {
+  const edit = state.seatEdit;
+  clearTimeout(draftTimer);
+  if (edit.dirty) await saveDraftNow();
+  edit.submitting = true; render();
+  try {
+    const result = await hubCall('/seat-draft/submit', { method: 'POST' });
+    edit.data.submission = result.submission;
+    if (state.hub && state.hub.me && state.hub.me.delegation) state.hub.me.delegation.submission = result.submission;
+    edit.note = '담임 선생님께 냈습니다.';
+  } catch (error) {
+    edit.note = String(error.message || error);
+  } finally {
+    edit.submitting = false; render();
+  }
+}
+
+function toggleBig() {
+  const node = document.getElementById('seat-editor');
+  if (!document.fullscreenElement && node && node.requestFullscreen) node.requestFullscreen().then(() => render()).catch(() => {});
+  else if (document.exitFullscreen) document.exitFullscreen().then(() => render()).catch(() => {});
+}
+
+function seatEditor() {
+  const edit = state.seatEdit;
+  const top = h('header', { class: 'editor-top' },
+    h('button', { class: 'icon-btn', type: 'button', 'aria-label': '닫기', onclick: closeSeatEditor }, icon('back')),
+    h('h1', null, '자리배치 맡김'),
+    h('span', { class: 'muted editor-status' }, edit.saving ? '저장 중…' : edit.dirty ? '' : edit.revision ? '저장됨' : ''),
+    h('button', { class: 'btn is-plain is-small', type: 'button', onclick: toggleBig }, document.fullscreenElement ? '작게' : '크게'));
+  if (edit.loading) return h('div', { class: 'editor', id: 'seat-editor' }, top, h('p', { class: 'empty' }, '불러오는 중…'));
+  if (edit.error || !edit.room) {
+    return h('div', { class: 'editor', id: 'seat-editor' }, top,
+      h('p', { class: 'empty' }, edit.error || '담임 선생님이 아직 자리배치를 저장하지 않았습니다.'));
+  }
+  const data = edit.data;
+  const roomLocked = data.roomLocked;
+  const mode = roomLocked ? 'seats' : edit.mode;
+  const locked = lockedSeats();
+  const names = new Map(data.roster.map((s) => [s.no, s.name]));
+  const seated = new Set(Object.values(edit.seats));
+  const waiting = data.roster.filter((s) => !seated.has(s.no));
+  const room = edit.room;
+  const big = !!document.fullscreenElement;
+  const avail = Math.min((window.innerWidth || 390) - 32, big ? 4000 : 900);
+  const scale = Math.max(Math.min(avail / room.width, big ? ((window.innerHeight || 800) - 220) / room.depth : 10), 0.62);
+  const px = (v) => `${Math.round(v * scale * 10) / 10}px`;
+
+  const floor = h('div', { class: `seatmap is-edit${mode === 'room' ? ' is-room' : ''}`, style: `width:${px(room.width)};height:${px(room.depth)}` });
+  for (const f of room.fixtures || []) {
+    floor.append(h('div', { class: `seatmap-fx is-${f.kind}`, style: `left:${px(f.x - f.w / 2)};top:${px(f.y - f.h / 2)};width:${px(f.w)};height:${px(f.h)}` },
+      h('span', null, SEAT_FIXTURES[f.kind] || '')));
+  }
+  for (const d of room.desks || []) {
+    const shape = SEAT_DESKS[d.kind] || SEAT_DESKS.pair;
+    const group = h('div', { class: `seatmap-group${edit.desk === d.id ? ' is-chosen' : ''}`, style: `left:${px(d.x)};top:${px(d.y)}` });
+    group.append(h('div', { class: 'seatmap-desk', style: `left:0;top:0;width:${px(shape.w)};height:${px(shape.h)};transform:translate(-50%,-50%) rotate(${d.rot}deg)` }));
+    const rad = (d.rot * Math.PI) / 180, cos = Math.cos(rad), sin = Math.sin(rad);
+    shape.seats.forEach(([dx, dy], i) => {
+      const id = `${d.id}:${i}`;
+      const no = edit.seats[id];
+      const isLocked = locked.has(id) && no != null;
+      const label = no != null ? `${no}번 ${names.get(no) || ''}${isLocked ? ' · 고정' : ''}` : '빈자리';
+      group.append(h(mode === 'seats' ? 'button' : 'div', {
+        type: mode === 'seats' ? 'button' : null,
+        class: `seatmap-seat${no == null ? ' is-empty' : ''}${no != null && edit.picked === no ? ' is-picked' : ''}${isLocked ? ' is-locked' : ''}${data.me && no === data.me.no ? ' is-mine' : ''}`,
+        style: `left:${px(dx * cos - dy * sin)};top:${px(dx * sin + dy * cos)};width:${px(60)};height:${px(42)}`,
+        'aria-label': label, disabled: mode === 'seats' && isLocked ? true : null,
+        onclick: mode === 'seats' ? () => {
+          if (isLocked) return;
+          if (edit.picked != null) { if (no === edit.picked) edit.picked = null; else { const p = edit.picked; edit.picked = null; placeNo(p, id); return; } }
+          else if (no != null) edit.picked = no;
+          render();
+        } : null,
+      }, no != null && h('span', { class: 'no' }, String(no)), no != null && h('b', null, names.get(no) || '')));
+    });
+    if (mode === 'room') group.addEventListener('pointerdown', (event) => startDeskDrag(event, d.id, scale, group));
+    floor.append(group);
+  }
+
+  const tools = mode === 'seats'
+    ? h('div', { class: 'editor-tools' },
+        h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => fillDraft(false) }, '번호순'),
+        h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => fillDraft(true) }, '무작위'),
+        edit.picked != null && Object.values(edit.seats).includes(edit.picked) && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => {
+          const seat = Object.keys(edit.seats).find((id) => edit.seats[id] === edit.picked);
+          const seats = { ...edit.seats }; delete seats[seat]; edit.picked = null; editSeats(seats);
+        } }, '자리 비우기'))
+    : h('div', { class: 'editor-tools' },
+        h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => addDraftDesk('pair') }, '2인 책상'),
+        h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => addDraftDesk('single') }, '1인 책상'),
+        edit.desk && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: () => editRoom((r) => ({ ...r, desks: r.desks.map((d) => d.id === edit.desk ? { ...d, rot: ((d.rot + 90 + 180) % 360) - 180 } : d) })) }, '90° 돌리기'),
+        edit.desk && h('button', { class: 'btn is-plain is-small is-danger', type: 'button', onclick: () => { const id = edit.desk; edit.desk = null; editRoom((r) => ({ ...r, desks: r.desks.filter((d) => d.id !== id) })); } }, '책상 빼기'));
+
+  const sub = data.submission;
+  return h('div', { class: `editor${big ? ' is-big' : ''}`, id: 'seat-editor' }, top,
+    h('div', { class: 'editor-body' },
+      !roomLocked && h('div', { class: 'seg', role: 'group', 'aria-label': '고칠 것' },
+        [['seats', '학생 자리'], ['room', '책상']].map(([key, label]) => h('button', { type: 'button', class: mode === key ? 'is-on' : null, 'aria-pressed': String(mode === key),
+          onclick: () => { edit.mode = key; edit.picked = null; edit.desk = null; render(); } }, label))),
+      tools,
+      h('p', { class: 'muted editor-hint' }, mode === 'seats' ? '칠판이 위 · 학생을 누르고 앉힐 자리를 누릅니다' : '칠판이 위 · 책상을 끌어 옮깁니다'),
+      h('div', { class: 'seatmap-scroll' }, floor),
+      mode === 'seats' && h('div', { class: 'editor-waiting' },
+        h('h2', { class: 'card-title' }, `자리 없는 친구 ${waiting.length}`),
+        waiting.length ? h('div', { class: 'chips' }, waiting.map((s) => h('button', {
+          type: 'button', class: `chip${edit.picked === s.no ? ' is-on' : ''}`, 'aria-pressed': String(edit.picked === s.no),
+          onclick: () => { edit.picked = edit.picked === s.no ? null : s.no; render(); },
+        }, `${s.no} ${s.name}`))) : h('p', { class: 'empty' }, '모두 앉았습니다.')),
+      edit.note && h('p', { class: 'card-note' }, edit.note)),
+    h('footer', { class: 'editor-foot' },
+      h('span', { class: 'muted' }, sub ? delegationNote({ submission: sub }) : '다 정했으면 냅니다'),
+      h('button', { class: 'btn is-key', type: 'button', disabled: edit.submitting || edit.saving ? true : null, onclick: submitDraft },
+        edit.submitting ? '내는 중…' : sub && sub.status === 'submitted' ? '다시 내기' : '담임 선생님께 내기')));
+}
+
+/* 책상 끌기 — 끄는 동안은 그 책상만 움직이고, 놓을 때 초안에 적는다(5cm 눈금) */
+function startDeskDrag(event, deskId, scale, node) {
+  const edit = state.seatEdit;
+  edit.desk = deskId;
+  const start = { x: event.clientX, y: event.clientY };
+  const desk = edit.room.desks.find((d) => d.id === deskId);
+  const origin = { left: parseFloat(node.style.left), top: parseFloat(node.style.top) };
+  node.setPointerCapture(event.pointerId);
+  let moved = false;
+  const move = (e) => {
+    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+    if (!moved && Math.hypot(dx, dy) < 4) return;
+    moved = true;
+    node.style.left = `${origin.left + dx}px`; node.style.top = `${origin.top + dy}px`;
+  };
+  const up = (e) => {
+    node.removeEventListener('pointermove', move); node.removeEventListener('pointerup', up); node.removeEventListener('pointercancel', up);
+    if (!moved) { render(); return; }
+    const snap = (v) => Math.round(v / 5) * 5;
+    const x = snap(desk.x + (e.clientX - start.x) / scale), y = snap(desk.y + (e.clientY - start.y) / scale);
+    editRoom((r) => ({ ...r, desks: r.desks.map((d) => d.id === deskId ? { ...d, x: Math.min(r.width - 32, Math.max(32, x)), y: Math.min(r.depth - 23, Math.max(23, y)) } : d) }));
+  };
+  node.addEventListener('pointermove', move); node.addEventListener('pointerup', up); node.addEventListener('pointercancel', up);
 }
 
 /* 학생용 층이 생기기 전에 로그인한 학생 — 한 번 더 구글로 확인하면 선생님 일정·자리가 들어온다 */
