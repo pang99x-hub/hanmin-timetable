@@ -5,7 +5,7 @@
  *   2. 새 일정 판에서 «우리 반»을 고르면 메모 칸이 열리고 «올리기» — 학생용 층에 올리고 돌아온 목록을 기기에 둔다
  *   3. 못 올리면(하루 한도 등) 판을 닫지 않고 까닭을 보인다
  *   4. 내가 올린 것은 고치는 판(삭제 포함), 남이 올린 것은 읽는 판(«디데이로 정하기»만)
- *   5. 선생님이 학생 화면으로 볼 때 — 그 반 일정이 보이고, 두 번 눌러 지운다. 올리기는 없다
+ *   5. 선생님이 학생 화면으로 볼 때 — 그 반 일정이 보이고, 두 번 눌러 지운다. «누구와»는 보이되 우리 반으로 올리지는 않는다
  */
 const jsdomPath = process.env.JSDOM_PATH
   ?? process.env.HOME + '/Documents/AX 시스템 구축/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/api.js';
@@ -191,7 +191,10 @@ const trow = [...t.app.querySelectorAll('.row.is-class')].find((n) => n.textCont
 check('그 반 일정이 보인다', !!trow);
 t.w.eval(`openSheet({ type: 'event', draft: { date: '${plus(1)}', period: null, title: '' } })`);
 await settle();
-check('보는 중에는 «우리 반»으로 올릴 수 없다', !t.sheet().querySelector('[aria-label="누구와"]'));
+const previewScope = t.sheet().querySelector('[aria-label="누구와"]');
+check('보는 중에도 «누구와»는 보인다(학생이 보는 판 그대로)', !!previewScope);
+byText(previewScope, '우리 반').click();
+check('보는 중에는 «우리 반»으로 올릴 수 없다 — 단추가 막히고 까닭을 말한다', byText(t.sheet(), '올리기')?.disabled === true && t.sheet().textContent.includes('학생 화면 보기라 여기서는 올리지 않습니다'));
 t.w.eval('closeSheet()');
 trow.click();
 await settle();

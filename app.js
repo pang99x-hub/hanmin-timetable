@@ -1428,7 +1428,7 @@ function renderSheet(force = false) {
   if (!body) { state.sheet = null; return; }
   document.body.classList.add('has-sheet');
   const fresh = Date.now() - sheetOpenedAt < 400;
-  const panel = h('section', { class: `sheet${fresh ? ' is-entering' : ''}${currentLayout() === 'single' ? ' is-bottom' : ' is-dialog'}`,
+  const panel = h('section', { class: `sheet${fresh ? ' is-entering' : ''}${currentLayout() === 'single' ? ' is-bottom' : ' is-dialog'}${body.wide ? ' is-wide' : ''}`,
     role: 'dialog', 'aria-modal': 'true', 'aria-label': body.title, tabindex: '-1' },
     h('div', { class: 'sheet-head' },
       h('div', { class: 'sheet-titles' }, h('h2', null, body.title), body.sub && h('p', { class: 'muted' }, body.sub)),
@@ -1525,13 +1525,17 @@ function lessonSheet(date, period) {
  */
 function eventSheet(draft) {
   const shared = !!draft.shared;
-  const offerShare = !draft.id && canShare();
+  // 선생님이 학생 화면으로 볼 때도 학생이 보는 판 그대로 «누구와»를 보인다 — 다만 우리 반으로 올리지는 않는다
+  const preview = !draft.id && !!state.viewing;
+  const offerShare = !draft.id && (canShare() || preview);
   let scope = shared ? 'class' : 'mine';
   const title = h('input', { type: 'text', maxlength: '40', placeholder: '수행평가, 준비물', value: draft.title || '', autofocus: true });
   const when = h('input', { type: 'date', value: draft.date || iso(today()) });
   const note = h('textarea', { rows: '3', maxlength: '300', placeholder: '반 친구에게 알릴 내용' }, draft.note || '');
   const noteField = field('메모', note);
-  const hint = h('p', { class: 'card-note' }, '우리 반 친구 모두가 봅니다. 고치고 지우는 건 올린 사람만 할 수 있습니다.');
+  const hint = h('p', { class: 'card-note' }, preview
+    ? '학생 화면 보기라 여기서는 올리지 않습니다. 학생이 자기 계정으로 올리면 반 친구 모두가 봅니다.'
+    : '우리 반 친구 모두가 봅니다. 고치고 지우는 건 올린 사람만 할 수 있습니다.');
   const msg = h('p', { class: 'card-note is-error', role: 'alert', hidden: true });
   let period = draft.period ?? null;
   const choices = [null, ...(state.school.periods || []).map((p) => p.period)];
@@ -1552,6 +1556,7 @@ function eventSheet(draft) {
     noteField.hidden = scope !== 'class';
     hint.hidden = scope !== 'class';
     saveBtn.textContent = saveLabel();
+    saveBtn.disabled = preview && scope === 'class';
   };
   paintScope();
 
@@ -1701,6 +1706,7 @@ const SEAT_FIXTURES = { board: '칠판', lectern: '교탁', door: '문', window:
 const SEAT_AISLE = 16;   // 좁힌 통로(cm)
 const SEAT_EDGE = 16;    // 가장자리 여백(cm)
 const SEAT_READABLE = 0.52; // 이 배율 아래면 이름이 안 읽힌다 — «크게 보기»로 내 자리 둘레
+const SEAT_MAX = 1.1;       // 이보다 키우지 않는다 — 넓은 화면에서 칸이 두 배 넘게 커져 옆으로 넘쳤다(10/8)
 function compactRoom(room) {
   const desks = room.desks || [];
   if (!desks.length) return room;
@@ -1748,10 +1754,14 @@ function compactRoom(room) {
   };
 }
 
-/** 이 교실을 폰 폭에 맞춘 배율과, 맞추면 이름이 읽히는지 */
+/**
+ * 이 교실을 자리 판 폭에 맞춘 배율과, 맞추면 이름이 읽히는지. 폰은 화면 폭, 넓은 화면은 가운데 넓은 창(760px).
+ * 전에는 넓은 화면에서도 화면 폭(최대 640)에 맞춰 480px 창보다 커졌다(10/8 «보기가 너무 불편»).
+ */
 function seatFit(room) {
-  const avail = Math.min((window.innerWidth || 390) - 48, 640);
-  const fit = avail / room.width;
+  const vw = window.innerWidth || 390;
+  const sheet = currentLayout() === 'single' ? vw : Math.min(760, vw - 32);
+  const fit = Math.min(SEAT_MAX, (sheet - 36) / room.width);   // 판 안쪽 여백 16×2·테두리 2×2
   return { fit, readable: fit >= SEAT_READABLE };
 }
 
@@ -1812,7 +1822,7 @@ function seatSheet(title, plan) {
   // 좁혀서 한눈에 읽히면 고를 것이 없다 — 안 읽힐 때만 «전체 보기»·«크게 보기»
   const wide = !seatFit(compactRoom(plan.room)).readable;
   return {
-    title,
+    title, wide: true,
     sub: `${fmtShort(parse(plan.effectiveFrom))}부터 · 칠판이 위`,
     content: [
       wide && h('div', { class: 'seat-view' }, h('button', { class: 'btn is-plain is-small', type: 'button',
