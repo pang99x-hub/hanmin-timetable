@@ -27,7 +27,7 @@
   --danger-text: #b91c1c; --danger-bg: #fef2f2; --danger-border: #fecaca;
   --neutral-bg: #f5f5f4; --neutral-text: #57534e; --neutral-border: #e7e5e4;
   /* 갈래 — 옅은 바탕 한 겹 */
-  --school-dot: #a8a29e;
+  --school-dot: #a8a29e; --class-dot: #0d9488; --class-text: #0f766e;
   --mine-bg: var(--primary-faint); --mine-text: var(--primary-text);
   /* 떠 있는 것만 — 따뜻한 그림자 */
   --shadow-sheet: 0 24px 70px rgba(28, 25, 23, .28);
@@ -43,7 +43,7 @@
     --warn-text: #fcd34d; --warn-bg: #2a2111; --warn-border: #713f12; --warn-dot: #f59e0b;
     --danger-text: #fda4af; --danger-bg: #2b1a1d; --danger-border: #7f1d1d;
     --neutral-bg: #27272a; --neutral-text: #d4d4d8; --neutral-border: #3f3f46;
-    --school-dot: #71717a;
+    --school-dot: #71717a; --class-dot: #2dd4bf; --class-text: #5eead4;
     --shadow-sheet: 0 24px 70px rgba(0, 0, 0, .6); --scrim: rgba(0, 0, 0, .5);
   }
 }
@@ -56,7 +56,7 @@
   --warn-text: #fcd34d; --warn-bg: #2a2111; --warn-border: #713f12; --warn-dot: #f59e0b;
   --danger-text: #fda4af; --danger-bg: #2b1a1d; --danger-border: #7f1d1d;
   --neutral-bg: #27272a; --neutral-text: #d4d4d8; --neutral-border: #3f3f46;
-  --school-dot: #71717a;
+  --school-dot: #71717a; --class-dot: #2dd4bf; --class-text: #5eead4;
   --shadow-sheet: 0 24px 70px rgba(0, 0, 0, .6); --scrim: rgba(0, 0, 0, .5);
 }
 
@@ -162,6 +162,9 @@ button.card { width: 100%; }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--g-2); min-height: 28px; margin-bottom: var(--g-1); }
 .card-title { font-size: var(--t-lg); font-weight: 700; letter-spacing: -.02em; }
 .card-note { font-size: var(--t-sm); color: var(--text-muted); padding: var(--g-1) 0; }
+.card-note.is-error { color: var(--danger-text); }
+/* 판 안에서 고르는 대로 숨기는 칸 — .field 의 display 가 hidden 을 이기지 않게 */
+[hidden] { display: none !important; }
 .card-foot { display: flex; padding-top: var(--g-2); margin-top: var(--g-1); border-top: 1px solid var(--border); }
 .card-foot .btn { margin-left: calc(-1 * var(--g-3)); }
 .sub-title { font-size: var(--t-sm); font-weight: 700; color: var(--text-muted); margin: var(--g-3) 0 var(--g-1); }
@@ -189,6 +192,7 @@ button.row:hover + .row { border-top-color: transparent; }
 .row.is-on .row-title { color: var(--primary-text); }
 .row.is-mine .row-lead { color: var(--mine-text); font-weight: 600; }
 .row.is-teacher .row-lead { color: var(--primary-text); font-weight: 600; }
+.row.is-class .row-lead { color: var(--class-text); font-weight: 600; }
 .row.is-holiday .row-lead { color: var(--danger-text); }
 .rows.is-boxed { margin: 0; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; }
 .rows.is-boxed .row { padding: var(--g-3) var(--g-4); }
@@ -228,6 +232,8 @@ button.row:hover + .row { border-top-color: transparent; }
 .dot.is-mine { background: none; box-shadow: inset 0 0 0 1.5px var(--primary-text); }
 .dot.is-teacher { background: var(--primary-text); }
 .dot.is-school { background: var(--school-dot); }
+/* 우리 반 일정(2026-10-08) — 반 친구가 올린 것. 선생님 일정(남색)·내 기록(빈 고리)과 갈리게 청록 */
+.dot.is-class { background: var(--class-dot); }
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--g-2); padding-top: var(--g-2); }
 .chip {
@@ -436,11 +442,12 @@ button.row:hover + .row { border-top-color: transparent; }
 .sheet.is-bottom .sheet-foot .btn { flex: 1; }
 
 .field { display: flex; flex-direction: column; gap: 6px; font-size: var(--t-sm); font-weight: 600; color: var(--text-sub); }
-.field input {
+.field input, .field textarea {
   min-height: var(--tap); padding: 0 var(--g-3); border: 1px solid var(--border); border-radius: var(--r-sm);
   background: var(--card); font-size: var(--t-md); font-weight: 400; color: var(--text); width: 100%;
 }
-.field input:focus { border-color: var(--primary-border); box-shadow: 0 0 0 3px var(--primary-faint); }
+.field textarea { padding: var(--g-2) var(--g-3); line-height: 1.5; resize: vertical; font-family: inherit; }
+.field input:focus, .field textarea:focus { border-color: var(--primary-border); box-shadow: 0 0 0 3px var(--primary-faint); }
 .choice { display: flex; flex-wrap: wrap; gap: 6px; }
 .choice button {
   min-height: 40px; min-width: 56px; padding: 0 var(--g-3); border: 1px solid var(--border); border-radius: var(--r-pill);

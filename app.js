@@ -787,9 +787,9 @@ function todayScreen(layout) {
     return h('div', { class: 'page' }, head,
       h('div', { class: 'cols is-dash' },
         h('div', { class: 'col' }, installCard(layout), weekGridCard(mondayOf(date), date, '이번 주 시간표')),
-        h('div', { class: 'col is-side' }, ddayCard(), seatJobCard(), teacherSoonCard(), newSeatsCard(), mealCard(date), upcomingCard())));
+        h('div', { class: 'col is-side' }, ddayCard(), seatJobCard(), teacherSoonCard(), classSoonCard(), newSeatsCard(), mealCard(date), upcomingCard())));
   }
-  return h('div', { class: 'page' }, head, ddayCard(), installCard(layout), pushOfferCard(), seatJobCard(), teacherSoonCard(), newSeatsCard(), lessonsCard(date, '수업'), mealCard(date));
+  return h('div', { class: 'page' }, head, ddayCard(), installCard(layout), pushOfferCard(), seatJobCard(), teacherSoonCard(), classSoonCard(), newSeatsCard(), lessonsCard(date, '수업'), mealCard(date));
 }
 
 function rotationNote(date) {
@@ -869,6 +869,18 @@ function teacherSoonCard() {
     h('div', { class: 'rows' }, list.map((item) => row({
       cls: 'is-teacher', lead: item.date === from ? '오늘' : fmtShort(parse(item.date)), title: item.title, note: teacherNote(item),
       tail: icon('next'), onclick: () => openSheet({ type: 'teacherEvent', id: item.id }),
+    }))));
+}
+
+/* 우리 반 일정 — 오늘부터 사흘 안. 없으면 카드를 두지 않는다 */
+function classSoonCard() {
+  const from = iso(today());
+  const list = classEventsBetween(from, iso(addDays(today(), 3)));
+  if (!list.length) return null;
+  return card('우리 반 일정', { tail: linkTo('달력', () => go('calendar')) },
+    h('div', { class: 'rows' }, list.map((item) => row({
+      cls: 'is-class', lead: item.date === from ? '오늘' : fmtShort(parse(item.date)), title: item.title, note: classNote(item),
+      tail: icon('next'), onclick: () => openClassEvent(item),
     }))));
 }
 
@@ -990,9 +1002,10 @@ const menuLines = (items) => (Array.isArray(items) ? items : typeof items === 's
 function upcomingCard(withLink = true) {
   const from = iso(today());
   const school = upcomingSchool(from).map((day) => ({ date: day.date, text: day.labels.join(' · '), kind: day.kind }));
-  // 내가 적은 것은 달력의 «내 기록»이 모아 보인다 — 여기서는 학교·선생님 일정만(2026-10-08 겹침 정리)
+  // 내가 적은 것은 달력의 «내 기록»이 모아 보인다 — 여기서는 학교·선생님·우리 반 일정만(2026-10-08 겹침 정리)
   const teacher = teacherEventsBetween(from, '9999-12-31').map((item) => ({ date: item.date, text: item.title, kind: 'teacher', teacherId: item.id }));
-  const soon = [...school, ...teacher].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6);
+  const shared = classEventsBetween(from, '9999-12-31').map((item) => ({ date: item.date, text: item.title, kind: 'class', shared: item }));
+  const soon = [...school, ...teacher, ...shared].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6);
   return card('다가오는 일정', { tail: withLink && linkTo('달력', () => go('calendar')) },
     soon.length === 0
       ? empty(state.calendar ? '다가오는 일정이 없습니다.' : '학사일정 자료가 아직 없습니다.')
@@ -1000,7 +1013,7 @@ function upcomingCard(withLink = true) {
           cls: `is-${item.kind}`,
           lead: fmtShort(parse(item.date)),
           title: item.text,
-          onclick: () => openSheet(item.teacherId ? { type: 'teacherEvent', id: item.teacherId } : item.item ? { type: 'event', draft: { ...item.item } } : { type: 'school', date: item.date }),
+          onclick: () => (item.shared ? openClassEvent(item.shared) : openSheet(item.teacherId ? { type: 'teacherEvent', id: item.teacherId } : item.item ? { type: 'event', draft: { ...item.item } } : { type: 'school', date: item.date })),
         }))));
 }
 
@@ -1230,10 +1243,11 @@ function monthCard(first) {
       const school = calendarOn(date);
       const mine = eventsOn(date);
       const teacher = teacherEventsOn(date);
+      const shared = classEventsOn(date);
       const changed = isWeekday(date) && myChanges(date).length > 0;
       const off = !isWeekday(date) || (school && school.kind === 'holiday');
       const cls = ['day', off && 'is-off', sameDay(date, today()) && 'is-today', state.selDate && sameDay(date, state.selDate) && 'is-sel'].filter(Boolean).join(' ');
-      const said = [school && school.labels.join(' · '), teacher.length && `선생님 일정 ${teacher.length}`, mine.length && `내 기록 ${mine.length}`, changed && '바뀐 수업'].filter(Boolean).join(' · ');
+      const said = [school && school.labels.join(' · '), teacher.length && `선생님 일정 ${teacher.length}`, shared.length && `우리 반 ${shared.length}`, mine.length && `내 기록 ${mine.length}`, changed && '바뀐 수업'].filter(Boolean).join(' · ');
       cells.push(h('td', null, h('button', { type: 'button', class: cls,
         'aria-label': `${date.getMonth() + 1}월 ${date.getDate()}일${said ? ` · ${said}` : ''}`,
         onclick: () => { state.selDate = date; render(); } },
@@ -1241,6 +1255,7 @@ function monthCard(first) {
         h('span', { class: 'dots' },
           school && school.kind !== 'holiday' && h('i', { class: 'dot is-school' }),
           teacher.length > 0 && h('i', { class: 'dot is-teacher' }),
+          shared.length > 0 && h('i', { class: 'dot is-class' }),
           mine.length > 0 && h('i', { class: 'dot is-mine' }),
           changed && h('i', { class: 'dot is-warn' })))));
     }
@@ -1257,6 +1272,7 @@ function monthCard(first) {
   h('div', { class: 'legend' },
     h('span', null, h('i', { class: 'dot is-school' }), '학사일정'),
     hubMe() && h('span', null, h('i', { class: 'dot is-teacher' }), '선생님 일정'),
+    (hubMe() || state.viewing) && h('span', null, h('i', { class: 'dot is-class' }), '우리 반'),
     h('span', null, h('i', { class: 'dot is-mine' }), '내 기록'),
     h('span', null, h('i', { class: 'dot is-warn' }), '바뀐 수업')));
 }
@@ -1266,13 +1282,15 @@ function dayDetailCard(date) {
   const school = calendarOn(date);
   const mine = eventsOn(date);
   const teacher = teacherEventsOn(date);
+  const shared = classEventsOn(date);
   const changed = isWeekday(date) ? myChanges(date) : [];
   return card(fmtShort(date), {
     tail: isWeekday(date) && linkTo('이날 시간표', () => { state.week = mondayOf(date); state.listDay = date; go('timetable'); }),
   },
-  (school || mine.length > 0 || changed.length > 0 || teacher.length > 0) ? h('div', { class: 'rows' },
+  (school || mine.length > 0 || changed.length > 0 || teacher.length > 0 || shared.length > 0) ? h('div', { class: 'rows' },
     school && row({ cls: `is-${school.kind}`, lead: '학사', title: school.labels.join(' · '), tail: icon('next'), onclick: () => openSheet({ type: 'school', date: iso(date) }) }),
     teacher.map((item) => row({ cls: 'is-teacher', lead: '선생님', title: item.title, note: teacherNote(item), tail: icon('next'), onclick: () => openSheet({ type: 'teacherEvent', id: item.id }) })),
+    shared.map((item) => row({ cls: 'is-class', lead: '우리 반', title: item.title, note: classNote(item), tail: icon('next'), onclick: () => openClassEvent(item) })),
     changed.map((chg) => row({
       lead: `${chg.period}교시`,
       title: chg.kind === 'cancel' ? (chg.lesson && chg.lesson.subject) || '' : chg.subject || '',
@@ -1434,6 +1452,7 @@ function sheetBody(spec) {
     case 'picker': return pickerSheet(spec.band);
     case 'install': return installSheet();
     case 'teacherEvent': return teacherEventSheet(spec.id);
+    case 'classEvent': return classEventSheet(spec.id);
     case 'seats': return seatsSheet();
     case 'lessonSeats': return lessonSeatsSheet(spec.lessonId, spec.date);
     case 'connect': return connectSheet();
@@ -1500,10 +1519,20 @@ function lessonSheet(date, period) {
 /*
  * 내 일정·수업 기록 적기. 교시를 고르면 그 수업에 붙고, 종일이면 그날의 일정이 된다.
  * 교시는 폰 기본 선택창(까만 휠) 대신 우리가 그린 단추로 고른다(원칙 11).
+ *
+ * 우리 반(2026-10-08): 새로 적을 때 «나만 / 우리 반»을 고른다. 우리 반이면 학생용 층에 올라가 반 친구 모두가
+ * 보고, 메모를 붙일 수 있다. 내가 올린 우리 반 일정을 열면 여기서 고치고 지운다(draft.shared).
  */
 function eventSheet(draft) {
+  const shared = !!draft.shared;
+  const offerShare = !draft.id && canShare();
+  let scope = shared ? 'class' : 'mine';
   const title = h('input', { type: 'text', maxlength: '40', placeholder: '수행평가, 준비물', value: draft.title || '', autofocus: true });
   const when = h('input', { type: 'date', value: draft.date || iso(today()) });
+  const note = h('textarea', { rows: '3', maxlength: '300', placeholder: '반 친구에게 알릴 내용' }, draft.note || '');
+  const noteField = field('메모', note);
+  const hint = h('p', { class: 'card-note' }, '우리 반 친구 모두가 봅니다. 고치고 지우는 건 올린 사람만 할 수 있습니다.');
+  const msg = h('p', { class: 'card-note is-error', role: 'alert', hidden: true });
   let period = draft.period ?? null;
   const choices = [null, ...(state.school.periods || []).map((p) => p.period)];
   const group = h('div', { class: 'choice', role: 'group', 'aria-label': '교시' });
@@ -1513,27 +1542,95 @@ function eventSheet(draft) {
       onclick: () => { period = p; paint(); } }, p === null ? '종일' : `${p}교시`)));
   };
   paint();
+  const scopeGroup = h('div', { class: 'choice', role: 'group', 'aria-label': '누구와' });
+  const saveBtn = h('button', { class: 'btn is-key', type: 'button', onclick: () => save() });
+  const saveLabel = () => (scope === 'class' && !shared ? '올리기' : '저장');
+  const paintScope = () => {
+    scopeGroup.innerHTML = '';
+    scopeGroup.append(...[['mine', '나만'], ['class', '우리 반']].map(([key, label]) => h('button', { type: 'button', class: key === scope ? 'is-on' : null,
+      'aria-pressed': String(key === scope), onclick: () => { scope = key; paintScope(); } }, label)));
+    noteField.hidden = scope !== 'class';
+    hint.hidden = scope !== 'class';
+    saveBtn.textContent = saveLabel();
+  };
+  paintScope();
+
+  // 우리 반 일정은 층에 올리고 돌아온 반 목록을 기기에 둔다 — 못 올리면 판을 닫지 않고 까닭을 보인다
+  const send = async (button, path, init, busyText) => {
+    const label = button.textContent;
+    button.disabled = true; button.textContent = busyText; msg.hidden = true;
+    try {
+      const data = await hubCall(path, init);
+      adoptClassEvents(data.classEvents || []);
+      closeSheet();
+    } catch (error) {
+      button.disabled = false; button.textContent = label;
+      msg.textContent = String(error.message || error); msg.hidden = false;
+    }
+  };
+  const save = () => {
+    const text = title.value.trim();
+    if (!text) { title.focus(); return; }
+    if (!when.value) { when.focus(); return; }
+    if (scope === 'class') {
+      const body = JSON.stringify({ date: when.value, period, title: text, note: note.value.trim() });
+      send(saveBtn, shared ? `/class-events/${encodeURIComponent(draft.id)}` : '/class-events', { method: shared ? 'PUT' : 'POST', body }, shared ? '저장 중…' : '올리는 중…');
+      return;
+    }
+    const next = { id: draft.id || newEventId(), date: when.value, period, title: text, gcalId: draft.gcalId || null };
+    saveEvents([...state.events.filter((item) => item.id !== next.id), next]);
+    closeSheet();
+    pushEventToCalendar(next);
+  };
   return {
-    title: draft.id ? '일정 고치기' : draft.period ? '수업 기록' : '일정 추가',
+    title: shared ? '우리 반 일정 고치기' : draft.id ? '일정 고치기' : draft.period ? '수업 기록' : '일정 추가',
     content: [field('내용', title), field('날짜', when), h('div', { class: 'field' }, h('span', null, '교시'), group),
-      state.calNote && h('p', { class: 'card-note' }, state.calNote)],
+      offerShare && h('div', { class: 'field' }, h('span', null, '누구와'), scopeGroup),
+      noteField, hint, msg,
+      !shared && state.calNote && h('p', { class: 'card-note' }, state.calNote)],
     footer: [
-      draft.id && h('button', { class: 'btn is-plain is-danger', type: 'button', onclick: () => {
+      draft.id && h('button', { class: 'btn is-plain is-danger', type: 'button', onclick: (event) => {
+        if (shared) { send(event.currentTarget, `/class-events/${encodeURIComponent(draft.id)}`, { method: 'DELETE' }, '지우는 중…'); return; }
         saveEvents(state.events.filter((item) => item.id !== draft.id));
         closeSheet();
         removeEventFromCalendar(draft);
       } }, '삭제'),
-      h('button', { class: 'btn is-key', type: 'button', onclick: () => {
-        const text = title.value.trim();
-        if (!text) { title.focus(); return; }
-        if (!when.value) { when.focus(); return; }
-        const next = { id: draft.id || newEventId(), date: when.value, period, title: text, gcalId: draft.gcalId || null };
-        saveEvents([...state.events.filter((item) => item.id !== next.id), next]);
-        closeSheet();
-        pushEventToCalendar(next);
-      } }, '저장'),
+      saveBtn,
     ],
   };
+}
+
+/* 우리 반 일정 한 건(남이 올린 것) — 내용 전체, «디데이로 정하기». 선생님이 학생 화면으로 볼 때는 «지우기» */
+function classEventSheet(id) {
+  const item = classEventsAll().find((e) => e.id === id);
+  if (!item) return null;
+  const teacher = !!(state.viewing && state.teacher);
+  return {
+    title: item.title,
+    sub: [fmtShort(parse(item.date)), item.period ? `${item.period}교시` : null, item.by ? `${item.by.no}번 ${item.by.name}` : null, '우리 반'].filter(Boolean).join(' · '),
+    content: [item.note ? h('p', { class: 'sheet-text' }, item.note) : null],
+    footer: teacher
+      ? [h('button', { class: 'btn is-plain is-danger', type: 'button', onclick: (event) => removeClassEventAsTeacher(item, event.currentTarget) }, '지우기')]
+      : [h('button', { class: 'btn is-key', type: 'button', onclick: () => { saveDday({ label: item.title, date: item.date }); closeSheet(); } }, '디데이로 정하기')],
+  };
+}
+
+/** 선생님 — 반 학생 모두의 화면에서 지운다. 한 번 더 눌러야 지운다 */
+async function removeClassEventAsTeacher(item, button) {
+  if (button.dataset.armed !== '1') { button.dataset.armed = '1'; button.textContent = '한 번 더 누르면 반 전체에서 지웁니다'; return; }
+  button.disabled = true; button.textContent = '지우는 중…';
+  try {
+    if (axConnection) await axConnection.ensureFresh();
+    const request = () => fetch(`${HUB}/ax/class-events/${encodeURIComponent(item.id)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${state.teacher.axSession}` } });
+    let res = await request();
+    if (res.status === 401 && axConnection) { await axConnection.ensureFresh(true); res = await request(); }
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || '지우지 못했습니다.');
+    state.viewing = { ...state.viewing, classEvents: (state.viewing.classEvents || []).filter((e) => e.id !== item.id) };
+    studentReadCache.clear();
+    closeSheet();
+  } catch (error) {
+    button.disabled = false; delete button.dataset.armed; button.textContent = String(error.message || error);
+  }
 }
 
 /* 학사일정 한 날 — «디데이로 정하기». */
@@ -2433,6 +2530,32 @@ function teacherEventsBetween(fromKey, toKey) {
   return ((hubMe() && hubMe().events) || []).filter((e) => e.date >= fromKey && e.date <= toKey);
 }
 
+/*
+ * 우리 반 일정(2026-10-08) — 같은 반 누구나 올리고 반 친구 모두가 본다. 담당 학생을 두지 않는다.
+ * 고치고 지우는 건 올린 사람만, 선생님은 학생 화면 보기에서 지울 수 있다. 쓴 사람은 번호·이름만 온다.
+ */
+const classEventsAll = () => ((state.viewing ? state.viewing.classEvents : hubMe() && hubMe().classEvents) || []);
+function classEventsOn(date) {
+  const key = iso(date);
+  return classEventsAll().filter((e) => e.date === key);
+}
+function classEventsBetween(fromKey, toKey) {
+  return classEventsAll().filter((e) => e.date >= fromKey && e.date <= toKey);
+}
+const classNote = (item) => [item.period && `${item.period}교시`, item.by && `${item.by.no}번 ${item.by.name}`].filter(Boolean).join(' · ');
+/** 학생으로 로그인해 있어야 올린다 — 선생님이 학생 화면을 볼 때는 못 올린다 */
+const canShare = () => !!(state.hub && hubMe() && !state.viewing);
+/** 내가 올린 것은 바로 고치는 판, 남이 올린 것은 읽는 판 */
+function openClassEvent(item) {
+  if (item.mine && canShare()) openSheet({ type: 'event', draft: { ...item, shared: true } });
+  else openSheet({ type: 'classEvent', id: item.id });
+}
+/** 올리기·고치기·지우기 응답(그 반 목록 전체)을 기기에 둔다 */
+function adoptClassEvents(list) {
+  const me = hubMe();
+  if (me) saveHub({ ...state.hub, me: { ...me, classEvents: list } });
+}
+
 /** 우리 반 자리 — 오늘 쓰는 것, 없으면 가장 가까운 다음 것 */
 function seatPlanNow() {
   const plans = (seatSource() && seatSource().seats) || [];
@@ -2498,7 +2621,7 @@ async function openStudent(target, force = false) {
       if (!body.found) throw new Error('그 학생을 찾지 못했습니다.');
       return body;
     }, { force });
-    state.viewing = { classId: data.classId, no: data.no, name: data.name, seats: data.seats || [], lessonSeats: data.lessonSeats || [] };
+    state.viewing = { classId: data.classId, no: data.no, name: data.name, seats: data.seats || [], lessonSeats: data.lessonSeats || [], classEvents: data.classEvents || [] };
     state.me = { classId: data.classId, sections: adoptSections(data.sections) };
     // 교사가 보는 것은 저장하지 않는다 — 이 기기의 «내 시간표»가 아니다.
   } catch (error) {
