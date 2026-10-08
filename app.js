@@ -2267,7 +2267,8 @@ function installSheet() {
     return {
       title: '앱으로 받기', sub,
       content: [h('ol', { class: 'steps' },
-        h('li', null, icon('share'), h('span', null, '사파리 아래쪽 ', h('b', null, '공유'))),
+        // 아이패드는 공유 단추가 위에, 새 사파리는 ⋯ 메뉴 안에 있다 — 자리를 말하지 않는다(10/8)
+        h('li', null, icon('share'), h('span', null, '사파리 ', h('b', null, '공유'), ' (안 보이면 ⋯ 메뉴 안)')),
         h('li', null, icon('add'), h('span', null, h('b', null, '홈 화면에 추가'))))],
       footer: [later],
     };
