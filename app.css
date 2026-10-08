@@ -424,6 +424,8 @@ button.row:hover + .row { border-top-color: transparent; }
 }
 .sheet.is-bottom { left: 0; right: 0; bottom: 0; border-radius: var(--r-md) var(--r-md) 0 0; padding-bottom: env(safe-area-inset-bottom); }
 .sheet.is-dialog { left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(480px, calc(100vw - 32px)); max-height: 84vh; border-radius: var(--r-md); }
+/* 자리 판 — 교실 배치도는 넓게(10/8). 폭은 app.js seatFit 과 같은 값 */
+.sheet.is-dialog.is-wide { width: min(760px, calc(100vw - 32px)); }
 .sheet.is-bottom.is-entering { animation: rise .22s ease-out; }
 .sheet.is-dialog.is-entering { animation: pop .18s ease-out; }
 @keyframes rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
