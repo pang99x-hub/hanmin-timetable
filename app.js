@@ -28,7 +28,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261008-v14';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261019-v19';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -497,7 +497,44 @@ function ownsCell(chg, lesson) {
  * 교체로 들어온 수업에 다시 보강이 걸리는 일이 있다. 하나만 집으면 나머지가 조용히
  * 사라진다. 교체는 «무슨 수업인지»를, 보강은 «누가 들어오는지»를 바꾸므로 겹쳐 읽는다.
  */
+/*
+ * 이동수업 묶음째 교체(2026-10-19 «수업교체를 선생님들이 신청을 할 수 있어야지»).
+ *
+ * 묶음 칸의 교체는 묶음에 든 반 전체가 함께 다른 교시와 자리를 맞바꾼다 — 서버가 그렇게만
+ * 받는다. 그런데 교체 기록에는 분반 하나(예: 일본어/김병숙)의 과목·교사만 적힌다. 같은 반도
+ * 학생마다 듣는 분반이 다르니, 기록된 값 대신 «내 시간표의 상대 자리 수업»을 그대로 가져온다.
+ * 그러지 않으면 중국어를 듣는 학생에게 일본어 교실이 뜬다.
+ */
+function bandSwapAt(list, period, lesson) {
+  const bandLike = (item) => item && (item.kind === 'section' || item.kind === 'unpicked');
+  for (const chg of list) {
+    if (chg.kind !== 'swap' || chg.period !== period || chg.classId !== state.me.classId) continue;
+    if (!chg.fromDate || chg.fromPeriod == null) continue;
+    const from = lessonsOn(parse(chg.fromDate)).get(chg.fromPeriod);
+    if (!bandLike(lesson) && !bandLike(from)) continue;
+    // 옮겨 온 수업에 뒤이어 걸린 보강은 그 수업 담당을 바꾼다.
+    const substitute = from && list.find((other) => other !== chg && other.period === period
+      && other.kind === 'substitute' && ownsCell(other, from));
+    return {
+      kind: substitute ? 'substitute' : 'swap',
+      period,
+      subject: from ? from.subject : null,
+      teacher: (substitute && substitute.newTeacher) || (from ? from.teacher : null),
+      room: (substitute && substitute.newRoom) || (from ? from.room : null),
+      // 들어온 수업이 이동수업인지 — 교실을 보여 줄지 정한다.
+      incomingKind: from ? from.kind : 'empty',
+      origTeacher: chg.origTeacher ?? null,
+      note: substitute ? '교체 · 보강' : '교체',
+      fromDate: chg.fromDate,
+      stack: substitute ? [chg, substitute] : [chg],
+    };
+  }
+  return null;
+}
+
 function changeForCell(list, period, lesson) {
+  const band = bandSwapAt(list, period, lesson);
+  if (band) return band;
   const here = list.filter((chg) => chg.period === period && ownsCell(chg, lesson));
   // 교체로 **들어온** 수업에 다시 붙은 변경은 원래 과목과 안 맞는다. 들어온 과목으로 한 번 더 본다.
   const incoming = here.map((chg) => chg.newSubject).filter(Boolean);
@@ -616,7 +653,9 @@ function cellOf(date, period, lessons, chgs) {
      * 이동수업은 교실을 함께 보여 준다 — 학생이 «어디로 가나»를 알아야 한다.
      * 자기 교실에서 하는 수업(kind: 'class')은 갈 곳이 없으니 적지 않는다.
      */
-    room: lesson.kind === 'section' ? ((chg && chg.room) || lesson.room || '') : '',
+    room: chg && chg.incomingKind
+      ? (chg.incomingKind === 'section' ? (chg.room || '') : '')
+      : lesson.kind === 'section' ? ((chg && chg.room) || lesson.room || '') : '',
   };
 }
 
