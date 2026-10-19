@@ -28,13 +28,13 @@ const CHANGES = { schema: 1, changes: [
   교체('1-3', 3, 2, 일본어, '김병숙', '공통영어2', '공대현'),
 ] };
 
-async function open(me) {
+async function open(me, changes = CHANGES) {
   const dom = new JSDOM(fs.readFileSync(`${ROOT}/index.html`, 'utf8'),
     { url: 'https://x/', runScripts: 'dangerously', pretendToBeVisual: true });
   const w = dom.window;
   w.fetch = async (url) => {
     const n = String(url).replace('data/', '');
-    const body = n === 'changes.json' ? JSON.stringify(CHANGES) : read(n);
+    const body = n === 'changes.json' ? JSON.stringify(changes) : read(n);
     return body == null ? { ok: false } : { ok: true, json: async () => JSON.parse(body) };
   };
   w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {} });
@@ -82,6 +82,22 @@ for (const [who, me, expect2, expect3] of [
   // 다른 교시는 그대로다 — 1교시 묶음은 옮기지 않았다.
   const one = 칸(w, 1);
   check('1교시는 그대로', me.classId === '1-3' ? one.subject === '통합과학2' : one.subject !== '공통국어2', 줄(one));
+  w.close();
+}
+
+// 옮겨 온 중국어(1-10 3교시)에 보강 — 기록은 1-10 한 반에만 남는다.
+const WITH_SUB = { schema: 1, changes: [...CHANGES.changes, {
+  date: D, classId: '1-10', period: 3, kind: 'substitute',
+  origSubject: 중국어, origTeacher: '김성자', newTeacher: '안기종', newRoom: null,
+}] };
+for (const [who, me, expect3] of [
+  ['보강 — 1-11 중국어 학생', { classId: '1-11', sections: pick(중국어) }, `${중국어}/안기종/집현전`],
+  ['보강 — 1-10 일본어 학생', { classId: '1-10', sections: pick(일본어) }, `${일본어}/김병숙/링컨실`],
+]) {
+  console.log(`\n[${who}]`);
+  const w = await open(me, WITH_SUB);
+  const three = 줄(칸(w, 3));
+  check('3교시', three === expect3, three);
   w.close();
 }
 
