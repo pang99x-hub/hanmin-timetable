@@ -1,3 +1,4 @@
+import { dataFile, HUB_SESSION, timetableReply } from './smoke-data.mjs';
 /*
  * 내 일정 — 학생이 적는 일정.
  *
@@ -12,7 +13,7 @@ const jsdomPath = process.env.JSDOM_PATH
 const { JSDOM } = await import('file://' + jsdomPath);
 import fs from 'node:fs';
 const ROOT = process.env.HOME + '/Documents/hanmin-timetable';
-const data = (n) => { try { return fs.readFileSync(`${ROOT}/data/${n}`,'utf8'); } catch { return null; } };
+const data = (n) => dataFile(n);
 
 const dom = new JSDOM(fs.readFileSync(`${ROOT}/index.html`,'utf8'),
   { url:'https://timetable.hanmin.hs.kr/', runScripts:'dangerously', pretendToBeVisual:true });
@@ -21,6 +22,7 @@ const w = dom.window;
 let deskCalls = 0, dataCalls = 0, calCalls = 0;
 const calStore = new Map();
 w.fetch = async (url, init) => {
+    { const tt = timetableReply(url); if (tt) return tt; }
   const target = String(url);
   if (target.includes('script.google.com')) { deskCalls += 1; return { ok:true, json: async () => ({ ok:true }) }; }
   if (target.includes('googleapis.com')) {
@@ -47,6 +49,7 @@ const store = new Map();
 Object.defineProperty(w, 'localStorage', { value:{
   getItem:(k)=>store.has(k)?store.get(k):null, setItem:(k,v)=>store.set(k,String(v)),
   removeItem:(k)=>store.delete(k) } });
+store.set(...HUB_SESSION);
 store.set('hanmin.timetable.me.v1', JSON.stringify({ classId:'3-8', sections:{} }));
 
 // 구글 권한은 이미 준 기기로 흉내 낸다.

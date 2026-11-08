@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { dataFile, HUB_SESSION, timetableReply } from './smoke-data.mjs';
 /*
  * 합반·분반·동명·교차수업 — 교사웹에서 사고가 났던 자리들.
  *
@@ -10,25 +10,24 @@ const jsdomPath = process.env.JSDOM_PATH
 const { JSDOM } = await import('file://' + jsdomPath);
 import fs from 'node:fs';
 const ROOT = process.env.HOME + '/Documents/hanmin-timetable';
-const read = (n) => fs.readFileSync(`${ROOT}/data/${n}`, 'utf8');
-// 수업 변경은 정적 사이트에서 내렸다(2026-11-08) — 시험 자료는 내리기 전 판에서 꺼내고, 앱에는 층 /live 로 준다
-const changesFixture = () => execSync('git -C ' + JSON.stringify(ROOT) + ' show 9ec2736:data/changes.json', { encoding: 'utf8' });
+const read = (n) => dataFile(n);
 
 const sections = JSON.parse(read('sections.json')).sections;
 const classes = JSON.parse(read('classes.json')).classes;
-const changes = JSON.parse(changesFixture()).changes;
+const changes = JSON.parse(dataFile('changes.json')).changes;
 
 async function open(classId, chosen) {
   const dom = new JSDOM(fs.readFileSync(`${ROOT}/index.html`, 'utf8'),
     { url: 'https://x/', runScripts: 'dangerously', pretendToBeVisual: true });
   const w = dom.window;
   w.fetch = async (u) => {
+    { const tt = timetableReply(u); if (tt) return tt; }
     const n = String(u).replace('data/', '');
-    if (n.includes('/live')) return { ok: true, json: async () => ({ etag: 'e', changes: JSON.parse(changesFixture()) }) };
+    if (n.includes('/live')) return { ok: true, json: async () => ({ etag: 'e', changes: JSON.parse(dataFile('changes.json')) }) };
     try { return { ok: true, json: async () => JSON.parse(read(n)) }; } catch { return { ok: false }; }
   };
   w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {} });
-  const store = new Map([['hanmin.timetable.me.v1',
+  const store = new Map([HUB_SESSION, ['hanmin.timetable.me.v1',
     JSON.stringify({ classId, sections: chosen })]]);
   Object.defineProperty(w, 'localStorage', { value: {
     getItem: (k) => store.get(k) ?? null, setItem() {}, removeItem() {} } });

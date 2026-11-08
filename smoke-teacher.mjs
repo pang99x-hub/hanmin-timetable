@@ -1,3 +1,4 @@
+import { dataFile, HUB_SESSION, timetableReply } from './smoke-data.mjs';
 /*
  * Hi-AX «학생 화면 보기» → 학생 골라 보기(2026-10-08 학생용 층으로 옮김, 앱스 스크립트 없음).
  *
@@ -13,7 +14,7 @@ const jsdomPath = process.env.JSDOM_PATH
 const { JSDOM } = await import('file://' + jsdomPath);
 import fs from 'node:fs';
 const ROOT = process.env.HOME + '/Documents/hanmin-timetable';
-const read = (n) => fs.readFileSync(`${ROOT}/data/${n}`, 'utf8');
+const read = (n) => dataFile(n);
 const sections = JSON.parse(read('sections.json')).sections;
 
 const ROSTER = [
@@ -43,6 +44,7 @@ async function open(hubReply, { teacher = true } = {}) {
   const w = dom.window;
   const store = new Map();
   w.fetch = async (url, init = {}) => {
+    { const tt = timetableReply(url); if (tt) return tt; }
     const u = String(url);
     if (u.includes('script.google.com')) { calls.push('DESK'); return { ok: false, json: async () => ({}) }; }
     if (u.startsWith(HUB)) {

@@ -1,3 +1,4 @@
+import { dataFile, HUB_SESSION, timetableReply } from './smoke-data.mjs';
 /*
  * 이동수업 묶음째 교체 — 11/4(수) 1-3·1-10·1-11 의 2·3교시 교환(2026-10-19 교무기획부 문의).
  *
@@ -10,7 +11,7 @@ const jsdomPath = process.env.JSDOM_PATH
 const { JSDOM } = await import('file://' + jsdomPath);
 import fs from 'node:fs';
 const ROOT = process.env.HOME + '/Documents/hanmin-timetable';
-const read = (n) => { try { return fs.readFileSync(`${ROOT}/data/${n}`, 'utf8'); } catch { return null; } };
+const read = (n) => dataFile(n);
 
 
 const D = '2026-11-04';
@@ -34,13 +35,14 @@ async function open(me, changes = CHANGES) {
     { url: 'https://x/', runScripts: 'dangerously', pretendToBeVisual: true });
   const w = dom.window;
   w.fetch = async (url) => {
+    { const tt = timetableReply(url); if (tt) return tt; }
     const n = String(url).replace('data/', '');
     if (n.includes('/live')) return { ok: true, json: async () => ({ etag: 'e', changes }) };
     const body = n === 'changes.json' ? null : read(n);
     return body == null ? { ok: false } : { ok: true, json: async () => JSON.parse(body) };
   };
   w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {} });
-  const store = new Map([['hanmin.timetable.me.v1', JSON.stringify(me)]]);
+  const store = new Map([HUB_SESSION, ['hanmin.timetable.me.v1', JSON.stringify(me)]]);
   Object.defineProperty(w, 'localStorage', { value: {
     getItem: (k) => store.has(k) ? store.get(k) : null, setItem: (k, v) => store.set(k, String(v)),
     removeItem: (k) => store.delete(k) } });

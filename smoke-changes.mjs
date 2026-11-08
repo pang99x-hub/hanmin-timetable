@@ -1,3 +1,4 @@
+import { dataFile, HUB_SESSION, timetableReply } from './smoke-data.mjs';
 /*
  * 덧칠 확인 — 요일 교환·이동수업 칸 보호·급식·학사일정.
  *
@@ -13,7 +14,7 @@ const jsdomPath = process.env.JSDOM_PATH
 const { JSDOM } = await import('file://' + jsdomPath);
 import fs from 'node:fs';
 const ROOT = process.env.HOME + '/Documents/hanmin-timetable';
-const read = (n) => { try { return fs.readFileSync(`${ROOT}/data/${n}`,'utf8'); } catch { return null; } };
+const read = (n) => dataFile(n);
 
 
 // 3-1 의 5교시는 「고전과 윤리」와 「세계 문제와 미래 사회」가 함께 걸린 이동수업 칸이다.
@@ -40,6 +41,7 @@ async function open(me) {
     { url:'https://x/', runScripts:'dangerously', pretendToBeVisual:true });
   const w = dom.window;
   w.fetch = async (url) => {
+    { const tt = timetableReply(url); if (tt) return tt; }
     const n = String(url).replace('data/','');
     if (n.includes('/live')) return { ok:true, json: async () => ({ etag:'e', changes: CHANGES, meals: MEALS, calendar: CAL }) };
     const body = n === 'changes.json' ? null
@@ -48,7 +50,7 @@ async function open(me) {
     return body == null ? { ok:false } : { ok:true, json: async () => JSON.parse(body) };
   };
   w.matchMedia = () => ({ matches:false, addListener(){}, removeListener(){} });
-  const store = new Map([['hanmin.timetable.me.v1', JSON.stringify(me)]]);
+  const store = new Map([HUB_SESSION, ['hanmin.timetable.me.v1', JSON.stringify(me)]]);
   Object.defineProperty(w, 'localStorage', { value:{
     getItem:(k)=>store.has(k)?store.get(k):null, setItem:(k,v)=>store.set(k,String(v)),
     removeItem:(k)=>store.delete(k) } });

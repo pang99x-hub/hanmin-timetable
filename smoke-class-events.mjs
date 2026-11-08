@@ -1,3 +1,4 @@
+import { dataFile, HUB_SESSION, timetableReply } from './smoke-data.mjs';
 /*
  * 우리 반 일정 점검 — 2026-10-08.
  *
@@ -12,7 +13,7 @@ const jsdomPath = process.env.JSDOM_PATH
 const { JSDOM } = await import('file://' + jsdomPath);
 import fs from 'node:fs';
 const ROOT = process.env.HOME + '/Documents/hanmin-timetable';
-const read = (n) => fs.readFileSync(`${ROOT}/data/${n}`, 'utf8');
+const read = (n) => dataFile(n);
 const sections = JSON.parse(read('sections.json')).sections;
 const sample = sections.find((s) => s.classIds.includes('2-1'));
 const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date());
@@ -31,6 +32,7 @@ async function open({ hub, url = 'https://timetable.hanmin.hs.kr/', opener }) {
   const store = new Map();
   const calls = [];
   w.fetch = async (u, init = {}) => {
+    { const tt = timetableReply(u); if (tt) return tt; }
     u = String(u);
     if (u.startsWith('https://students.hiax.cloud')) {
       calls.push({ at: `${init.method || 'GET'} ${new URL(u).pathname}`, body: init.body ? JSON.parse(init.body) : null });

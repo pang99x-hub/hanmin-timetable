@@ -5,8 +5,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  *
  * 자료는 전부 이 사이트의 정적 파일에서 온다 — 서버에 묻지 않는다.
  *   school.json    교시 시각·식사 시각 (교사웹 일과표에서 옴)
- *   classes.json   반별 시간표
- *   sections.json  강좌별 시간표 (명단 없이 시간만)
+ *   (반별·강좌 시간표는 2026-11-08부터 로그인한 학생·교사만 학생용 층 /timetable 에서 받는다)
  *   meals.json     급식
  *   calendar.json  학사일정
  *
@@ -27,7 +26,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261108-v20';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261108-v21';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -125,6 +124,46 @@ async function load(name) {
   } catch { return null; }
 }
 
+/* 로그인 열쇠 — 학생은 층 세션, AX 에서 연 교사는 교사 세션 */
+function hubToken() {
+  return (state.hub && state.hub.token) || (state.teacher && state.teacher.axSession) || (loadHub() || {}).token || null;
+}
+
+/*
+ * 반별·강좌 시간표(교사 이름이 든다)는 공개 사이트에 두지 않는다(2026-11-08). 로그인한 사람만 층에서
+ * 받고, 받은 것은 기기에 둔다 — 지문이 같으면 한 줄로 끝나고, 망이 없으면 기기 사본을 쓴다.
+ * 열쇠가 거절되면(로그아웃·만료) 사본도 쓰지 않는다.
+ */
+const TT_KEY = 'hanmin.timetable.tt.v1.';
+async function loadPrivate(name) {
+  const token = hubToken();
+  if (!token) return null;
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(TT_KEY + name) || 'null'); } catch { /* 없음 */ }
+  try {
+    const known = saved && saved.etag ? `?known=${saved.etag}` : '';
+    const res = await fetch(`${HUB}/timetable/${name}${known}`, { cache: 'no-store', signal: AbortSignal.timeout(6000), headers: { Authorization: `Bearer ${token}` } });
+    if (res.status === 401 || res.status === 403) return null;
+    if (res.ok) {
+      const got = await res.json();
+      if (got.unchanged && saved) return saved.body;
+      if (got.body) {
+        try { if (!state.viewing) localStorage.setItem(TT_KEY + name, JSON.stringify(got)); } catch { /* 이번 화면에서만 */ }
+        return got.body;
+      }
+    }
+  } catch { /* 망이 없으면 기기 사본 */ }
+  return saved ? saved.body : null;
+}
+
+async function loadTimetables() {
+  const [classes, sections] = await Promise.all([loadPrivate('classes.json'), loadPrivate('sections.json')]);
+  state.classes = (classes && classes.classes) || [];
+  state.sections = (sections && sections.sections) || [];
+  state.loadedAt = (classes && classes.generatedAt) || null;
+  return !!classes;
+}
+
 function readLive() {
   try { const raw = JSON.parse(localStorage.getItem(LIVE_KEY) || 'null'); return raw && raw.etag ? raw : null; } catch { return null; }
 }
@@ -141,7 +180,7 @@ async function refreshLive(timeout = 8000) {
   try {
     const known = state.liveEtag ? `?known=${state.liveEtag}` : '';
     // 수업 변경은 로그인한 학생·교사에게만 온다(2026-11-08) — 열쇠가 없으면 일과표·급식만
-    const token = (state.hub && state.hub.token) || (state.teacher && state.teacher.axSession) || (loadHub() || {}).token;
+    const token = hubToken();
     const res = await fetch(`${HUB}/live${known}`, { cache: 'no-store', signal: AbortSignal.timeout(timeout), headers: token ? { Authorization: `Bearer ${token}` } : {} });
     if (!res.ok) return false;
     const live = await res.json();
@@ -156,27 +195,23 @@ async function loadData() {
   const cached = readLive();
   // 기기에 사본이 있으면 정적 사이트의 같은 자료는 받지 않는다 — 층이 안 닿을 때의 대비로만 쓴다
   // 수업 변경은 정적 사이트에 두지 않는다 — 누구나 받을 수 있는 주소라서(2026-11-08). 층(/live)에서만 온다
-  const names = cached ? ['school.json', 'classes.json', 'sections.json', 'abbrev.json'] : ['school.json', 'classes.json', 'sections.json', 'meals.json', 'calendar.json', 'abbrev.json'];
+  const names = cached ? ['school.json', 'abbrev.json'] : ['school.json', 'meals.json', 'calendar.json', 'abbrev.json'];
   /*
    * 수업 변경·급식(/live)은 로그인한 학생의 첫 화면에만 필요하다. 로그인 문·선생님 화면까지 그것을
    * 기다리면 층 왕복(약 0.9초) 뒤에야 문이 떴다(2026-10-08 실측) — 그때는 뒤에서 받고 오면 다시 그린다.
    */
   let signedIn = false;
-  try { signedIn = !AX_EMBEDDED && !AX_EXTERNAL && !!localStorage.getItem(KEY); } catch { /* 문부터 */ }
+  try { signedIn = !AX_EMBEDDED && !AX_EXTERNAL && !!localStorage.getItem(KEY) && !!hubToken(); } catch { /* 문부터 */ }
   const waitLive = !cached && signedIn;
   if (!cached && !signedIn) refreshLive(8000).then((changed) => { if (changed && state.school) render(); });
-  const [files] = await Promise.all([Promise.all(names.map(load)), waitLive ? refreshLive(4000) : null]);
+  const [files] = await Promise.all([Promise.all(names.map(load)), waitLive ? refreshLive(4000) : null, loadTimetables()]);
   const got = Object.fromEntries(names.map((name, i) => [name, files[i]]));
-  const { 'classes.json': classes, 'sections.json': sections, 'abbrev.json': abbrev } = got;
-  if (!classes) return false;
+  const { 'abbrev.json': abbrev } = got;
   state.school = state.school || got['school.json'];
   if (!state.school) return false;
-  state.classes = classes.classes || [];
-  state.sections = (sections && sections.sections) || [];
   if (cached) adoptLive(cached);
   else if (!state.liveEtag) { state.meals = got['meals.json']; state.calendar = got['calendar.json']; }
   state.abbrev = (abbrev && abbrev.subjects) || {};
-  state.loadedAt = classes.generatedAt || null;
   state.fetchedAt = Date.now();
   return true;
 }
@@ -1430,8 +1465,8 @@ function dataNote() {
 
 function logout() {
   localStorage.removeItem(KEY);
-  try { localStorage.removeItem(LIVE_KEY); } catch { /* 없음 */ }
-  state.changes = null; state.liveEtag = null;
+  try { for (const k of [LIVE_KEY, TT_KEY + 'classes.json', TT_KEY + 'sections.json']) localStorage.removeItem(k); } catch { /* 없음 */ }
+  state.changes = null; state.liveEtag = null; state.classes = []; state.sections = []; state.loadedAt = null;
   if (state.hub && pushOn()) pushOff();
   if (state.hub) {
     fetch(`${HUB}/logout`, { method: 'POST', headers: { Authorization: `Bearer ${state.hub.token}` } }).catch(() => {});
@@ -2532,7 +2567,8 @@ function loadHub() {
 function saveHub(value) {
   const signedIn = !state.hub && value && value.token;
   state.hub = value;
-  if (signedIn) refreshLive().then((changed) => { if (changed) render(); });
+  // 강좌는 강좌 시간표가 있어야 반에 맞춰진다 — 시간표가 오면 로그인 때 받은 강좌를 다시 맞춘다
+  if (signedIn) Promise.all([refreshLive(), loadTimetables()]).then(() => { if (state.hub && state.hub.me) adoptHub(state.hub.me); render(); });
   if (state.viewing) return;
   try {
     if (value) localStorage.setItem(HUB_KEY, JSON.stringify(value));
@@ -2742,7 +2778,7 @@ boot().then(async () => {
       state.teacher.axSession = data.sessionToken;
     } else {
       state.teacher = { axSession: data.sessionToken, profileId: data.profileId, roster: data.roster || [] }; state.me = null; state.gateError = null; render();
-      refreshLive().then((changed) => { if (changed) render(); });
+      Promise.all([refreshLive(), loadTimetables()]).then(() => render());
     }
     return { expiresIn: data.expiresIn };
   });

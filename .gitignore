@@ -1,0 +1,4 @@
+# 교사 이름이 든 시간표·수업 변경은 공개하지 않는다(2026-11-08) — 학생용 층에서만
+data/classes.json
+data/sections.json
+data/changes.json

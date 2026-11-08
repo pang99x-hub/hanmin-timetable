@@ -1,3 +1,4 @@
+import { dataFile, HUB_SESSION, timetableReply } from './smoke-data.mjs';
 /*
  * 학생용 층(students.hiax.cloud) 점검 — 2026-10-07.
  *
@@ -12,7 +13,7 @@ const jsdomPath = process.env.JSDOM_PATH
 const { JSDOM } = await import('file://' + jsdomPath);
 import fs from 'node:fs';
 const ROOT = process.env.HOME + '/Documents/hanmin-timetable';
-const read = (n) => fs.readFileSync(`${ROOT}/data/${n}`, 'utf8');
+const read = (n) => dataFile(n);
 const sections = JSON.parse(read('sections.json')).sections;
 const sample = sections.find((s) => s.classIds.includes('2-1'));
 const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date());
@@ -50,6 +51,7 @@ async function open({ hub, desk, seed = [], sw = false }) {
   const store = new Map();
   const calls = { hub: [], desk: 0 };
   w.fetch = async (url, init = {}) => {
+    { const tt = timetableReply(url); if (tt) return tt; }
     const u = String(url);
     if (u.startsWith('https://students.hiax.cloud')) { calls.hub.push(`${init.method || 'GET'} ${new URL(u).pathname}`); return hub(u, init); }
     if (u.includes('script.google.com')) { calls.desk += 1; return { ok: true, json: async () => desk(JSON.parse(init.body)) }; }

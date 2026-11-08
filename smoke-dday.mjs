@@ -1,3 +1,4 @@
+import { dataFile, HUB_SESSION, timetableReply } from './smoke-data.mjs';
 /*
  * 디데이 — 학생이 정한 날까지 며칠.
  *
@@ -10,7 +11,7 @@ const jsdomPath = process.env.JSDOM_PATH
 const { JSDOM } = await import('file://' + jsdomPath);
 import fs from 'node:fs';
 const ROOT = process.env.HOME + '/Documents/hanmin-timetable';
-const data = (n) => { try { return fs.readFileSync(`${ROOT}/data/${n}`,'utf8'); } catch { return null; } };
+const data = (n) => dataFile(n);
 
 const dom = new JSDOM(fs.readFileSync(`${ROOT}/index.html`,'utf8'),
   { url:'https://timetable.hanmin.hs.kr/', runScripts:'dangerously', pretendToBeVisual:true });
@@ -19,6 +20,7 @@ const w = dom.window;
 let deskCalls = 0;
 let dataCalls = 0;
 w.fetch = async (url, init) => {
+    { const tt = timetableReply(url); if (tt) return tt; }
   if (String(url).includes('script.google.com')) {
     deskCalls += 1;
     return { ok:true, json: async () => ({ ok:true, found:true, classId:'3-8', sections:['132','141'] }) };
@@ -34,6 +36,7 @@ Object.defineProperty(w, 'localStorage', { value:{
   removeItem:(k)=>store.delete(k) } });
 
 // 이미 로그인해 둔 기기로 시작한다 — 여기서 보려는 것은 로그인이 아니다.
+store.set(...HUB_SESSION);
 store.set('hanmin.timetable.me.v1', JSON.stringify({
   classId: '3-8', sections: { b19000: '132|고급 물리학|채원식' },
 }));

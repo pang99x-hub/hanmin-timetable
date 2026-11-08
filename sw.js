@@ -10,7 +10,7 @@
  * VERSION 은 index.html 의 ?v= 와 app.js 의 VERSION 과 같은 값이다. 올리면 새 워커가
  * 설치되고, 앱은 «새 버전이 있어요»를 띄운 뒤 학생이 누를 때 갈아 끼운다.
  */
-const VERSION = '20261108-v20';
+const VERSION = '20261108-v21';
 const CACHE = `tt-${VERSION}`;
 const SHELL = [
   './',
@@ -24,7 +24,7 @@ const SHELL = [
 /* 자료를 기다리는 한도 — 넘으면 기기에 둔 것을 먼저 쓴다. */
 const DATA_TIMEOUT = 4000;
 /* 발행할 때만 바뀌는 자료 — 기기 사본 먼저, 뒤에서 새로 */
-const SLOW = ['school.json', 'classes.json', 'sections.json', 'abbrev.json'];
+const SLOW = ['school.json', 'abbrev.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
