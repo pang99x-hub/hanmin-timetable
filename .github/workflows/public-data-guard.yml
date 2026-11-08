@@ -1,0 +1,15 @@
+name: 공개 자료 검사
+# 이 저장소는 공개라 이력이 영구히 남는다. 교사 이름이 붙은 시간표·수업 변경, 학생 정보가
+# 올라오면 실패시킨다(2026-11-08). 규칙은 check-public-data.mjs 한곳에 있다.
+on:
+  push:
+  pull_request:
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node check-public-data.mjs
