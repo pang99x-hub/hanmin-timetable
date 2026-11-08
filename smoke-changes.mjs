@@ -15,6 +15,7 @@ import fs from 'node:fs';
 const ROOT = process.env.HOME + '/Documents/hanmin-timetable';
 const read = (n) => { try { return fs.readFileSync(`${ROOT}/data/${n}`,'utf8'); } catch { return null; } };
 
+
 // 3-1 의 5교시는 「고전과 윤리」와 「세계 문제와 미래 사회」가 함께 걸린 이동수업 칸이다.
 const CHANGES = { schema:1, changes:[
   { date:'2026-09-10', classId:'3-1', period:5, kind:'substitute',
@@ -40,7 +41,8 @@ async function open(me) {
   const w = dom.window;
   w.fetch = async (url) => {
     const n = String(url).replace('data/','');
-    const body = n === 'changes.json' ? JSON.stringify(CHANGES)
+    if (n.includes('/live')) return { ok:true, json: async () => ({ etag:'e', changes: CHANGES, meals: MEALS, calendar: CAL }) };
+    const body = n === 'changes.json' ? null
       : n === 'meals.json' ? JSON.stringify(MEALS)
       : n === 'calendar.json' ? JSON.stringify(CAL) : read(n);
     return body == null ? { ok:false } : { ok:true, json: async () => JSON.parse(body) };

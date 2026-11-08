@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 /*
  * 합반·분반·동명·교차수업 — 교사웹에서 사고가 났던 자리들.
  *
@@ -10,9 +11,12 @@ const { JSDOM } = await import('file://' + jsdomPath);
 import fs from 'node:fs';
 const ROOT = process.env.HOME + '/Documents/hanmin-timetable';
 const read = (n) => fs.readFileSync(`${ROOT}/data/${n}`, 'utf8');
+// 수업 변경은 정적 사이트에서 내렸다(2026-11-08) — 시험 자료는 내리기 전 판에서 꺼내고, 앱에는 층 /live 로 준다
+const changesFixture = () => execSync('git -C ' + JSON.stringify(ROOT) + ' show 9ec2736:data/changes.json', { encoding: 'utf8' });
+
 const sections = JSON.parse(read('sections.json')).sections;
 const classes = JSON.parse(read('classes.json')).classes;
-const changes = JSON.parse(read('changes.json')).changes;
+const changes = JSON.parse(changesFixture()).changes;
 
 async function open(classId, chosen) {
   const dom = new JSDOM(fs.readFileSync(`${ROOT}/index.html`, 'utf8'),
@@ -20,6 +24,7 @@ async function open(classId, chosen) {
   const w = dom.window;
   w.fetch = async (u) => {
     const n = String(u).replace('data/', '');
+    if (n.includes('/live')) return { ok: true, json: async () => ({ etag: 'e', changes: JSON.parse(changesFixture()) }) };
     try { return { ok: true, json: async () => JSON.parse(read(n)) }; } catch { return { ok: false }; }
   };
   w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {} });

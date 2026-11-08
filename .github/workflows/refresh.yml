@@ -70,7 +70,7 @@ jobs:
         if: steps.fetch.outputs.unchanged != 'true'
         run: |
           set -euo pipefail
-          for name in school changes meals calendar; do
+          for name in school meals calendar; do
             jq -S ".$name" /tmp/payload.json > "data/$name.json"
           done
           jq -r '.etag' /tmp/payload.json > data/.etag
@@ -82,7 +82,7 @@ jobs:
           set -euo pipefail
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add data/school.json data/changes.json data/meals.json data/calendar.json data/.etag
+          git add data/school.json data/meals.json data/calendar.json data/.etag
           if git diff --cached --quiet; then
             echo '바뀐 것 없음 — 커밋하지 않습니다.'
             exit 0

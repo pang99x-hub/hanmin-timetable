@@ -12,6 +12,7 @@ import fs from 'node:fs';
 const ROOT = process.env.HOME + '/Documents/hanmin-timetable';
 const read = (n) => { try { return fs.readFileSync(`${ROOT}/data/${n}`, 'utf8'); } catch { return null; } };
 
+
 const D = '2026-11-04';
 const 일본어 = '일본 언어와 역사의 이해2';
 const 중국어 = '중국 언어와 역사의 이해2';
@@ -34,7 +35,8 @@ async function open(me, changes = CHANGES) {
   const w = dom.window;
   w.fetch = async (url) => {
     const n = String(url).replace('data/', '');
-    const body = n === 'changes.json' ? JSON.stringify(changes) : read(n);
+    if (n.includes('/live')) return { ok: true, json: async () => ({ etag: 'e', changes }) };
+    const body = n === 'changes.json' ? null : read(n);
     return body == null ? { ok: false } : { ok: true, json: async () => JSON.parse(body) };
   };
   w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {} });
