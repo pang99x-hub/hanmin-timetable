@@ -514,3 +514,161 @@ button.row:hover + .row { border-top-color: transparent; }
 button.seatmap-seat { cursor: pointer; font: inherit; line-height: 1.15; color: inherit; padding: 0; }
 .seatmap-seat.is-picked { border: 2px solid var(--primary); background: var(--primary-faint); }
 .seatmap-seat.is-locked { background: var(--bg-alt); opacity: .7; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+ * 새 옷(2026-11-09 대표 «학생앱 디자인도 전체적으로 다시해줘. 좀 후진거 같아»).
+ * 짜임·기능은 그대로 두고 겉만 학생 앱답게 — 옅은 남보라 바탕, 테두리 없는 둥근 카드와
+ * 부드러운 그림자, 떠 있는 아래 메뉴, 과목마다 고유 색(--sub), 지금 수업은 그라데이션.
+ * 위의 값은 Hi-AX 화면 원칙을 따르던 판이고, 여기서 학생 앱 것만 덮는다.
+ * ════════════════════════════════════════════════════════════════════ */
+:root {
+  --r-sm: 10px; --r-md: 18px; --r-lg: 24px;
+  --bg: #f3f4fa; --bg-alt: #eceefa; --card: #ffffff; --border: #e5e7f2;
+  --text: #0f172a; --text-sub: #334155; --text-muted: #64748b; --text-faint: #94a3b8;
+  --primary: #4f46e5; --primary-hover: #4338ca; --primary-text: #4f46e5;
+  --primary-faint: #eef0ff; --primary-border: #c7cdfb;
+  --grad: linear-gradient(135deg, #6366f1 0%, #4f46e5 45%, #7c3aed 100%);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, .04), 0 10px 28px -14px rgba(49, 46, 129, .22);
+  --shadow-float: 0 12px 34px -10px rgba(30, 27, 75, .35);
+  --glass: rgba(255, 255, 255, .78);
+  --sub: #94a3b8;
+  --raise: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0d18; --bg-alt: #161a2b; --card: #141829; --border: #252a40;
+    --text: #eef0fb; --text-sub: #cbd2e6; --text-muted: #8f98b8; --text-faint: #5f6788;
+    --primary: #6366f1; --primary-text: #a5b4fc; --primary-faint: rgba(99, 102, 241, .16); --primary-border: #3f43a8;
+    --shadow-card: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 12px 30px -16px rgba(0, 0, 0, .7);
+    --shadow-float: 0 14px 40px -12px rgba(0, 0, 0, .8); --glass: rgba(20, 24, 41, .82); --raise: #2a3050;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b0d18; --bg-alt: #161a2b; --card: #141829; --border: #252a40;
+  --text: #eef0fb; --text-sub: #cbd2e6; --text-muted: #8f98b8; --text-faint: #5f6788;
+  --primary: #6366f1; --primary-text: #a5b4fc; --primary-faint: rgba(99, 102, 241, .16); --primary-border: #3f43a8;
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 12px 30px -16px rgba(0, 0, 0, .7);
+  --shadow-float: 0 14px 40px -12px rgba(0, 0, 0, .8); --glass: rgba(20, 24, 41, .82); --raise: #2a3050;
+}
+body {
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  background: radial-gradient(1200px 520px at 100% -10%, rgba(124, 58, 237, .10), transparent 60%),
+              radial-gradient(900px 480px at -10% -5%, rgba(99, 102, 241, .10), transparent 60%), var(--bg);
+  background-attachment: fixed;
+}
+
+/* 머리줄 — 반투명, 붙어 다님 */
+.top { position: sticky; top: 0; z-index: 15; border-bottom: 0; background: var(--glass); backdrop-filter: saturate(1.6) blur(16px); -webkit-backdrop-filter: saturate(1.6) blur(16px); }
+.school { font-weight: 700; color: var(--text); letter-spacing: -.01em; }
+.class-chip { border: 0; background: var(--grad); color: #fff; box-shadow: 0 6px 16px -8px rgba(79, 70, 229, .8); }
+.page { gap: var(--g-4); }
+.page-head h1 { font-size: 28px; font-weight: 800; letter-spacing: -.035em; }
+
+/* 카드 — 테두리 대신 그림자 */
+.card { border: 0; border-radius: var(--r-lg); box-shadow: var(--shadow-card); padding: 18px; }
+.card-title { font-size: 17px; font-weight: 750; }
+.card-foot { border-top-color: var(--border); }
+.rows { margin: 0 -6px; }
+.row { border-top-color: color-mix(in srgb, var(--border) 70%, transparent); padding: 12px 6px; }
+button.row:hover { background: var(--bg-alt); border-radius: 14px; }
+.row-title { font-weight: 650; }
+.badge { border: 0; padding: 3px 9px; }
+.badge.is-accent { background: var(--primary-faint); }
+
+/* 단추 */
+.btn { border-radius: 14px; }
+.btn.is-key { background: var(--grad); box-shadow: 0 8px 20px -10px rgba(79, 70, 229, .9); }
+.btn.is-plain, .btn.is-quiet { border-color: transparent; background: var(--bg-alt); }
+
+/* 아래 메뉴 — 떠 있는 둥근 막대 */
+.shell.is-single .screen { padding-bottom: calc(108px + env(safe-area-inset-bottom)); }
+.tabbar {
+  left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom)); padding: 6px;
+  border: 0; border-radius: 26px; background: var(--glass); box-shadow: var(--shadow-float);
+  backdrop-filter: saturate(1.6) blur(18px); -webkit-backdrop-filter: saturate(1.6) blur(18px); gap: 4px;
+}
+.tabbar .tab { min-height: 54px; border-radius: 20px; font-weight: 600; transition: background .15s, color .15s; }
+.tabbar .tab.is-on { background: var(--primary-faint); color: var(--primary-text); }
+.rail { border-right: 0; background: var(--glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.rail .tab.is-on { background: var(--primary-faint); color: var(--primary-text); }
+
+/* 하루·주간 고르기 */
+.seg { border: 0; background: var(--bg-alt); padding: 4px; }
+.seg button.is-on { background: var(--raise); color: var(--text); box-shadow: 0 2px 8px -2px rgba(15, 23, 42, .18); }
+.seg.is-full { display: flex; width: 100%; }
+.seg.is-full button { flex: 1; text-align: center; }
+
+/* 요일 칩 — 고른 날은 그라데이션 */
+.day-chip { border: 0; background: var(--card); box-shadow: var(--shadow-card); min-height: 60px; border-radius: 18px; }
+.day-chip.is-on { background: var(--grad); }
+.day-chip.is-on span, .day-chip.is-on b { color: #fff; }
+.day-chip.is-today:not(.is-on) { box-shadow: var(--shadow-card), inset 0 0 0 2px var(--primary-border); }
+
+/* 수업 줄 — 과목 색 막대, 지금 수업은 칠 */
+.slot:not(.is-free):not(.is-unpicked) .row-body { position: relative; padding-left: 14px; }
+.slot:not(.is-free):not(.is-unpicked) .row-body::before { content: ""; position: absolute; left: 0; top: 2px; bottom: 2px; width: 4px; border-radius: 4px; background: var(--sub); }
+.slot.is-now { background: var(--grad); border-radius: 16px; box-shadow: 0 10px 24px -12px rgba(79, 70, 229, .9); }
+.slot.is-now .row-title, .slot.is-now .row-note, .slot.is-now .lead-2 b, .slot.is-now .lead-2 span { color: #fff; }
+.slot.is-now .row-body::before { background: rgba(255, 255, 255, .85) !important; }
+.slot.is-now .badge { background: rgba(255, 255, 255, .22); color: #fff; }
+
+/* 주간 표 칸 — 과목 색 옅은 바탕 + 위 막대 */
+.wk .cell { border: 0; background: color-mix(in srgb, var(--sub) 13%, var(--card)); box-shadow: inset 0 3px 0 var(--sub); border-radius: 12px; }
+.wk .cell:hover { background: color-mix(in srgb, var(--sub) 22%, var(--card)); }
+.wk .cell b { color: color-mix(in srgb, var(--sub) 45%, var(--text)); }
+.wk .cell.is-now { background: var(--grad); box-shadow: 0 8px 18px -10px rgba(79, 70, 229, .9); }
+.wk .cell.is-now b, .wk .cell.is-now > span { color: #fff; }
+.wk .cell.is-unpicked { background: none; box-shadow: inset 0 0 0 1.5px var(--primary-border); }
+.wk td.free { border: 1.5px dashed var(--border); border-radius: 12px; }
+.wk td.off { border-radius: 12px; }
+
+/* 오늘 — 지금·다음 수업 큰 카드 */
+.hero { position: relative; display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 20px 20px 18px; overflow: hidden; color: #fff; background: var(--grad); box-shadow: 0 18px 40px -18px rgba(79, 70, 229, .95); text-align: left; }
+.hero::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .28), transparent 65%); pointer-events: none; }
+.hero-kicker { font-size: 13px; font-weight: 700; opacity: .85; letter-spacing: .01em; }
+.hero-title { font-size: 26px; font-weight: 800; letter-spacing: -.035em; line-height: 1.2; }
+.hero-note { font-size: 14px; opacity: .9; }
+.hero-bar { display: flex; gap: 4px; margin-top: 12px; }
+.hero-bar i { flex: 1; height: 5px; border-radius: 4px; background: rgba(255, 255, 255, .28); }
+.hero-bar i.is-done { background: rgba(255, 255, 255, .85); }
+.hero-bar i.is-now { background: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .35); }
+.hero.is-done { background: linear-gradient(135deg, #0ea5e9, #6366f1); }
+
+/* 디데이 */
+.dday-num { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.dday.is-empty { border: 1.5px dashed var(--primary-border); box-shadow: none; background: transparent; }
+.dday.is-empty b, .dday.is-empty .i { color: var(--primary-text); }
+
+/* 달력 */
+.mo .day { border-radius: 14px; }
+.mo .day.is-sel { background: var(--grad); box-shadow: 0 8px 18px -10px rgba(79, 70, 229, .9); }
+.mo .day.is-sel .num { color: #fff; }
+.mo .day.is-today:not(.is-sel) { box-shadow: inset 0 0 0 2px var(--primary-border); }
+
+/* 급식 */
+.menu li { padding: 4px 0; }
+
+/* 판 */
+.sheet.is-bottom { border-radius: 26px 26px 0 0; }
+.sheet.is-bottom::before { content: ""; align-self: center; width: 40px; height: 5px; margin-top: 8px; border-radius: 3px; background: var(--border); }
+.sheet.is-dialog { border-radius: var(--r-lg); }
+.sheet-foot { border-top: 0; }
+
+/* 로그인 */
+.gate-card { border: 0; border-radius: 28px; box-shadow: var(--shadow-card); }
+
+/* ── 다음 학년도 선택 과목(2026-11-09) — 내 정보엔 한 줄, 누르면 판 ── */
+.course-entry { padding: 8px 12px; }
+.course-ico { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; background: var(--grad); color: #fff; font-size: 15px; font-weight: 800; letter-spacing: -.02em; }
+.course-entry .row-lead { min-width: 0; }
+.course-sum { display: flex; align-items: baseline; gap: 10px; padding: 14px 16px; border-radius: 18px; background: var(--primary-faint); }
+.course-sum > span:first-child { font-weight: 700; color: var(--primary-text); }
+.course-sum b { margin-left: auto; font-size: 28px; font-weight: 800; letter-spacing: -.03em; color: var(--primary-text); }
+.course-sum b small { font-size: 14px; font-weight: 700; margin-left: 2px; }
+.course-list { display: flex; flex-direction: column; gap: 8px; }
+.course-list li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: color-mix(in srgb, var(--sub) 10%, var(--card)); }
+.course-list li i { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--sub); }
+.course-list li span { flex: 1; font-weight: 650; letter-spacing: -.02em; }
+.course-list li b { flex: none; padding: 3px 10px; border-radius: 999px; background: var(--card); font-size: 12px; font-weight: 700; color: var(--text-sub); }
+.course-help { font-size: 12px; text-align: center; }

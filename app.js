@@ -26,7 +26,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261108-v21';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261109-v23';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -830,10 +830,10 @@ function card(title, opts, ...body) {
 }
 
 /** 목록 한 줄 — 앞 칸 · 제목 · 보조 · 끝 칸. */
-function row({ lead, title, note, extra, tail, onclick, cls, label }) {
+function row({ lead, title, note, extra, tail, onclick, cls, label, style }) {
   const tails = [tail].flat().filter(Boolean);
   return h(onclick ? 'button' : 'div', {
-    class: `row${cls ? ` ${cls}` : ''}`, type: onclick ? 'button' : null, onclick, 'aria-label': label || null,
+    class: `row${cls ? ` ${cls}` : ''}`, type: onclick ? 'button' : null, onclick, 'aria-label': label || null, style: style || null,
   },
     lead != null && h('span', { class: 'row-lead' }, lead),
     h('span', { class: 'row-body' },
@@ -844,6 +844,15 @@ function row({ lead, title, note, extra, tail, onclick, cls, label }) {
 }
 
 const empty = (text) => h('p', { class: 'empty' }, text);
+/* 과목 색(2026-11-09 새 옷) — 과목 이름으로 늘 같은 색을 고른다. 시간표 칸·수업 줄의 옅은 바탕과 왼쪽 막대에 */
+const SUBJECT_HUES = [250, 200, 165, 140, 95, 45, 25, 345, 300, 275, 215, 10];
+function subjectStyle(name) {
+  const key = String(name || '').replace(/[ⅠⅡⅢ\d\s]/g, '');
+  if (!key) return null;
+  let n = 0;
+  for (const ch of key) n = (n * 31 + ch.codePointAt(0)) >>> 0;
+  return `--sub: hsl(${SUBJECT_HUES[n % SUBJECT_HUES.length]} 70% 55%)`;
+}
 const linkTo = (label, onclick) => h('button', { class: 'link', type: 'button', onclick }, label, icon('next'));
 const periodLead = (top, bottom) => h('span', { class: 'lead-2' }, h('b', null, top), bottom && h('span', null, bottom));
 
@@ -862,16 +871,49 @@ function todayScreen(layout) {
   if (layout === 'dashboard') {
     return h('div', { class: 'page' }, head,
       h('div', { class: 'cols is-dash' },
-        h('div', { class: 'col' }, installCard(layout), weekGridCard(mondayOf(date), date, '이번 주 시간표')),
+        h('div', { class: 'col' }, nowCard(date), installCard(layout), weekGridCard(mondayOf(date), date, '이번 주 시간표')),
         h('div', { class: 'col is-side' }, ddayCard(), seatJobCard(), teacherSoonCard(), classSoonCard(), newSeatsCard(), mealCard(date), upcomingCard())));
   }
-  return h('div', { class: 'page' }, head, ddayCard(), installCard(layout), pushOfferCard(), seatJobCard(), teacherSoonCard(), classSoonCard(), newSeatsCard(), lessonsCard(date, '수업'), mealCard(date));
+  // 디데이가 맨 위(2026-10-07 대표 결정), 바로 아래 지금·다음 수업
+  return h('div', { class: 'page' }, head, ddayCard(), nowCard(date), installCard(layout), pushOfferCard(), seatJobCard(), teacherSoonCard(), classSoonCard(), newSeatsCard(), lessonsCard(date, '수업'), mealCard(date));
 }
 
 function rotationNote(date) {
   const day = effectiveDay(date);
   if (day === dayIndex(date) || !DAYS[day]) return null;
   return h('p', { class: 'card-note' }, `${DAYS[day]}요일 시간표로 운영합니다`);
+}
+
+/*
+ * 지금·다음 수업(2026-11-09 새 옷) — 오늘 맨 위의 큰 카드. 수업 중이면 그 수업, 쉬는 때면 다음 수업,
+ * 다 끝났으면 «오늘 수업 끝». 수업일이 아니면(주말) 다음 수업일 첫 수업.
+ */
+function nowCard(date) {
+  if (holidayOn(date)) return null;
+  const periods = state.school.periods || [];
+  const lessons = lessonsOn(date), chgs = changesOn(date);
+  const isToday = sameDay(date, today());
+  const t = isToday ? nowHM() : '00:00';
+  const real = periods.map((p) => ({ p, c: cellOf(date, p.period, lessons, chgs) })).filter(({ c }) => !c.empty && !c.cancelled);
+  if (!real.length) return null;
+  const cur = real.find(({ p }) => p.startTime <= t && t < p.endTime);
+  const next = real.find(({ p }) => p.startTime > t);
+  const pick = cur || next;
+  const last = real[real.length - 1].p;
+  if (!pick) {
+    return h('section', { class: 'card hero is-done' },
+      h('span', { class: 'hero-kicker' }, '오늘 수업 끝'),
+      h('b', { class: 'hero-title' }, '수고했어요'),
+      h('span', { class: 'hero-note' }, `${last.period}교시까지 · ${last.endTime} 마침`));
+  }
+  const { p, c } = pick;
+  const done = real.filter(({ p: q }) => q.endTime <= t).length;
+  return h('button', { class: 'card hero', type: 'button', style: subjectStyle(c.subject),
+    onclick: () => (c.unpicked ? pickOrNotice(c.band) : openSheet({ type: 'lesson', date: iso(date), period: p.period })) },
+    h('span', { class: 'hero-kicker' }, cur ? `지금 · ${p.period}교시` : `${isToday ? '다음' : '첫 수업'} · ${p.period}교시 ${p.startTime}`),
+    h('b', { class: 'hero-title' }, c.unpicked ? (sectionsFromSchool() ? '이동수업' : '강좌를 골라 주세요') : c.subject),
+    h('span', { class: 'hero-note' }, c.chg ? changeLine(c.chg) : [c.teacher, c.room, `${p.startTime}–${p.endTime}`].filter(Boolean).join(' · ')),
+    h('span', { class: 'hero-bar', 'aria-hidden': 'true' }, real.map((_, i) => h('i', { class: i < done ? 'is-done' : i === done && cur ? 'is-now' : null }))));
 }
 
 /* 디데이 — 오늘과 달력 맨 위. 누르면 고친다. */
@@ -919,11 +961,12 @@ function lessonRows(date) {
       cls: ['slot', on && 'is-now', c.empty && 'is-free', c.unpicked && 'is-unpicked', c.chg && 'is-chg'].filter(Boolean).join(' '),
       lead: periodLead(`${p.period}교시`, p.startTime),
       title: c.empty ? '공강' : h('span', { class: c.cancelled ? 'is-cut' : null }, c.subject),
-      note: c.empty || c.cancelled ? null : c.unpicked ? '강좌 고르기' : c.chg ? changeLine(c.chg) : [c.teacher, c.room].filter(Boolean).join(' · '),
+      note: c.empty || c.cancelled ? null : c.unpicked ? (sectionsFromSchool() ? '강좌 정보 없음 · 담임 선생님께' : '강좌 고르기') : c.chg ? changeLine(c.chg) : [c.teacher, c.room].filter(Boolean).join(' · '),
       extra: records.length > 0 && h('span', { class: 'row-mine' }, records.map((item) => item.title).join(' · ')),
       tail: [on && badge('지금', 'accent'), c.chg && badge(c.chg.note, changeTone(c.chg))],
       label: `${p.period}교시 ${c.empty ? '공강' : c.subject}`,
-      onclick: () => (c.unpicked ? openSheet({ type: 'picker', band: c.band }) : openSheet({ type: 'lesson', date: iso(date), period: p.period })),
+      style: c.empty || c.unpicked ? null : subjectStyle(c.subject),
+      onclick: () => (c.unpicked ? pickOrNotice(c.band) : openSheet({ type: 'lesson', date: iso(date), period: p.period })),
     });
   }));
 }
@@ -1175,12 +1218,12 @@ function weekGridCard(mon, focus, title) {
       if (c.empty) return h('td', { class: 'free' });
       const records = eventsAt(date, p.period);
       const on = isToday(date) && p.startTime <= t && t < p.endTime;
-      return h('td', null, h('button', { type: 'button',
+      return h('td', null, h('button', { type: 'button', style: c.unpicked ? null : subjectStyle(c.subject),
         class: ['cell', c.chg && 'is-chg', c.unpicked && 'is-unpicked', on && 'is-now', focus && sameDay(date, focus) && 'is-focus'].filter(Boolean).join(' '),
         'aria-label': `${WEEK[date.getDay()]} ${p.period}교시 ${c.subject}${c.chg ? ` ${c.chg.note}` : ''}${records.length ? ` · 기록 ${records.length}` : ''}`,
-        onclick: () => (c.unpicked ? openSheet({ type: 'picker', band: c.band }) : openSheet({ type: 'lesson', date: iso(date), period: p.period })) },
+        onclick: () => (c.unpicked ? pickOrNotice(c.band) : openSheet({ type: 'lesson', date: iso(date), period: p.period })) },
         h('b', { class: c.cancelled ? 'is-cut' : null }, c.unpicked ? c.subject : shortName(c.subject)),
-        h('span', null, c.unpicked ? '고르기' : c.teacher || ''),
+        h('span', null, c.unpicked ? (sectionsFromSchool() ? '확인 필요' : '고르기') : c.teacher || ''),
         (c.chg || records.length > 0) && h('span', { class: 'marks' },
           c.chg && h('i', { class: 'dot is-warn' }), records.length > 0 && h('i', { class: 'dot is-mine' }))));
     })));
@@ -1435,6 +1478,7 @@ function meScreen() {
       note: state.viewing ? '선생님이 보는 학생 화면' : '학교 구글 계정',
       tail: !state.viewing && h('button', { class: 'btn is-plain is-small', type: 'button', onclick: logout }, '로그아웃'),
     }))),
+    !state.viewing && courseCards(),
     // 자리·맡은 자리배치는 시간표 탭의 «자리배치»로 옮겼다(2026-10-08). 여기는 계정 연결만
     !state.viewing && !AX_EMBEDDED && !AX_EXTERNAL && !state.hub && card('학교 계정', null, h('div', { class: 'rows' },
       row({ title: '학교 계정 연결', note: '선생님 일정과 자리를 받습니다', tail: icon('next'), onclick: () => openSheet({ type: 'connect' }) }))),
@@ -1454,6 +1498,42 @@ function meScreen() {
       ? row({ title: '앱으로 쓰는 중' })
       : row({ title: '앱으로 받기', note: '홈 화면에서 바로 열립니다', tail: icon('next'), onclick: () => openSheet({ type: 'install' }) }))),
     h('p', { class: 'foot' }, ['화면 설정은 이 기기에만 저장됩니다', dataNote()].filter(Boolean).join(' · ')));
+}
+
+/*
+ * 다음 학년도 선택 과목(2026-11-09 대표 «데스크탑앱에 2027학년도 선택자료가 최종이니까 그 자료를 학생들이 볼 수 있게»).
+ * 학생용 층 /me 의 courseChoices — 데스크톱 본안에서 보낸 본인 것만 온다. 없으면 카드를 두지 않는다.
+ */
+function courseCards() {
+  const list = (hubMe() && hubMe().courseChoices) || [];
+  if (!list.length) return null;
+  return card(null, { cls: 'course-entry' }, h('div', { class: 'rows' }, list.map((c, i) => row({
+    lead: h('span', { class: 'course-ico', 'aria-hidden': 'true' }, String(c.academicYear).slice(2)),
+    title: `${c.academicYear}학년도 선택 과목`,
+    note: `${c.grade}학년 · ${c.terms.reduce((n, t) => n + t.subjects.reduce((m, x) => m + (Number(x.credits) || 0), 0), 0)}학점 · 학교 확정`,
+    tail: icon('next'), onclick: () => openSheet({ type: 'courses', index: i, term: 0 }),
+  }))));
+}
+
+function coursesSheet(index, termIndex) {
+  const c = ((hubMe() && hubMe().courseChoices) || [])[index];
+  if (!c) return { title: '선택 과목', content: empty('선택 과목 자료가 없습니다.') };
+  const term = c.terms[termIndex] || c.terms[0];
+  const sum = term.subjects.reduce((n, x) => n + (Number(x.credits) || 0), 0);
+  const label = (t) => { const [g, sem] = t.term.split('-'); return `${g}학년 ${sem}학기`; };
+  return {
+    title: `${c.academicYear}학년도 선택 과목`,
+    sub: `${c.grade}학년${c.publishedAt ? ` · ${fmtShort(parse(c.publishedAt.slice(0, 10)))} 학교 확정` : ''}`,
+    content: [
+      c.terms.length > 1 && h('div', { class: 'seg is-full', role: 'tablist' }, c.terms.map((t, i) =>
+        h('button', { type: 'button', role: 'tab', class: t === term ? 'is-on' : null, 'aria-selected': String(t === term),
+          onclick: () => openSheet({ type: 'courses', index, term: i }) }, label(t)))),
+      h('div', { class: 'course-sum' }, h('span', null, label(term)), h('b', null, String(sum), h('small', null, '학점')), h('span', { class: 'muted' }, `${term.subjects.length}과목`)),
+      h('ul', { class: 'course-list' }, term.subjects.map((x) =>
+        h('li', { style: subjectStyle(x.name) }, h('i', { 'aria-hidden': 'true' }), h('span', null, x.name), h('b', null, `${x.credits}학점`)))),
+      h('p', { class: 'muted course-help' }, '학교가 확정한 자료입니다. 다르면 담임 선생님께 말씀하세요.'),
+    ],
+  };
 }
 
 /* 자료가 언제 것인지 — 경고처럼 띄우지 않고 내 정보 맨 아래에 한 줄. */
@@ -1527,13 +1607,15 @@ function sheetBody(spec) {
     case 'lesson': return lessonSheet(parse(spec.date), spec.period);
     case 'event': return eventSheet(spec.draft);
     case 'school': return schoolSheet(spec.date);
-    case 'picker': return pickerSheet(spec.band);
+    case 'picker': return sectionsFromSchool() ? noSectionSheet() : pickerSheet(spec.band);
+    case 'noSection': return noSectionSheet();
     case 'install': return installSheet();
     case 'teacherEvent': return teacherEventSheet(spec.id);
     case 'classEvent': return classEventSheet(spec.id);
     case 'seats': return seatsSheet();
     case 'lessonSeats': return lessonSeatsSheet(spec.lessonId, spec.date);
     case 'connect': return connectSheet();
+    case 'courses': return coursesSheet(spec.index || 0, spec.term || 0);
     default: return null;
   }
 }
@@ -2252,6 +2334,17 @@ async function onConnect(response) {
     state.gateError = String(error.message || error);
     renderSheet(true);
   }
+}
+
+/*
+ * 학교 계정 학생은 강좌를 고르지 않는다(2026-11-09 대표 «이동수업고르기는 쓰는거 아니지?» → «로그인 학생은 막기»).
+ * 강좌는 학교 명단이 유일한 원본 — 빠진 학생은 고르게 두면 기기에 틀린 시간표가 남으므로 담임에게 안내만.
+ */
+function pickOrNotice(band) {
+  openSheet(sectionsFromSchool() ? { type: 'noSection' } : { type: 'picker', band });
+}
+function noSectionSheet() {
+  return { title: '이동수업 강좌 정보 없음', content: [h('p', null, '학교 명단에 이 시간 강좌가 아직 없습니다.'), h('p', { class: 'muted' }, '담임 선생님께 말씀하면 학교에서 고쳐 줍니다. 고치면 저절로 들어옵니다.')] };
 }
 
 /* 강좌 고르기 — 이동수업은 학생마다 다르다. 한 번 고르면 계속 기억한다. */

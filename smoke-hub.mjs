@@ -36,6 +36,9 @@ const ME = {
     seats: { 'd1a:0': { no: 6, name: '나학생' }, 'd1a:1': { no: 7, name: '가학생' } },
     locked: [], mine: 'd1a:1',
   }],
+  // 다음 학년도 선택 과목(데스크톱 본안에서 보낸 본인 것)
+  courseChoices: [{ academicYear: 2027, grade: 3, publishedAt: '2026-11-09T12:00:00+09:00',
+    terms: [{ term: '3-1', subjects: [{ name: '통합수학Ⅰ', credits: 5 }, { name: '심화 영어', credits: 4 }] }, { term: '3-2', subjects: [{ name: '전문 수학', credits: 5 }] }] }],
   // 이동수업 자리 — 교과 선생님이 짠 것. 여러 반이 모이므로 반을 함께 싣는다
   lessonSeats: [{
     lessonId: `sec:${sample.sectionId}`, effectiveFrom: plus(-1),
@@ -114,6 +117,25 @@ student.w.eval('closeSheet()')
 
 console.log('\n[3] 우리 반 자리');
 student.w.eval(`state.tab='me'; render();`)
+{
+  // 내 정보에는 한 줄만(펼쳐 두지 않는다 — 2026-11-09 대표 «이렇게 펼쳐놓으면 앱이 망가지잖아»), 누르면 판
+  const entry = [...student.app.querySelectorAll('button.row')].find((n) => n.textContent.includes('2027학년도 선택 과목'))
+  check('내 정보 — 선택 과목은 한 줄(3학년 · 14학점)', !!entry && entry.textContent.includes('3학년 · 14학점') && !student.app.textContent.includes('통합수학'))
+  entry.click()
+  await settle()
+  check('누르면 판 — 1학기 과목·학점 합계', student.sheet().textContent.includes('통합수학Ⅰ') && student.sheet().textContent.includes('9학점'))
+  ;[...student.sheet().querySelectorAll('.seg button')].find((b) => b.textContent.includes('2학기')).click()
+  await settle()
+  check('2학기로 바꾸면 2학기 과목', student.sheet().textContent.includes('전문 수학') && !student.sheet().textContent.includes('통합수학Ⅰ'))
+  student.w.eval('closeSheet()')
+}
+{
+  // 로그인 학생은 강좌를 고르지 않는다 — 고르기를 불러도 «강좌 정보 없음» 안내만(2026-11-09)
+  student.w.eval(`openSheet({ type: 'picker', band: 'x' })`)
+  await settle()
+  check('로그인 학생 — 강좌 고르기 대신 담임 안내', student.sheet().textContent.includes('강좌 정보 없음') && !student.sheet().textContent.includes('강좌 고르기'))
+  student.w.eval('closeSheet()')
+}
 check('내 정보에는 자리가 없다 — 시간표 탭으로 옮겼다', ![...student.app.querySelectorAll('.card-title')].some((n) => n.textContent.includes('자리')))
 student.w.eval(`state.tab='timetable'; render();`)
 // «자리배치» 카드 — 줄은 «우리 반»과 이동수업 과목, 긴 안내 없이(2026-10-08 «주저리 설명 빼고»)
