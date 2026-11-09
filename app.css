@@ -519,7 +519,7 @@ button.seatmap-seat { cursor: pointer; font: inherit; line-height: 1.15; color: 
 /* ════════════════════════════════════════════════════════════════════
  * 새 옷(2026-11-09 대표 «학생앱 디자인도 전체적으로 다시해줘. 좀 후진거 같아»).
  * 짜임·기능은 그대로 두고 겉만 학생 앱답게 — 옅은 남보라 바탕, 테두리 없는 둥근 카드와
- * 부드러운 그림자, 떠 있는 아래 메뉴, 과목마다 고유 색(--sub), 지금 수업은 그라데이션.
+ * 부드러운 그림자, 떠 있는 아래 메뉴, 색은 바뀐 수업에만, 지금 수업은 그라데이션.
  * 위의 값은 Hi-AX 화면 원칙을 따르던 판이고, 여기서 학생 앱 것만 덮는다.
  * ════════════════════════════════════════════════════════════════════ */
 :root {
@@ -532,7 +532,6 @@ button.seatmap-seat { cursor: pointer; font: inherit; line-height: 1.15; color: 
   --shadow-card: 0 1px 2px rgba(15, 23, 42, .04), 0 10px 28px -14px rgba(49, 46, 129, .22);
   --shadow-float: 0 12px 34px -10px rgba(30, 27, 75, .35);
   --glass: rgba(255, 255, 255, .78);
-  --sub: #94a3b8;
   --raise: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
@@ -605,18 +604,19 @@ button.row:hover { background: var(--bg-alt); border-radius: 14px; }
 .day-chip.is-on span, .day-chip.is-on b { color: #fff; }
 .day-chip.is-today:not(.is-on) { box-shadow: var(--shadow-card), inset 0 0 0 2px var(--primary-border); }
 
-/* 수업 줄 — 과목 색 막대, 지금 수업은 칠 */
-.slot:not(.is-free):not(.is-unpicked) .row-body { position: relative; padding-left: 14px; }
-.slot:not(.is-free):not(.is-unpicked) .row-body::before { content: ""; position: absolute; left: 0; top: 2px; bottom: 2px; width: 4px; border-radius: 4px; background: var(--sub); }
+/* 수업 줄 — 색은 바뀐 수업에만(2026-11-09 대표 «색깔 없애고 변경 있는것만»), 지금 수업은 칠 */
+.slot.is-chg .row-body { position: relative; padding-left: 14px; }
+.slot.is-chg .row-body::before { content: ""; position: absolute; left: 0; top: 2px; bottom: 2px; width: 4px; border-radius: 4px; background: var(--warn-dot); }
 .slot.is-now { background: var(--grad); border-radius: 16px; box-shadow: 0 10px 24px -12px rgba(79, 70, 229, .9); }
 .slot.is-now .row-title, .slot.is-now .row-note, .slot.is-now .lead-2 b, .slot.is-now .lead-2 span { color: #fff; }
 .slot.is-now .row-body::before { background: rgba(255, 255, 255, .85) !important; }
 .slot.is-now .badge { background: rgba(255, 255, 255, .22); color: #fff; }
 
-/* 주간 표 칸 — 과목 색 옅은 바탕 + 위 막대 */
-.wk .cell { border: 0; background: color-mix(in srgb, var(--sub) 13%, var(--card)); box-shadow: inset 0 3px 0 var(--sub); border-radius: 12px; }
-.wk .cell:hover { background: color-mix(in srgb, var(--sub) 22%, var(--card)); }
-.wk .cell b { color: color-mix(in srgb, var(--sub) 45%, var(--text)); }
+/* 주간 표 칸 — 흰 칸, 바뀐 수업만 노란 바탕 + 위 막대 */
+.wk .cell { border: 0; background: var(--card); box-shadow: inset 0 0 0 1px var(--border); border-radius: 12px; }
+.wk .cell:hover { background: var(--bg-alt); }
+.wk .cell.is-chg { background: var(--warn-bg); box-shadow: inset 0 3px 0 var(--warn-dot), inset 0 0 0 1px var(--warn-border); }
+.wk .cell.is-chg b { color: var(--warn-text); }
 .wk .cell.is-now { background: var(--grad); box-shadow: 0 8px 18px -10px rgba(79, 70, 229, .9); }
 .wk .cell.is-now b, .wk .cell.is-now > span { color: #fff; }
 .wk .cell.is-unpicked { background: none; box-shadow: inset 0 0 0 1.5px var(--primary-border); }
@@ -667,8 +667,7 @@ button.row:hover { background: var(--bg-alt); border-radius: 14px; }
 .course-sum b { margin-left: auto; font-size: 28px; font-weight: 800; letter-spacing: -.03em; color: var(--primary-text); }
 .course-sum b small { font-size: 14px; font-weight: 700; margin-left: 2px; }
 .course-list { display: flex; flex-direction: column; gap: 8px; }
-.course-list li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: color-mix(in srgb, var(--sub) 10%, var(--card)); }
-.course-list li i { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--sub); }
+.course-list li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1px var(--border); }
 .course-list li span { flex: 1; font-weight: 650; letter-spacing: -.02em; }
 .course-list li b { flex: none; padding: 3px 10px; border-radius: 999px; background: var(--card); font-size: 12px; font-weight: 700; color: var(--text-sub); }
 .course-help { font-size: 12px; text-align: center; }

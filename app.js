@@ -26,7 +26,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261109-v23';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261109-v24';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -844,15 +844,6 @@ function row({ lead, title, note, extra, tail, onclick, cls, label, style }) {
 }
 
 const empty = (text) => h('p', { class: 'empty' }, text);
-/* 과목 색(2026-11-09 새 옷) — 과목 이름으로 늘 같은 색을 고른다. 시간표 칸·수업 줄의 옅은 바탕과 왼쪽 막대에 */
-const SUBJECT_HUES = [250, 200, 165, 140, 95, 45, 25, 345, 300, 275, 215, 10];
-function subjectStyle(name) {
-  const key = String(name || '').replace(/[ⅠⅡⅢ\d\s]/g, '');
-  if (!key) return null;
-  let n = 0;
-  for (const ch of key) n = (n * 31 + ch.codePointAt(0)) >>> 0;
-  return `--sub: hsl(${SUBJECT_HUES[n % SUBJECT_HUES.length]} 70% 55%)`;
-}
 const linkTo = (label, onclick) => h('button', { class: 'link', type: 'button', onclick }, label, icon('next'));
 const periodLead = (top, bottom) => h('span', { class: 'lead-2' }, h('b', null, top), bottom && h('span', null, bottom));
 
@@ -908,8 +899,7 @@ function nowCard(date) {
   }
   const { p, c } = pick;
   const done = real.filter(({ p: q }) => q.endTime <= t).length;
-  return h('button', { class: 'card hero', type: 'button', style: subjectStyle(c.subject),
-    onclick: () => (c.unpicked ? pickOrNotice(c.band) : openSheet({ type: 'lesson', date: iso(date), period: p.period })) },
+  return h('button', { class: 'card hero', type: 'button', onclick: () => (c.unpicked ? pickOrNotice(c.band) : openSheet({ type: 'lesson', date: iso(date), period: p.period })) },
     h('span', { class: 'hero-kicker' }, cur ? `지금 · ${p.period}교시` : `${isToday ? '다음' : '첫 수업'} · ${p.period}교시 ${p.startTime}`),
     h('b', { class: 'hero-title' }, c.unpicked ? (sectionsFromSchool() ? '이동수업' : '강좌를 골라 주세요') : c.subject),
     h('span', { class: 'hero-note' }, c.chg ? changeLine(c.chg) : [c.teacher, c.room, `${p.startTime}–${p.endTime}`].filter(Boolean).join(' · ')),
@@ -965,7 +955,6 @@ function lessonRows(date) {
       extra: records.length > 0 && h('span', { class: 'row-mine' }, records.map((item) => item.title).join(' · ')),
       tail: [on && badge('지금', 'accent'), c.chg && badge(c.chg.note, changeTone(c.chg))],
       label: `${p.period}교시 ${c.empty ? '공강' : c.subject}`,
-      style: c.empty || c.unpicked ? null : subjectStyle(c.subject),
       onclick: () => (c.unpicked ? pickOrNotice(c.band) : openSheet({ type: 'lesson', date: iso(date), period: p.period })),
     });
   }));
@@ -1218,7 +1207,7 @@ function weekGridCard(mon, focus, title) {
       if (c.empty) return h('td', { class: 'free' });
       const records = eventsAt(date, p.period);
       const on = isToday(date) && p.startTime <= t && t < p.endTime;
-      return h('td', null, h('button', { type: 'button', style: c.unpicked ? null : subjectStyle(c.subject),
+      return h('td', null, h('button', { type: 'button',
         class: ['cell', c.chg && 'is-chg', c.unpicked && 'is-unpicked', on && 'is-now', focus && sameDay(date, focus) && 'is-focus'].filter(Boolean).join(' '),
         'aria-label': `${WEEK[date.getDay()]} ${p.period}교시 ${c.subject}${c.chg ? ` ${c.chg.note}` : ''}${records.length ? ` · 기록 ${records.length}` : ''}`,
         onclick: () => (c.unpicked ? pickOrNotice(c.band) : openSheet({ type: 'lesson', date: iso(date), period: p.period })) },
@@ -1530,7 +1519,7 @@ function coursesSheet(index, termIndex) {
           onclick: () => openSheet({ type: 'courses', index, term: i }) }, label(t)))),
       h('div', { class: 'course-sum' }, h('span', null, label(term)), h('b', null, String(sum), h('small', null, '학점')), h('span', { class: 'muted' }, `${term.subjects.length}과목`)),
       h('ul', { class: 'course-list' }, term.subjects.map((x) =>
-        h('li', { style: subjectStyle(x.name) }, h('i', { 'aria-hidden': 'true' }), h('span', null, x.name), h('b', null, `${x.credits}학점`)))),
+        h('li', null, h('span', null, x.name), h('b', null, `${x.credits}학점`)))),
       h('p', { class: 'muted course-help' }, '학교가 확정한 자료입니다. 다르면 담임 선생님께 말씀하세요.'),
     ],
   };
