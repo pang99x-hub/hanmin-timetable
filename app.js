@@ -26,7 +26,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261109-v26';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261117-v27';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -43,7 +43,16 @@ const CAL_KEY = 'hanmin.timetable.cal.v1';
  * 그 사본을 둔 클라우드플레어 워커다. 선생님의 «학생 화면 보기»도 여기서 한다(2026-10-08 — 앱스 스크립트를
  * 거쳐 명단 3~5초·학생 하나 2초 걸리던 것을 옮기고 앱스 스크립트는 뺐다).
  */
-const HUB = 'https://students.hiax.cloud';
+/*
+ * 다른 학교(2026-11-17) — «학교이름.hiax.cloud/st/» 로 열리면 그 학교의 층을 쓴다. 표는 config.js 에 있고
+ * 그 주소에서는 Hi-AX 쪽 파일이 대신 나온다. 한민고 주소에서는 표가 비어 있어 아래 기본값 그대로다.
+ * 표에 없는 학교는 한민고 층으로 새지 않게 빈 주소로 둔다(불러오기 실패로 끝난다).
+ */
+const SCHOOL = location.hostname.endsWith('.hiax.cloud')
+  ? (window.AX_STUDENT_SCHOOLS || {})[location.hostname.split('.')[0]] || { hub: '' }
+  : null;
+const HUB = SCHOOL ? SCHOOL.hub : 'https://students.hiax.cloud';
+if (SCHOOL) document.title = '학생 AX';
 const HUB_KEY = 'hanmin.timetable.hub.v1';
 const HUB_TRY_KEY = 'hanmin.timetable.hub-try.v1';
 /*
@@ -59,7 +68,7 @@ const DATA = 'data/';
 const REFRESH_AFTER = 10 * 60 * 1000;
 
 /* 구글 로그인. 학교가 바뀌면 이 줄과 HUB 만 고친다. */
-const CLIENT_ID = '817402337132-buq4v80hslbv80d2ajteaj8h5664hod2.apps.googleusercontent.com';
+const CLIENT_ID = (SCHOOL && SCHOOL.clientId) || '817402337132-buq4v80hslbv80d2ajteaj8h5664hod2.apps.googleusercontent.com';
 
 const TABS = [
   ['today', '오늘'], ['timetable', '시간표'], ['calendar', '달력'], ['meals', '급식'], ['me', '내 정보'],
@@ -117,6 +126,7 @@ const nowHM = () => new Date().toTimeString().slice(0, 5);
 const schoolDay = (d) => { let x = d; while (!isWeekday(x)) x = addDays(x, 1); return x; };
 
 async function load(name) {
+  if (SCHOOL) return null;   // data/ 는 한민고 것이다 — 다른 학교는 층(/live)에서만 받는다
   try {
     const res = await fetch(`${DATA}${name}`, { cache: 'no-cache' });
     if (!res.ok) return null;
@@ -202,8 +212,8 @@ async function loadData() {
    */
   let signedIn = false;
   try { signedIn = !AX_EMBEDDED && !AX_EXTERNAL && !!localStorage.getItem(KEY) && !!hubToken(); } catch { /* 문부터 */ }
-  const waitLive = !cached && signedIn;
-  if (!cached && !signedIn) refreshLive(8000).then((changed) => { if (changed && state.school) render(); });
+  const waitLive = !cached && (signedIn || !!SCHOOL);   // 다른 학교는 학교 이름·일과표도 층에서 온다
+  if (!cached && !signedIn && !SCHOOL) refreshLive(8000).then((changed) => { if (changed && state.school) render(); });
   const [files] = await Promise.all([Promise.all(names.map(load)), waitLive ? refreshLive(4000) : null, loadTimetables()]);
   const got = Object.fromEntries(names.map((name, i) => [name, files[i]]));
   const { 'abbrev.json': abbrev } = got;
@@ -231,6 +241,12 @@ async function boot() {
   if (TABS.some(([key]) => key === fromHash)) state.tab = fromHash;
 
   render();
+  // 선생님 주소에서 로그인하고 넘어온 학생 — 그 로그인으로 바로 잇는다(한 번 쓰고 지운다)
+  if (SCHOOL && !state.hub) {
+    let handoff = null;
+    try { handoff = sessionStorage.getItem('ax.st.handoff'); sessionStorage.removeItem('ax.st.handoff'); } catch { /* 저장소가 막힌 기기 */ }
+    if (handoff) await onCredential({ accessToken: handoff });
+  }
   /*
    * 권한을 이미 준 기기면 캘린더에 있는 것을 조용히 가져온다. 연결한 적이 없는 기기에서
    * 이것을 부르면 열 때마다 권한 창을 띄우려다 막혀 «팝업 차단» 표시만 남는다.
@@ -2659,9 +2675,10 @@ function saveHub(value) {
 }
 
 /** 학생이면 { token, me }, 명단에 없으면(교사 등) { notStudent }. 닿지 않으면 던진다 */
-async function hubLogin(credential) {
-  const res = await fetch(`${HUB}/login`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential }),
+async function hubLogin(credential, accessToken) {
+  // accessToken — 선생님 주소에서 이미 한 로그인을 이어받을 때(다른 학교 /st/ 만)
+  const res = await fetch(`${HUB}/${accessToken ? 'server-login' : 'login'}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(accessToken ? { accessToken } : { credential }),
   });
   let data = {};
   try { data = await res.json(); } catch { /* 본문 없음 */ }
@@ -2834,7 +2851,7 @@ const TEACHER_HINT = '학생 명단에 없는 계정입니다. 학생이면 담�
 async function onCredential(response) {
   state.busy = true; state.gateError = null; render();
   try {
-    const hub = await hubLogin(response.credential);
+    const hub = await hubLogin(response.credential, response.accessToken);
     if (hub.notStudent) { state.gateError = TEACHER_HINT; return; }
     state.me = { classId: hub.me.student.classId, sections: adoptSections(hub.me.sections) };
     save();

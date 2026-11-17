@@ -10,12 +10,13 @@
  * VERSION 은 index.html 의 ?v= 와 app.js 의 VERSION 과 같은 값이다. 올리면 새 워커가
  * 설치되고, 앱은 «새 버전이 있어요»를 띄운 뒤 학생이 누를 때 갈아 끼운다.
  */
-const VERSION = '20261109-v26';
+const VERSION = '20261117-v27';
 const CACHE = `tt-${VERSION}`;
 const SHELL = [
   './',
   `app.js?v=${VERSION}`,
   `app.css?v=${VERSION}`,
+  'config.js',
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',
