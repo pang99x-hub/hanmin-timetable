@@ -26,7 +26,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261117-v27';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261120-v28';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -51,7 +51,25 @@ const CAL_KEY = 'hanmin.timetable.cal.v1';
 const SCHOOL = location.hostname.endsWith('.hiax.cloud')
   ? (window.AX_STUDENT_SCHOOLS || {})[location.hostname.split('.')[0]] || { hub: '' }
   : null;
-const HUB = SCHOOL ? SCHOOL.hub : 'https://students.hiax.cloud';
+// 한민고 학생용 층은 학교 서버 PC(2026-11-20 전환). 예전 클라우드플레어 워커는 students.hiax.cloud
+const HUB_PUBLIC = SCHOOL ? SCHOOL.hub : 'https://hanmin-server.hiax.cloud/functions/v1/student-hub';
+// 학교 와이파이에서는 서버 PC 로 직통(0.01초대). 바깥에서는 이 주소가 닿지 않아 공개 주소를 쓴다.
+const HUB_LAN = SCHOOL ? '' : 'https://hanmin-lan.hiax.cloud/functions/v1/student-hub';
+let HUB = HUB_PUBLIC;
+if (HUB_LAN) {
+  const nativeFetch = window.fetch.bind(window);
+  // 직통으로 가다 끊기면(학교 밖으로 나감) 공개 주소로 바꿔 한 번 다시 보낸다
+  window.fetch = (input, init) => {
+    const url = typeof input === 'string' ? input : input.url;
+    if (!url.startsWith(HUB_LAN)) return nativeFetch(input, init);
+    return nativeFetch(input, init).catch((error) => {
+      HUB = HUB_PUBLIC;
+      if (init?.signal?.aborted || typeof input !== 'string') throw error;
+      return nativeFetch(HUB_PUBLIC + url.slice(HUB_LAN.length), init);
+    });
+  };
+  nativeFetch(`${HUB_LAN}/push/key`, { signal: AbortSignal.timeout(1500) }).then((r) => { if (r.ok) HUB = HUB_LAN; }).catch(() => {});
+}
 if (SCHOOL) document.title = '학생 AX';
 const HUB_KEY = 'hanmin.timetable.hub.v1';
 const HUB_TRY_KEY = 'hanmin.timetable.hub-try.v1';
