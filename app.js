@@ -26,7 +26,7 @@ const AX_EMBEDDED = new URLSearchParams(location.search).get('axEmbed')==='1' &&
  */
 'use strict';
 
-const VERSION = '20261120-v28';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
+const VERSION = '20261124-v29';      // index.html 의 ?v= 와 sw.js 의 VERSION 과 같은 값
 const DAYS = ['월', '화', '수', '목', '금'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const KEY = 'hanmin.timetable.me.v1';
@@ -109,6 +109,10 @@ const state = {
   teacher: null,          // { axSession, profileId, roster: [{classId, no, name}] } — Hi-AX 에서 연 선생님
   viewing: null,          // 지금 보고 있는 학생 { classId, no, name }
   pickClass: null,        // 교사 화면에서 고른 학급
+  linkProof: null,        // 연결 코드 입력 중 — 방금 받은 구글 로그인 증표(저장하지 않는다)
+  linkFields: null,       // 그 화면에 적은 학번·이름·코드(틀려서 다시 그려도 남게)
+  consentPending: null,   // 필수 동의 전 { token, document } — 동의하면 «내 것»을 받는다
+  links: null,            // 교사 — 연결 코드 판 { classId, rows, codes, busy, error }
   busy: false,            // 창구에 묻는 중
   gateError: null,
   tab: 'today',
@@ -772,6 +776,7 @@ const changeTone = (chg) => (chg.kind === 'cancel' ? 'danger' : 'warn');
 function render() {
   const app = document.getElementById('app');
   app.innerHTML = '';
+  if (state.consentPending) { app.appendChild(consentGate()); return; }
   if (state.teacher && !state.me) app.appendChild(teacherPicker());
   else if (!state.me || !state.me.classId) app.appendChild(loginGate());
   else if (state.seatEdit) app.appendChild(seatEditor());
@@ -2035,6 +2040,7 @@ function quietConnect() {
         try {
           const hub = await hubLogin(response.credential);
           if (hub.notStudent) return;
+          if (hub.consentNeeded) { state.consentPending = { token: hub.token, document: hub.consentNeeded }; render(); return; }
           saveHub({ token: hub.token, me: hub.me, savedAt: Date.now() });
           adoptHub(hub.me);
           render();
@@ -2350,6 +2356,7 @@ async function onConnect(response) {
   try {
     const hub = await hubLogin(response.credential);
     if (hub.notStudent) { state.gateError = '학생 명단에 없는 계정입니다. 학교 계정으로 다시 고릅니다.'; renderSheet(true); return; }
+    if (hub.consentNeeded) { closeSheet(); state.consentPending = { token: hub.token, document: hub.consentNeeded }; render(); return; }
     saveHub({ token: hub.token, me: hub.me, savedAt: Date.now() });
     adoptHub(hub.me);
     closeSheet();
@@ -2700,7 +2707,10 @@ async function hubLogin(credential, accessToken) {
   });
   let data = {};
   try { data = await res.json(); } catch { /* 본문 없음 */ }
-  if (res.status === 404 && data.notStudent) return { notStudent: true };
+  if (res.status === 404 && data.notStudent) return { notStudent: true, canLink: !!data.canLink };
+  // 필수 동의 전 — 세션은 받았지만 «내 것»은 동의한 뒤에 준다(2026-11-24 동의 화면)
+  // 지금 판에 동의하지 않았으면(옛 판 동의로 «내 것»이 와도) 동의 화면부터 — 동의하면 /me 로 다시 받는다
+  if (res.ok && data.token && data.consent && !data.consent.accepted) return { token: data.token, consentNeeded: data.consent.document };
   if (!res.ok || !data.token || !data.me) throw new Error(data.error || '학생 서버에 닿지 못했습니다.');
   return data;
 }
@@ -2711,6 +2721,11 @@ async function refreshHub() {
   try {
     const res = await fetch(`${HUB}/me`, { headers: { Authorization: `Bearer ${state.hub.token}` } });
     if (res.status === 401) { saveHub(null); render(); return; }
+    if (res.status === 403) {
+      const body = await res.json().catch(() => ({}));
+      if (body.consentRequired && body.consent) { state.consentPending = { token: state.hub.token, document: body.consent.document }; render(); }
+      return;
+    }
     if (!res.ok) return;
     const me = await res.json();
     adoptHub(me);
@@ -2775,6 +2790,7 @@ function seatPlanNow() {
 }
 
 function loginGate() {
+  if (state.linkProof) return linkGate();
   const slot = h('div', { class: 'gsi' });
   if (AX_EMBEDDED || AX_EXTERNAL || state.busy) {
     slot.appendChild(h('p', { class: 'muted' }, '시간표를 찾는 중입니다…'));
@@ -2807,6 +2823,176 @@ function loginGate() {
       h('p', { class: 'muted' }, '학교 구글 계정으로 로그인하세요. 내 반과 이동수업이 한 번에 채워집니다.'),
       slot,
       state.gateError && h('p', { class: 'err' }, state.gateError)));
+}
+
+/* ── 필수 동의(2026-11-24) — 학생 서버가 처음 한 번(동의서가 바뀌면 다시) 받는 개인정보 수집·이용 동의 ──────────
+ * 동의 전에는 «내 것»을 받지 못한다. 동의하지 않으면 로그아웃한다(기본 서비스를 쓸 수 없다고 동의서에 적혀 있다).
+ */
+function consentGate() {
+  const doc = state.consentPending.document || {};
+  const rows = [['목적', doc.purpose], ['수집 항목', doc.items], ['보관 기간', doc.retention], ['거부할 권리', doc.refusal], ['선택 사항', doc.optional], ['알아 둘 것', doc.notice]].filter(([, v]) => v);
+  const check = h('input', { type: 'checkbox', id: 'consent-ok' });
+  const go = h('button', { class: 'btn is-key', type: 'button', disabled: true, onclick: () => acceptConsentNow() }, state.busy ? '확인하는 중…' : '동의하고 시작하기');
+  check.addEventListener('change', () => { go.disabled = !check.checked || state.busy; });
+  return h('div', { class: 'gate' },
+    h('div', { class: 'gate-card consent-card' },
+      h('h1', null, '시작하기 전에'),
+      h('p', { class: 'muted' }, '학생 AX를 쓰려면 아래 개인정보 수집·이용에 동의해야 합니다. 처음 한 번만 묻습니다.'),
+      h('div', { class: 'consent-doc' }, h('b', null, doc.title || '[필수] 개인정보 수집·이용 동의'),
+        h('dl', null, rows.map(([k, v]) => [h('dt', null, k), h('dd', null, v)]))),
+      h('label', { class: 'consent-check', for: 'consent-ok' }, check, h('span', null, '위 내용을 읽었고 동의합니다 (필수)')),
+      state.gateError && h('p', { class: 'err' }, state.gateError),
+      go,
+      h('button', { class: 'btn is-quiet', type: 'button', onclick: () => declineConsent() }, '동의하지 않음(로그아웃)')));
+}
+
+async function acceptConsentNow() {
+  const { token, document: doc } = state.consentPending;
+  state.busy = true; state.gateError = null; render();
+  try {
+    const auth = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    const res = await fetch(`${HUB}/consent`, { method: 'POST', headers: auth, body: JSON.stringify({ version: doc.version, accepted: true }) });
+    const body = await res.json().catch(() => ({}));
+    // 동의서가 그사이 바뀌었으면 새 동의서로 다시
+    if (res.status === 409) { const now = await (await fetch(`${HUB}/consent`, { headers: auth })).json().catch(() => null); if (now && now.document) state.consentPending = { token, document: now.document }; throw new Error(body.error || '동의 안내가 바뀌었습니다. 다시 확인해 주세요.'); }
+    if (!res.ok || !body.accepted) throw new Error(body.error || '동의를 저장하지 못했습니다.');
+    const meRes = await fetch(`${HUB}/me`, { headers: { Authorization: `Bearer ${token}` } });
+    const me = await meRes.json().catch(() => ({}));
+    if (!meRes.ok || !me.student) throw new Error(me.error || '학생 서버에 닿지 못했습니다.');
+    state.consentPending = null;
+    state.me = { classId: me.student.classId, sections: adoptSections(me.sections) };
+    save();
+    saveHub({ token, me, savedAt: Date.now() });
+  } catch (error) {
+    state.gateError = String(error.message || error);
+  } finally {
+    state.busy = false;
+    render();
+  }
+}
+
+function declineConsent() {
+  const { token } = state.consentPending;
+  fetch(`${HUB}/logout`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+  state.consentPending = null; state.gateError = null;
+  saveHub(null); state.me = null; save();
+  render();
+}
+
+/* ── 연결 코드(2026-11-24) — 명단에 메일이 없는 학생이 처음 한 번 자기 구글 계정을 묶는다 ─────────
+ * 구글 로그인 증표는 화면 메모리에만 둔다(저장하지 않는다). 학번·이름·코드가 맞으면 그 계정이 묶이고 바로 들어간다.
+ */
+function linkGate() {
+  const v = state.linkFields || {};  // 틀려서 다시 그려도 적은 것은 남긴다
+  const form = h('form', { class: 'link-form' },
+    h('label', { class: 'field' }, '학번', h('input', { name: 'studentCode', value: v.studentCode, inputmode: 'numeric', autocomplete: 'off', required: true, maxlength: 20, placeholder: '예: 20103' })),
+    h('label', { class: 'field' }, '이름', h('input', { name: 'name', value: v.name, autocomplete: 'off', required: true, maxlength: 20 })),
+    h('label', { class: 'field' }, '연결 코드', h('input', { name: 'linkCode', value: v.linkCode, autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', required: true, maxlength: 12, placeholder: 'ABCD-2345' })),
+    state.gateError && h('p', { class: 'err' }, state.gateError),
+    h('button', { class: 'btn is-key', type: 'submit', disabled: state.busy }, state.busy ? '확인하는 중…' : '연결하고 들어가기'),
+    h('button', { class: 'btn is-quiet', type: 'button', onclick: () => { state.linkProof = null; state.linkFields = null; state.gateError = null; render(); } }, '다른 계정으로 로그인'));
+  form.addEventListener('submit', (e) => { e.preventDefault(); submitLink(Object.fromEntries(new FormData(form))); });
+  return h('div', { class: 'gate' },
+    h('div', { class: 'gate-card' },
+      h('span', { class: 'gate-icon' }, icon('book')),
+      h('h1', null, '내 계정 연결'),
+      h('p', { class: 'muted' }, '처음 한 번만 합니다. 담임 선생님께 받은 연결 코드와 학번·이름을 넣으면, 다음부터는 이 구글 계정으로 바로 들어옵니다.'),
+      form));
+}
+
+async function submitLink(fields) {
+  state.linkFields = fields;
+  state.busy = true; state.gateError = null; render();
+  try {
+    const res = await fetch(`${HUB}/link`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...state.linkProof, ...fields }) });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.token && data.consent && !data.consent.accepted) {
+      state.linkProof = null; state.linkFields = null;
+      state.consentPending = { token: data.token, document: data.consent.document };
+      return;
+    }
+    if (!res.ok || !data.token || !data.me) {
+      // 구글 증표가 끝났으면 처음부터
+      if (res.status === 401) { state.linkProof = null; throw new Error('로그인이 끝났습니다. 구글 계정으로 다시 로그인해 주세요.'); }
+      throw new Error(data.error || '학생 서버에 닿지 못했습니다.');
+    }
+    state.linkProof = null; state.linkFields = null;
+    state.me = { classId: data.me.student.classId, sections: adoptSections(data.me.sections) };
+    save();
+    saveHub({ token: data.token, me: data.me, savedAt: Date.now() });
+  } catch (error) {
+    state.gateError = String(error.message || error);
+  } finally {
+    state.busy = false;
+    render();
+  }
+}
+
+/* 선생님 — 반 학생의 연결 상태를 보고 코드를 발급·인쇄한다. 코드 원문은 발급한 화면에만 있고 서버엔 해시만 남는다 */
+async function teacherFetch(path, init = {}) {
+  if (axConnection) await axConnection.ensureFresh();
+  const request = () => fetch(`${HUB}${path}`, { ...init, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${state.teacher.axSession}`, ...(init.headers || {}) } });
+  let res = await request();
+  if (res.status === 401 && axConnection) { await axConnection.ensureFresh(true); res = await request(); }
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || '학생 서버에 닿지 못했습니다.');
+  return body;
+}
+
+const LINK_STATE = { email: '학교 명단 메일', linked: '연결됨', issued: '코드 받음', none: '연결 전' };
+async function loadLinks(classId) {
+  state.links = { classId, busy: true, rows: [], codes: null, error: null }; render();
+  try { state.links.rows = (await teacherFetch(`/ax/link-status?classId=${encodeURIComponent(classId)}`)).students; }
+  catch (error) { state.links.error = String(error.message || error); }
+  state.links.busy = false; render();
+}
+async function issueLinks(classId, no) {
+  const who = no == null ? '메일·연결이 없는 학생 모두' : `${no}번`;
+  if (no != null && !confirm(`${classId} ${no}번 학생에게 새 연결 코드를 발급할까요? 이미 연결된 계정은 새 코드를 쓰는 순간 바뀝니다.`)) return;
+  state.links.busy = true; state.links.error = null; render();
+  try {
+    const out = await teacherFetch('/ax/link-codes', { method: 'POST', body: JSON.stringify(no == null ? { classId } : { classId, no }) });
+    state.links.codes = out.codes.length ? out : null;
+    if (!out.codes.length) state.links.error = `${who}에게 발급할 학생이 없습니다.`;
+    state.links.rows = (await teacherFetch(`/ax/link-status?classId=${encodeURIComponent(classId)}`)).students;
+  } catch (error) { state.links.error = String(error.message || error); }
+  state.links.busy = false; render();
+}
+/** 반별 배부 쪽지 — 인쇄할 때만 보이는 판을 붙였다가 뗀다 */
+function printSlips(out) {
+  const site = SCHOOL ? `${location.hostname}/st/` : 'timetable.hanmin.hs.kr';
+  const until = new Date(out.expiresAt);
+  const slips = h('div', { class: 'print-slips' }, out.codes.map((c) => h('div', { class: 'slip' },
+    h('b', null, '학생 AX 계정 연결'),
+    h('p', { class: 'slip-who' }, `${c.classId}반 ${c.no}번 ${c.name}`, h('span', null, `학번 ${c.studentCode}`)),
+    h('p', { class: 'slip-code' }, c.linkCode),
+    h('ol', null, h('li', null, `${site} 에 들어가 자기 구글 계정으로 로그인`), h('li', null, '학번·이름·위 연결 코드를 넣기')),
+    h('p', { class: 'slip-foot' }, `${until.getMonth() + 1}월 ${until.getDate()}일까지 · 한 번만 쓸 수 있습니다 · 다른 사람에게 보여 주지 마세요`))));
+  document.body.append(slips);
+  const done = () => { slips.remove(); removeEventListener('afterprint', done); };
+  addEventListener('afterprint', done);
+  print();
+  setTimeout(done, 60_000);
+}
+function linkPanel(classId) {
+  const L = state.links && state.links.classId === classId ? state.links : null;
+  if (!L) return h('button', { class: 'btn is-quiet', type: 'button', onclick: () => loadLinks(classId) }, '학생 계정 연결 코드');
+  const need = L.rows.filter((r) => r.state === 'none' || r.state === 'issued').length;
+  return h('section', { class: 'link-panel' },
+    h('div', { class: 'link-head' }, h('b', null, `${classId} 학생 계정 연결`),
+      h('button', { class: 'btn is-small is-quiet', type: 'button', onclick: () => { state.links = null; render(); } }, '닫기')),
+    h('p', { class: 'muted' }, '학교 명단에 메일이 없는 학생은 연결 코드로 처음 한 번 자기 구글 계정을 묶습니다. 코드는 30일, 한 번만 쓸 수 있습니다.'),
+    L.error && h('p', { class: 'err' }, L.error),
+    L.busy ? h('p', { class: 'muted' }, '가져오는 중입니다…') : [
+      h('table', { class: 'link-table' }, h('tbody', null, L.rows.map((r) => h('tr', null,
+        h('td', null, `${r.no}`), h('td', null, r.name || '(이름 없음)'), h('td', { class: `st-${r.state}` }, LINK_STATE[r.state]),
+        h('td', null, r.state === 'email' ? null : h('button', { class: 'btn is-small is-quiet', type: 'button', onclick: () => issueLinks(classId, r.no) }, r.state === 'none' ? '코드 발급' : '새 코드')))))),
+      h('div', { class: 'link-actions' },
+        h('button', { class: 'btn is-key', type: 'button', disabled: !need, onclick: () => issueLinks(classId) }, need ? `연결 안 된 학생 ${need}명 코드 발급` : '모두 연결됨'),
+        L.codes && h('button', { class: 'btn', type: 'button', onclick: () => printSlips(L.codes) }, `방금 발급한 ${L.codes.codes.length}장 쪽지 인쇄`)),
+      L.codes && h('table', { class: 'link-table is-codes' }, h('tbody', null, L.codes.codes.map((c) => h('tr', null,
+        h('td', null, c.no), h('td', null, c.name), h('td', { class: 'code' }, c.linkCode))))),
+    ]);
 }
 
 /* ── 교사: 학생 골라 보기 ─────────────────────────────────────────────
@@ -2854,6 +3040,7 @@ function teacherPicker() {
           onclick: () => { state.pickClass = state.pickClass === id ? null : id; render(); } }, id))),
         state.pickClass && h('div', { class: 'pick-grid names' }, roster.filter((x) => x.classId === state.pickClass)
           .map((r) => h('button', { type: 'button', onclick: () => openStudent(r) }, `${r.no}. ${r.name || '(이름 없음)'}`))),
+        state.pickClass && linkPanel(state.pickClass),
         h('button', { class: 'btn is-quiet', type: 'button', onclick: () => {
           if (state.teacher.axSession) fetch(`${HUB}/logout`, { method: 'POST', headers: { Authorization: `Bearer ${state.teacher.axSession}` } }).catch(() => {});
           studentReadCache.clear();
@@ -2870,7 +3057,9 @@ async function onCredential(response) {
   state.busy = true; state.gateError = null; render();
   try {
     const hub = await hubLogin(response.credential, response.accessToken);
+    if (hub.notStudent && hub.canLink) { state.linkProof = response.accessToken ? { accessToken: response.accessToken } : { credential: response.credential }; return; }
     if (hub.notStudent) { state.gateError = TEACHER_HINT; return; }
+    if (hub.consentNeeded) { state.consentPending = { token: hub.token, document: hub.consentNeeded }; return; }
     state.me = { classId: hub.me.student.classId, sections: adoptSections(hub.me.sections) };
     save();
     saveHub({ token: hub.token, me: hub.me, savedAt: Date.now() });
