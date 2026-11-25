@@ -10,7 +10,7 @@
  * VERSION 은 index.html 의 ?v= 와 app.js 의 VERSION 과 같은 값이다. 올리면 새 워커가
  * 설치되고, 앱은 «새 버전이 있어요»를 띄운 뒤 학생이 누를 때 갈아 끼운다.
  */
-const VERSION = '20261124-v29';
+const VERSION = '20261125-v30';
 const CACHE = `tt-${VERSION}`;
 const SHELL = [
   './',
@@ -119,7 +119,13 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil((async () => {
-    const url = new URL((event.notification.data && event.notification.data.url) || './#today', self.registration.scope).href;
+    // 알림이 가리키는 주소는 이 앱(registration.scope 아래, 같은 출처)일 때만 연다. 바깥 주소·깨진 주소는 앱 첫 화면으로(2026-11-25 보안 수정)
+    const scope = new URL(self.registration.scope);
+    let url = new URL('./#today', scope).href;
+    try {
+      const want = new URL((event.notification.data && event.notification.data.url) || './#today', scope);
+      if (want.origin === scope.origin && want.pathname.startsWith(scope.pathname)) url = want.href;
+    } catch (_) { /* 깨진 주소 — 첫 화면 */ }
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const client of windows) {
       if ('focus' in client) {
